@@ -224,7 +224,7 @@ button {
 
 .top button {
 	padding: var(--tbp);
-}
+}											 
 
 .bot button {
 	padding: var(--bbp);
@@ -298,39 +298,26 @@ button {
 	transition: 0.7s;
 	pointer-events: none;
 }
-/* Keep sliders on top when scrolling
-Effect Speed */
+
 .staytop {
 	display: block;
 	position: -webkit-sticky;
 	position: sticky;
 	background: var(--c-1);
-	top: 0px;
+	top: -1px;
 	z-index: 1;
 	margin-top: 1px;
 	width: 274px;
 	margin: auto;
 	border-radius: 25px;
 }
-/* Effect Intensity */
+
 #staytop1 {
-	top: 30px;
+	top: 28px;
 }
-/* FFT Low */
+
 #staytop2 {
-	top: 60px;
-}
-/* FFT High */
-#staytop3 {
-	top: 90px;
-}
-/* FFT Custom */
-#staytop4 {
-	top: 120px;
-}
-/* Solid Effect Mode */
-#staytop5 {
-	top: 150px;
+	top: 56px;
 }
 
 #fxb0 {
@@ -649,8 +636,8 @@ input[type=number]:focus, input[type=text]:focus {
 	background: var(--c-6);
 }
 
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
 	-webkit-appearance: none;
 }
 
@@ -716,7 +703,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .pwr {
-	color: var(--c-6);
+	color: var(--c-6); 
 	transform: translate(2px, 3px);
 	cursor: pointer;
 }
@@ -862,7 +849,7 @@ input[type=number]::-webkit-outer-spin-button {
 	width: 6px;
 }
 ::-webkit-scrollbar-track {
-	background: transparent;
+	background: transparent; 
 }
 ::-webkit-scrollbar-thumb {
 	background: var(--c-sb);
@@ -932,158 +919,134 @@ input[type=number]::-webkit-outer-spin-button {
 </div>
 
 <div class ="container">
-  <div id="Colors" class="tabcontent">
-	<div id="picker" class="noslide"></div>
-	<div id="rgbwrap">
-		<div class="sliderwrap il">
-			<input id="sliderR" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,1)" max="255" min="0" type="range" value="128" />
-			<div class="sliderdisplay"></div>
-		</div><br>
-		<div class="sliderwrap il">
-			<input id="sliderG" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,2)" max="255" min="0" type="range" value="128" />
-			<div class="sliderdisplay"></div>
-		</div><br>
-		<div class="sliderwrap il">
-			<input id="sliderB" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,3)" max="255" min="0" type="range" value="128" />
-			<div class="sliderdisplay"></div>
-		</div><br>
+	<div id="Colors" class="tabcontent">
+		<div id="picker" class="noslide"></div>
+		<div id="rgbwrap">
+			<div class="sliderwrap il">
+				<input id="sliderR" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,1)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div><br>
+			<div class="sliderwrap il">
+				<input id="sliderG" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,2)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div><br>
+			<div class="sliderwrap il">
+				<input id="sliderB" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,3)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div><br>
+		</div>
+		<div id="wwrap">
+			<p class="labels">White channel</p>
+			<div class="sliderwrap il">
+				<input id="sliderW" class="noslide" onchange="setColor(0)" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div>
+		</div>
+		<div id="qcs-w">
+			<div class="qcs" onclick="pC('#ff0000');" style="background-color:#ff0000;"></div>
+			<div class="qcs" onclick="pC('#ffa000');" style="background-color:#ffa000;"></div>
+			<div class="qcs" onclick="pC('#ffc800');" style="background-color:#ffc800;"></div>
+			<div class="qcs" onclick="pC('#ffe0a0');" style="background-color:#ffe0a0;"></div>
+			<div class="qcs" onclick="pC('#ffffff');" style="background-color:#ffffff;"></div>
+			<div class="qcs qcsb" onclick="pC('#000000');" style="background-color:#000000;"></div><br>
+			<div class="qcs" onclick="pC('#ff00ff');" style="background-color:#ff00ff;"></div>
+			<div class="qcs" onclick="pC('#0000ff');" style="background-color:#0000ff;"></div>
+			<div class="qcs" onclick="pC('#00ffc8');" style="background-color:#00ffc8;"></div>
+			<div class="qcs" onclick="pC('#08ff00');" style="background-color:#08ff00;"></div>
+			<div class="qcs" onclick="pC('rnd');" style="background-color:var(--c-3); padding: 4px 8px; transform: translateY(-10px);">R</div>
+		</div>
+		<div id="csl">
+			<button class="xxs cl btn" onclick="selectSlot(0);">1</button>
+			<button class="xxs cl btn" onclick="selectSlot(1);">2</button>
+			<button class="xxs cl btn" onclick="selectSlot(2);">3</button>
+		</div>
+		<div id="hexw">
+			<input id="hexc" type="text" class="noslide" onkeydown="hexEnter(this)" autocomplete="off" maxlength="8" />
+			<button id="hexcnf" class="xxs btn" onclick="fromHex();"><i class="icons btna-icon">&#xe390;</i></button>
+		</div>
+		<p class="labels">Color palette</p> 
+		<div class="il">
+			<i class="icons sel-icon" onclick="tglHex()">&#xe2b3;</i>
+			<select class="btn sel" id="selectPalette" onchange="setPalette()">
+				<option>Default</option>
+				<option>Error!</option>
+			</select>
+		</div>
 	</div>
-    <div id="wwrap">
-      <p class="labels">White channel</p>
-      <div class="sliderwrap il">
-        <input id="sliderW" class="noslide" onchange="setColor(0)" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <div id="qcs-w">
-      <div class="qcs" onclick="pC('#ff0000');" style="background-color:#ff0000;"></div>
-      <div class="qcs" onclick="pC('#ffa000');" style="background-color:#ffa000;"></div>
-      <div class="qcs" onclick="pC('#ffc800');" style="background-color:#ffc800;"></div>
-      <div class="qcs" onclick="pC('#ffe0a0');" style="background-color:#ffe0a0;"></div>
-      <div class="qcs" onclick="pC('#ffffff');" style="background-color:#ffffff;"></div>
-      <div class="qcs qcsb" onclick="pC('#000000');" style="background-color:#000000;"></div><br>
-      <div class="qcs" onclick="pC('#ff00ff');" style="background-color:#ff00ff;"></div>
-      <div class="qcs" onclick="pC('#0000ff');" style="background-color:#0000ff;"></div>
-      <div class="qcs" onclick="pC('#00ffc8');" style="background-color:#00ffc8;"></div>
-      <div class="qcs" onclick="pC('#08ff00');" style="background-color:#08ff00;"></div>
-      <div class="qcs" onclick="pC('rnd');" style="background-color:var(--c-3); padding: 4px 8px; transform: translateY(-10px);">R</div>
-    </div>
-    <div id="csl">
-      <button class="xxs cl btn" onclick="selectSlot(0);">1</button>
-      <button class="xxs cl btn" onclick="selectSlot(1);">2</button>
-      <button class="xxs cl btn" onclick="selectSlot(2);">3</button>
-	</div>
-	<div id="hexw">
-		<input id="hexc" type="text" class="noslide" onkeydown="hexEnter(this)" autocomplete="off" maxlength="8" />
-		<button id="hexcnf" class="xxs btn" onclick="fromHex();"><i class="icons btna-icon">&#xe390;</i></button>
-	</div>
-    <p class="labels">Color palette</p>
-    <div class="il">
-      <i class="icons sel-icon" onclick="tglHex()">&#xe2b3;</i>
-      <select class="btn sel" id="selectPalette" onchange="setPalette()">
-        <option>Default</option>
-        <option>Error!</option>
-      </select>
-    </div>
-  </div>
 
-  <div id="Effects" class="tabcontent">
-    <p class="labels">Effect speed</p>
-    <div class="staytop">
-      <i class="icons slider-icon">&#xe325;</i>
-      <div class="sliderwrap il">
-        <input id="sliderSpeed" class="noslide" onchange="setSpeed()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <p class="labels">Effect intensity</p>
-    <div class="staytop" id="staytop1">
-      <i class="icons slider-icon" onclick="tglLabels()">&#xe409;</i>
-      <div class="sliderwrap il">
-        <input id="sliderIntensity" class="noslide" onchange="setIntensity()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <p class="labels">FFT Low</p>
-    <div class="staytop" id="staytop2">
-      <i class="icons slider-icon">&#xe409;</i>
-      <div class="sliderwrap il">
-        <input id="sliderFFT1" class="noslide" onchange="setFFT1()" oninput="updateTrail(this)" max="255" min="0" type="range" value="6" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <p class="labels">FFT High</p>
-    <div class="staytop" id="staytop3">
-      <i class="icons slider-icon">&#xe409;</i>
-      <div class="sliderwrap il">
-        <input id="sliderFFT2" class="noslide" onchange="setFFT2()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <p class="labels">FFT Custom</p>
-    <div class="staytop" id="staytop4">
-      <i class="icons slider-icon">&#xe409;</i>
-      <div class="sliderwrap il">
-        <input id="sliderFFT3" class="noslide" onchange="setFFT3()" oninput="updateTrail(this)" max="255" min="0" type="range" value="252" />
-        <div class="sliderdisplay"></div>
-      </div>
-    </div>
-    <p class="labels">Effect mode</p>
-    <div class="staytop" id="staytop5">
-      <button class="btn" id="fxb0" onclick="setX(0);">Solid</button>
-    </div>
-    <div id="fxlist">
-      Loading...
-    </div>
-    <br>
-  </div>
-
-  <div id="Segments" class="tabcontent">
-    <div id="segcont">
-      Loading...
-    </div>
-    <div id="segutil">
-
+	<div id="Effects" class="tabcontent">
+		<p class="labels">Effect speed</p>
+		<div class="staytop">
+			<i class="icons slider-icon">&#xe325;</i>
+			<div class="sliderwrap il">
+				<input id="sliderSpeed" class="noslide" onchange="setSpeed()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div>
+		</div>
+		<p class="labels">Effect intensity</p>
+		<div class="staytop" id="staytop1">
+			<i class="icons slider-icon" onclick="tglLabels()">&#xe409;</i>
+			<div class="sliderwrap il">
+				<input id="sliderIntensity" class="noslide" onchange="setIntensity()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div>
+		</div>
+		<p class="labels">Effect mode</p>
+		<div class="staytop" id="staytop2">
+			<button class="btn" id="fxb0" onclick="setX(0);">Solid</button>
+		</div>
+		<div id="fxlist">
+			Loading...
+		</div>
+		<br>
 	</div>
-	<div id="segutil2">
-		<button class="btn btn-s rect" id="rsbtn" onclick="rSegs()">Reset segments</button>
+	
+	<div id="Segments" class="tabcontent">
+		<div id="segcont">
+			Loading...
+		</div>
+		<div id="segutil">
+			
+		</div>
+		<div id="segutil2">
+			<button class="btn btn-s rect" id="rsbtn" onclick="rSegs()">Reset segments</button>
+		</div>
 	</div>
-</div>
 
-  <div id="Favorites" class="tabcontent">
-    <p id="psLabel" class="labels">Load from slot</p>
-    <button class="xxs btn psts" onclick="setPreset(1);">1</button>
-    <button class="xxs btn psts" onclick="setPreset(2);">2</button>
-    <button class="xxs btn psts" onclick="setPreset(3);">3</button>
-    <button class="xxs btn psts" onclick="setPreset(4);">4</button><br>
-    <button class="xxs btn psts" onclick="setPreset(5);">5</button>
-    <button class="xxs btn psts" onclick="setPreset(6);">6</button>
-    <button class="xxs btn psts" onclick="setPreset(7);">7</button>
-    <button class="xxs btn psts" onclick="setPreset(8);">8</button><br>
-    <button class="xxs btn psts" onclick="setPreset(9);">9</button>
-    <button class="xxs btn psts" onclick="setPreset(10);">10</button>
-    <button class="xxs btn psts" onclick="setPreset(11);">11</button>
-    <button class="xxs btn psts" onclick="setPreset(12);">12</button><br>
-    <button class="xxs btn psts" onclick="setPreset(13);">13</button>
-    <button class="xxs btn psts" onclick="setPreset(14);">14</button>
-    <button class="xxs btn psts" onclick="setPreset(15);">15</button>
-    <button class="xxs btn psts" onclick="setPreset(16);">16</button><br>
-    <label class="check psvl">
-      Saving mode
-      <input type="checkbox" id="psToggle" onchange="togglePS()">
-      <span class="checkmark psv"></span>
-    </label><br>
-    <span class="h">Slot 16 can save all segments.</span><br><br>
-     <label class="check psvl">
-      Preset cycle
-      <input type="checkbox" id="cyToggle" onchange="toggleCY()">
-      <span class="checkmark psv"></span>
-    </label><br>
-    First preset: <input id="cycs" class="noslide" type="number" min="1" max="14" value="1"><br>
-    Last preset: <input id="cyce" class="noslide" type="number" min="2" max="15" value="3"><br>
-    Time per preset: <input id="cyct" class="noslide" type="number" min="0.2" max="6553.5" step="0.1" value="1.2">s<br>
-    Transition: <input id="cyctt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">s
-  </div>
+	<div id="Favorites" class="tabcontent">
+		<p id="psLabel" class="labels">Load from slot</p>
+		<button class="xxs btn psts" onclick="setPreset(1);">1</button>
+		<button class="xxs btn psts" onclick="setPreset(2);">2</button>
+		<button class="xxs btn psts" onclick="setPreset(3);">3</button>
+		<button class="xxs btn psts" onclick="setPreset(4);">4</button><br>
+		<button class="xxs btn psts" onclick="setPreset(5);">5</button>
+		<button class="xxs btn psts" onclick="setPreset(6);">6</button>
+		<button class="xxs btn psts" onclick="setPreset(7);">7</button>
+		<button class="xxs btn psts" onclick="setPreset(8);">8</button><br>
+		<button class="xxs btn psts" onclick="setPreset(9);">9</button>
+		<button class="xxs btn psts" onclick="setPreset(10);">10</button>
+		<button class="xxs btn psts" onclick="setPreset(11);">11</button>
+		<button class="xxs btn psts" onclick="setPreset(12);">12</button><br>
+		<button class="xxs btn psts" onclick="setPreset(13);">13</button>
+		<button class="xxs btn psts" onclick="setPreset(14);">14</button>
+		<button class="xxs btn psts" onclick="setPreset(15);">15</button>
+		<button class="xxs btn psts" onclick="setPreset(16);">16</button><br>
+		<label class="check psvl">
+			Saving mode
+			<input type="checkbox" id="psToggle" onchange="togglePS()">
+			<span class="checkmark psv"></span>
+		</label><br>
+		<span class="h">Slot 16 can save all segments.</span><br><br>
+		 <label class="check psvl">
+			Preset cycle
+			<input type="checkbox" id="cyToggle" onchange="toggleCY()">
+			<span class="checkmark psv"></span>
+		</label><br>
+		First preset: <input id="cycs" class="noslide" type="number" min="1" max="14" value="1"><br>
+		Last preset: <input id="cyce" class="noslide" type="number" min="2" max="15" value="3"><br>
+		Time per preset: <input id="cyct" class="noslide" type="number" min="0.2" max="6553.5" step="0.1" value="1.2">s<br>
+		Transition: <input id="cyctt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">s
+	</div>
 </div>
 
 <div class="tab bot" id="bot">
@@ -1283,10 +1246,10 @@ function onLoad() {
 	}
 	var sett = localStorage.getItem('wledUiCfg');
 	if (sett) cfg = mergeDeep(cfg, JSON.parse(sett));
-
+	
 	applyCfg();
 	loadBg(cfg.theme.bg.url);
-
+	
 	var cd = d.getElementById('csl').children;
 	for (i = 0; i < cd.length; i++) {
 		cd[i].style.backgroundColor = "rgb(0, 0, 0)";
@@ -1332,7 +1295,7 @@ function showToast(text, error = false) {
 	clearTimeout(timeout);
 	x.style.animation = 'none';
 	x.offsetHeight;
-	x.style.animation = null;
+	x.style.animation = null; 
 	timeout = setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2900);
 }
 
@@ -1354,7 +1317,7 @@ function getRuntimeStr(rt)
 	if (!days && hrs) str += ", ";
 	if (t > 59 && !days) str += mins + " min";
 	if (t < 3600 && t > 59) str += ", ";
-	if (t < 3600) str += (t - mins*60) + " sec";
+	if (t < 3600) str += (t - mins*60) + " sec"; 
 	return str;
 }
 
@@ -1386,7 +1349,7 @@ function populateInfo(i)
 	if (i.ver.startsWith("0.10.")) vcn = "Namigai";
 	if (i.ver.startsWith("0.11.")) vcn = "Akatsuki";
 	if (i.cn) vcn = i.cn;
-
+	
 	cn += `v${i.ver} "${vcn}"<br><br><table class="infot">
 	${urows}
 	${inforow("Build",i.vid)}
@@ -1404,17 +1367,17 @@ function populateSegments(s)
 {
 	var cn = "";
 	segCount = 0, lowestUnused = 0; lSeg = 0;
-
+ 
 	for (y in s.seg)
 	{
 		segCount++;
-
+		
 		var inst=s.seg[y];
 		var i = parseInt(inst.id);
 		powered[i] = inst.on;
 		if (i == lowestUnused) lowestUnused = i+1;
 		if (i > lSeg) lSeg = i;
-
+		
 		cn += `<div class="seg">
 			<label class="check schkl">
 				&nbsp;
@@ -1507,7 +1470,7 @@ function updateLen(s)
 	} else if (len == 1) {
 		out = "1 LED"
 	}
-
+	
 	if (d.getElementById(`seg${s}grp`) != null)
 	{
 		var grp = parseInt(d.getElementById(`seg${s}grp`).value);
@@ -1516,7 +1479,7 @@ function updateLen(s)
 		var virt = Math.ceil(len/(grp + spc));
 		if (!isNaN(virt) && (grp > 1 || spc > 0)) out += ` (${virt} virtual)`;
 	}
-
+	
 	d.getElementById(`seg${s}len`).innerHTML = out;
 }
 
@@ -1530,12 +1493,9 @@ function updateUI()
 	updateTrail(d.getElementById('sliderBri'));
 	updateTrail(d.getElementById('sliderSpeed'));
 	updateTrail(d.getElementById('sliderIntensity'));
-	updateTrail(d.getElementById('sliderFFT1'));
-	updateTrail(d.getElementById('sliderFFT2'));
-	updateTrail(d.getElementById('sliderFFT3'));
 	updateTrail(d.getElementById('sliderW'));
 	if (isRgbw) d.getElementById('wwrap').style.display = "block";
-
+	
 	var btns = document.getElementsByClassName("psts");
 	for (i = 0; i < btns.length; i++) {
 		btns[i].className = btns[i].className.replace(" active", "");
@@ -1577,7 +1537,7 @@ function requestJson(command, rinfo = true, verbose = true) {
 	if (loc) {
 		url = `http://${locip}${url}`;
 	}
-
+	
 	type = command ? 'post':'get';
 	if (command)
 	{
@@ -1624,7 +1584,7 @@ function requestJson(command, rinfo = true, verbose = true) {
 		}
 		e1.innerHTML=x; e2.innerHTML=y;
 		}
-
+		
 			var info = json.info;
 			var name = info.name;
 			d.getElementById('namelabel').innerHTML = name;
@@ -1655,7 +1615,7 @@ function requestJson(command, rinfo = true, verbose = true) {
 		d.getElementById('cyce').value = s.ccnf.max;
 		d.getElementById('cyct').value = s.ccnf.time /10;
 		d.getElementById('cyctt').value = s.transition /10;
-
+		
 		var selc=0; var ind=0;
 		populateSegments(s);
 		for (i in s.seg)
@@ -1679,9 +1639,6 @@ function requestJson(command, rinfo = true, verbose = true) {
 
 		d.getElementById('sliderSpeed').value = i.sx;
 		d.getElementById('sliderIntensity').value = i.ix;
-		d.getElementById('sliderFFT1').value = i.f1x;
-		d.getElementById('sliderFFT2').value = i.f2x;
-		d.getElementById('sliderFFT3').value = i.f3x;
 
 		d.getElementById('fxb' + selectedFx).style.backgroundColor = "var(--c-3)";
 		selectedFx = i.fx;
@@ -1868,21 +1825,6 @@ function setLor(i) {
 	requestJson(obj);
 }
 
-function setFFT1() {
-  var obj = {"seg": {"f1x": parseInt(d.getElementById('sliderFFT1').value)}};
-  requestJson(obj);
-}
-
-function setFFT2() {
-  var obj = {"seg": {"f2x": parseInt(d.getElementById('sliderFFT2').value)}};
-  requestJson(obj);
-}
-
-function setFFT3() {
-  var obj = {"seg": {"f3x": parseInt(d.getElementById('sliderFFT3').value)}};
-  requestJson(obj);
-}
-
 function toggleCY() {
 	var obj = {"pl" : -1};
 	if (d.getElementById('cyToggle').checked)
@@ -1890,13 +1832,13 @@ function toggleCY() {
 		obj = {"pl": 0, "ccnf": {"min": parseInt(d.getElementById('cycs').value), "max": parseInt(d.getElementById('cyce').value), "time": parseInt(d.getElementById('cyct').value*10)}};
 		obj.transition = parseInt(d.getElementById('cyctt').value*10);
 	}
-
+	
 	requestJson(obj);
 }
 
 function togglePS() {
 	ps = !ps;
-
+	
 	var btns = document.getElementsByClassName("psts");
 	for (i = 0; i < btns.length; i++) {
 		if (ps) {
@@ -1905,7 +1847,7 @@ function togglePS() {
 			btns[i].className = btns[i].className.replace(" saving", "");
 		}
 	}
-
+	
 	d.getElementById("psLabel").innerHTML = (ps) ? "Save to slot":"Load from slot";
 }
 
@@ -2077,10 +2019,6 @@ function unfocusSliders() {
 	d.getElementById("sliderBri").blur();
 	d.getElementById("sliderSpeed").blur();
 	d.getElementById("sliderIntensity").blur();
-	d.getElementById("sliderFFT1").blur();
-	d.getElementById("sliderFFT2").blur();
-	d.getElementById("sliderFFT3").blur();
-
 }
 
 //sliding UI
@@ -2106,13 +2044,13 @@ function drag(e) {
 	if (d.getElementsByClassName("tabcontent")[iSlide].scrollTop != scrollS) {
 		move(e); return;
 	}
-
+			
 	_C.style.setProperty('--tx', `${Math.round(unify(e).clientX - x0)}px`)
 }
 
 function move(e) {
 	if(!locked || pcMode) return;
-	var dx = unify(e).clientX - x0, s = Math.sign(dx),
+	var dx = unify(e).clientX - x0, s = Math.sign(dx), 
 			f = +(s*dx/w).toFixed(2);
 
 	if((iSlide > 0 || s < 0) && (iSlide < N - 1 || s > 0) && f > .12) {
@@ -2120,14 +2058,14 @@ function move(e) {
 		f = 1 - f;
 		updateTablinks(iSlide);
 	}
-
+	
 	_C.style.setProperty('--tx', '0px');
 	_C.style.setProperty('--f', f);
 	_C.classList.toggle('smooth', !(locked = false));
 	x0 = null
 }
 
-function size() {
+function size() { 
 	w = window.innerWidth;
 	var h = d.getElementById('top').clientHeight;
 	sCol('--th', h + "px");

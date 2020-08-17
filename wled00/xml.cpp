@@ -39,23 +39,13 @@ void XML_response(AsyncWebServerRequest *request, char* dest)
   oappendi(nightlightDelayMins);
   oappend("</nd><nt>");
   oappendi(nightlightTargetBri);
-  oappend("</nt><sq>");
-  oappendi(soundSquelch);
-  oappend("</sq><gn>");
-  oappendi(sampleGain);
-  oappend("</gn><fx>");
+  oappend("</nt><fx>");
   oappendi(effectCurrent);
   oappend("</fx><sx>");
   oappendi(effectSpeed);
   oappend("</sx><ix>");
   oappendi(effectIntensity);
-  oappend("</ix><f1>");
-  oappendi(effectFFT1);
-  oappend("</f1><f2>");
-  oappendi(effectFFT2);
-  oappend("</f2><f3>");
-  oappendi(effectFFT3);
-  oappend("</f3><fp>");
+  oappend("</ix><fp>");
   oappendi(effectPalette);
   oappend("</fp><wv>");
   if (strip.rgbwMode) {
@@ -128,7 +118,7 @@ void URL_response(AsyncWebServerRequest *request)
   for (int i = 0; i < 3; i++)
   {
    sprintf(s,"%02X", col[i]);
-   oappend(s);
+   oappend(s); 
   }
   oappend("&C2=h");
   for (int i = 0; i < 3; i++)
@@ -142,12 +132,6 @@ void URL_response(AsyncWebServerRequest *request)
   oappendi(effectSpeed);
   oappend("&IX=");
   oappendi(effectIntensity);
-  oappend("&F1=");
-  oappendi(effectFFT1);
-  oappend("&F2=");
-  oappendi(effectFFT2);
-  oappend("&F3=");
-  oappendi(effectFFT3);
   oappend("&FP=");
   oappendi(effectPalette);
 
@@ -157,7 +141,7 @@ void URL_response(AsyncWebServerRequest *request)
   oappend((const char*)F("<html><body><a href=\""));
   oappend(s2buf);
   oappend((const char*)F("\" target=\"_blank\">"));
-  oappend(s2buf);
+  oappend(s2buf);  
   oappend((const char*)F("</a></body></html>"));
 
   if (request != nullptr) request->send(200, "text/html", obuf);
@@ -318,20 +302,9 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('v',"TB",nightlightTargetBri);
     sappend('v',"TL",nightlightDelayMinsDefault);
     sappend('v',"TW",nightlightMode);
-    sappend('v',"SQ",soundSquelch);
-    sappend('v',"GN",sampleGain);
     sappend('i',"PB",strip.paletteBlend);
     sappend('c',"RV",strip.reverseMode);
     sappend('c',"SL",skipFirstLed);
-    #ifdef ESP8266
-    sappends('v',"LCW", "");
-    sappends('v',"LCH", "");
-    sappend('c',"LCWHS", 1);
-    #else
-    sappend('v',"LCW",strip.matrixWidth);
-    sappend('v',"LCH",strip.matrixHeight);
-    sappend('c',"LCWHS",strip.matrixSerpentine);
-    #endif // ESP8266
   }
 
   if (subPage == 3)
@@ -368,19 +341,6 @@ void getSettingsJS(byte subPage, char* dest)
     sappends('s',"AI",alexaInvocationName);
     sappend('c',"SA",notifyAlexa);
     sappends('s',"BK",(char*)((blynkEnabled)?"Hidden":""));
-    if (!(((audioSyncEnabled)>>(0)) & 1) && !(((audioSyncEnabled)>>(1)) & 1)) {
-      // 0 == udp audio sync off
-      sappend('v',"ASE", 0);
-    }
-    else if ((((audioSyncEnabled)>>(0)) & 1) && !(((audioSyncEnabled)>>(1)) & 1)) {
-      // 1 == transmit only
-      sappend('v',"ASE", 1);
-    }
-    else if (!(((audioSyncEnabled)>>(0)) & 1) && (((audioSyncEnabled)>>(1)) & 1)) {
-      // 2 == receive only
-      sappend('v',"ASE", 2);
-    }
-    sappend('v', "ASP", audioSyncPort);
 
     #ifdef WLED_ENABLE_MQTT
     sappend('c',"MQ",mqttEnabled);
@@ -421,7 +381,7 @@ void getSettingsJS(byte subPage, char* dest)
       case HUE_ERROR_TIMEOUT      : strcpy(hueErrorString,(char*)F("Timeout"));                 break;
       default: sprintf(hueErrorString,"Bridge Error %i",hueError);
     }
-
+    
     sappends('m',"(\"sip\")[0]",hueErrorString);
     #endif
   }
@@ -492,17 +452,17 @@ void getSettingsJS(byte subPage, char* dest)
     oappendi(VERSION);
     oappend(")\";");
   }
-
+  
   #ifdef WLED_ENABLE_DMX // include only if DMX is enabled
   if (subPage == 7)
   {
     sappend('v',"PU",e131ProxyUniverse);
-
+    
     sappend('v',"CN",DMXChannels);
     sappend('v',"CG",DMXGap);
     sappend('v',"CS",DMXStart);
     sappend('v',"SL",DMXStartLED);
-
+    
     sappend('i',"CH1",DMXFixtureMap[0]);
     sappend('i',"CH2",DMXFixtureMap[1]);
     sappend('i',"CH3",DMXFixtureMap[2]);

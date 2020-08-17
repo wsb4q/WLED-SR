@@ -8,7 +8,7 @@
  */
 
 // version code in format yymmddb (b = daily build)
-#define VERSION 2008140
+#define VERSION 2008100
 
 // ESP8266-01 (blue) got too little storage space to work with all features of WLED. To use it, you must use ESP8266 Arduino Core v2.4.2 and the setting 512K(No SPIFFS).
 
@@ -20,27 +20,26 @@
 //#define WLED_DISABLE_OTA         // saves 14kb
 
 // You need to choose some of these features to disable:
-#define WLED_DISABLE_ALEXA         // saves 11kb
-#define WLED_DISABLE_BLYNK         // saves 6kb
-#define WLED_DISABLE_CRONIXIE      // saves 3kb
-#define WLED_DISABLE_HUESYNC       // saves 4kb
-#define WLED_DISABLE_INFRARED      // there is no pin left for this on ESP8266-01, saves 12kb
+//#define WLED_DISABLE_ALEXA       // saves 11kb
+//#define WLED_DISABLE_BLYNK       // saves 6kb
+//#define WLED_DISABLE_CRONIXIE    // saves 3kb
+//#define WLED_DISABLE_HUESYNC     // saves 4kb
+//#define WLED_DISABLE_INFRARED    // there is no pin left for this on ESP8266-01, saves 12kb
 #ifndef WLED_DISABLE_MQTT
   #define WLED_ENABLE_MQTT         // saves 12kb
 #endif
-//#define WLED_ENABLE_ADALIGHT     // saves 500b only
+#define WLED_ENABLE_ADALIGHT       // saves 500b only
 //#define WLED_ENABLE_DMX          // uses 3.5kb (use LEDPIN other than 2)
 //#define WLED_ENABLE_WEBSOCKETS
-//#define WLED_DISABLE_SOUND       // saves 1kb
 
-#define WLED_DISABLE_FILESYSTEM    // SPIFFS is not used by any WLED feature yet
+#define WLED_DISABLE_FILESYSTEM        // SPIFFS is not used by any WLED feature yet
 //#define WLED_ENABLE_FS_SERVING   // Enable sending html file from SPIFFS before serving progmem version
 //#define WLED_ENABLE_FS_EDITOR    // enable /edit page for editing SPIFFS content. Will also be disabled with OTA lock
 
 // to toggle usb serial debug (un)comment the following line
 //#define WLED_DEBUG
 
-// Library inclusions.
+// Library inclusions. 
 #include <Arduino.h>
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -189,14 +188,9 @@ WLED_GLOBAL bool useRGBW      _INIT(false);       // SK6812 strips can contain a
 WLED_GLOBAL bool turnOnAtBoot _INIT(true);        // turn on LEDs at power-up
 WLED_GLOBAL byte bootPreset   _INIT(0);           // save preset to load after power-up
 
-WLED_GLOBAL byte col[]    _INIT_N(({ 255, 160, 0, 0 }));  // current RGB(W) primary color. col[] should be updated if you want to change the color
+WLED_GLOBAL byte col[]    _INIT_N(({ 255, 160, 0, 0 }));  // current RGB(W) primary color. col[] should be updated if you want to change the color.
 WLED_GLOBAL byte colSec[] _INIT_N(({ 0, 0, 0, 0 }));      // current RGB(W) secondary color
 WLED_GLOBAL byte briS     _INIT(128);                     // default brightness
-
-WLED_GLOBAL byte soundSquelch   _INIT(10);          // default squelch value for volume reactive routines
-WLED_GLOBAL byte sampleGain     _INIT(1);           // default sample gain
-WLED_GLOBAL uint16_t noiseFloor _INIT(100);         // default squelch value for FFT reactive routines
-WLED_GLOBAL bool digitalMic     _INIT(false);       // do we have a digital microphone or not
 
 WLED_GLOBAL byte nightlightTargetBri _INIT(0);      // brightness after nightlight is over
 WLED_GLOBAL byte nightlightDelayMins _INIT(60);
@@ -208,7 +202,7 @@ WLED_GLOBAL bool skipFirstLed  _INIT(false);        // ignore first LED in strip
 WLED_GLOBAL byte briMultiplier _INIT(100);          // % of brightness to set (to limit power, if you set it to 50 and set bri to 255, actual brightness will be 127)
 
 // User Interface CONFIG
-WLED_GLOBAL char serverDescription[33] _INIT("WLED-AudioReactive");  // Name of module
+WLED_GLOBAL char serverDescription[33] _INIT("WLED");  // Name of module
 WLED_GLOBAL bool syncToggleReceive     _INIT(false);   // UIs which only have a single button for sync should toggle send+receive if this is true, only send otherwise
 
 // Sync CONFIG
@@ -376,17 +370,10 @@ WLED_GLOBAL bool notificationTwoRequired _INIT(false);
 WLED_GLOBAL byte effectCurrent _INIT(0);
 WLED_GLOBAL byte effectSpeed _INIT(128);
 WLED_GLOBAL byte effectIntensity _INIT(128);
-WLED_GLOBAL byte effectFFT1 _INIT(6);
-WLED_GLOBAL byte effectFFT2 _INIT(128);
-WLED_GLOBAL byte effectFFT3 _INIT(252);
 WLED_GLOBAL byte effectPalette _INIT(0);
 
-//  0th bit - transmit enabled/disabled. 1st bit - receive enabled/disabled
-WLED_GLOBAL byte audioSyncEnabled _INIT(0);
-WLED_GLOBAL uint16_t audioSyncPort _INIT(11988);
-
 // network
-WLED_GLOBAL bool udpConnected _INIT(false), udpRgbConnected _INIT(false), udpSyncConnected _INIT(false);
+WLED_GLOBAL bool udpConnected _INIT(false), udpRgbConnected _INIT(false);
 
 // ui style
 WLED_GLOBAL bool showWelcomePage _INIT(false);
@@ -503,7 +490,6 @@ WLED_GLOBAL AsyncMqttClient* mqtt _INIT(NULL);
 // udp interface objects
 WLED_GLOBAL WiFiUDP notifierUdp, rgbUdp;
 WLED_GLOBAL WiFiUDP ntpUdp;
-WLED_GLOBAL WiFiUDP fftUdp;
 WLED_GLOBAL ESPAsyncE131 e131 _INIT_N(((handleE131Packet)));
 WLED_GLOBAL bool e131NewData _INIT(false);
 

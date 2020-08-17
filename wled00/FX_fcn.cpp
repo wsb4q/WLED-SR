@@ -318,11 +318,11 @@ uint8_t WS2812FX::getPaletteCount()
 
 //TODO transitions
 
-bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uint8_t f2, uint8_t f3, uint8_t p) {
 
+bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t p) {
   uint8_t mainSeg = getMainSegmentId();
   Segment& seg = _segments[getMainSegmentId()];
-  uint8_t modePrev = seg.mode, speedPrev = seg.speed, intensityPrev = seg.intensity, fft1Prev = seg.fft1, fft2Prev = seg.fft2, fft3Prev = seg.fft3, palettePrev = seg.palette;
+  uint8_t modePrev = seg.mode, speedPrev = seg.speed, intensityPrev = seg.intensity, palettePrev = seg.palette;
 
   bool applied = false;
   
@@ -333,9 +333,6 @@ bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uin
       {
         _segments[i].speed = s;
         _segments[i].intensity = in;
-        _segments[i].fft1 = f1;
-        _segments[i].fft2 = f2;
-        _segments[i].fft3 = f3;
         _segments[i].palette = p;
         setMode(i, m);
         applied = true;
@@ -346,14 +343,11 @@ bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uin
   if (!applyToAllSelected || !applied) {
     seg.speed = s;
     seg.intensity = in;
-    seg.fft1 = f1;
-    seg.fft2 = f2;
-    seg.fft3 = f3;
     seg.palette = p;
     setMode(mainSegment, m);
   }
-
-  if (seg.mode != modePrev || seg.speed != speedPrev || seg.intensity != intensityPrev || seg.fft1 != fft1Prev || seg.fft2 != fft2Prev || seg.fft3 != fft3Prev || seg.palette != palettePrev) return true;
+  
+  if (seg.mode != modePrev || seg.speed != speedPrev || seg.intensity != intensityPrev || seg.palette != palettePrev) return true;
   return false;
 }
 
@@ -590,33 +584,6 @@ uint32_t WS2812FX::color_blend(uint32_t color1, uint32_t color2, uint8_t blend) 
 void WS2812FX::fill(uint32_t c) {
   for(uint16_t i = 0; i < SEGLEN; i++) {
     setPixelColor(i, c);
-  }
-}
-
-/*
- * fade out function, higher rate = quicker fade
- */
-void WS2812FX::fade2black(uint8_t rate) {
-  uint32_t color;
-  
-  //rate = rate >> 1;
-  float mappedRate = (float) map(rate, 0, 255, 1, 100) ;
-
-  mappedRate = mappedRate / 100;
-  
-  for(uint16_t i = 0; i < SEGLEN; i++) {
-    color = getPixelColor(i);
-    int w1 = (color >> 24) & 0xff;
-    int r1 = (color >> 16) & 0xff;
-    int g1 = (color >>  8) & 0xff;
-    int b1 =  color        & 0xff;
-
-    int w = w1 * mappedRate;
-    int r = r1 * (mappedRate * 1.05);      // acount for the fact that leds stay red on much lower intensities
-    int g = g1 * mappedRate;
-    int b = b1 * mappedRate;
-    
-    setPixelColor(i, r, g, b, w);
   }
 }
 
@@ -875,9 +842,6 @@ bool WS2812FX::segmentsAreIdentical(Segment* a, Segment* b)
   if (a->mode != b->mode) return false;
   if (a->speed != b->speed) return false;
   if (a->intensity != b->intensity) return false;
-  if (a->fft1 != b->fft1) return false;
-  if (a->fft2 != b->fft2) return false;
-  if (a->fft3 != b->fft3) return false;
   if (a->palette != b->palette) return false;
   //if (a->getOption(SEG_OPTION_REVERSED) != b->getOption(SEG_OPTION_REVERSED)) return false;
   return true;

@@ -99,12 +99,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     transitionDelayDefault = t;
     strip.paletteFade = request->hasArg("PF");
 
-    t = request->arg("SQ").toInt();
-    if (t > 0) soundSquelch = t;
-
-    t = request->arg("GN").toInt();
-    if (t > 0) sampleGain = t;
-    
     nightlightTargetBri = request->arg("TB").toInt();
     t = request->arg("TL").toInt();
     if (t > 0) nightlightDelayMinsDefault = t;
@@ -117,12 +111,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     skipFirstLed = request->hasArg("SL");
     t = request->arg("BF").toInt();
     if (t > 0) briMultiplier = t;
-
-    #ifndef ESP8266
-    strip.matrixWidth = request->arg("LCW").toInt();
-    strip.matrixHeight = request->arg("LCH").toInt();
-    strip.matrixSerpentine = request->hasArg("LCWHS");
-    #endif // ESP8266
   }
 
   //UI
@@ -175,28 +163,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     if (request->hasArg("BK") && !request->arg("BK").equals("Hidden")) {
       strlcpy(blynkApiKey, request->arg("BK").c_str(), 36); initBlynk(blynkApiKey);
     }
-    t = request->arg("ASE").toInt();
-    if (t == 0) {
-      // 0 == udp audio sync off
-      Serial.print("Setting audio sync settings");
-      audioSyncEnabled &= ~(1 << 0);
-      audioSyncEnabled &= ~(1 << 1);
-    }
-    else if (t == 1) {
-      // 1 == transmit only
-      Serial.print("Setting audio sync settings");
-      audioSyncEnabled |= 1 << 0;
-      audioSyncEnabled &= ~(1 << 1);
-    }
-    else if (t == 2) {
-      // 2 == receive only
-      Serial.print("Setting audio sync settings");
-      audioSyncEnabled &= ~(1 << 0);
-      audioSyncEnabled |= 1 << 1;
-    }
-    Serial.print(audioSyncEnabled);
-    t = request->arg("ASP").toInt();
-    audioSyncPort = t;
 
     #ifdef WLED_ENABLE_MQTT
     mqttEnabled = request->hasArg("MQ");
@@ -588,9 +554,6 @@ bool handleSet(AsyncWebServerRequest *request, const String& req)
   if (updateVal(&req, "FX=", &effectCurrent, 0, strip.getModeCount()-1)) presetCyclingEnabled = false;
   updateVal(&req, "SX=", &effectSpeed);
   updateVal(&req, "IX=", &effectIntensity);
-  updateVal(&req, "F1=", &effectFFT1);
-  updateVal(&req, "F2=", &effectFFT2);
-  updateVal(&req, "F3=", &effectFFT3);
   updateVal(&req, "FP=", &effectPalette, 0, strip.getPaletteCount()-1);
 
   //set advanced overlay
@@ -751,9 +714,6 @@ bool handleSet(AsyncWebServerRequest *request, const String& req)
   }
   //you can add more if you need
 
-  pos = req.indexOf("DX="); // delay in ms  050720 ajn
-  if (pos > 0) delay(getNumVal(&req,pos));
- 
   //internal call, does not send XML response
   pos = req.indexOf("IN");
   if (pos < 1) XML_response(request);
@@ -761,7 +721,5 @@ bool handleSet(AsyncWebServerRequest *request, const String& req)
   pos = req.indexOf("&NN"); //do not send UDP notifications this time
   colorUpdated((pos > 0) ? NOTIFIER_CALL_MODE_NO_NOTIFY : NOTIFIER_CALL_MODE_DIRECT_CHANGE);
 
-
-  
   return true;
 }

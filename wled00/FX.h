@@ -102,6 +102,7 @@
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
 #define MODE_COUNT  112
+// define MODE_COUNT 125
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -215,6 +216,35 @@
 #define FX_MODE_PHASEDNOISE            109
 #define FX_MODE_FLOW                   110
 #define FX_MODE_CHUNCHUN               111
+
+
+/*
+#define FX_MODE_PIXELS                 112
+#define FX_MODE_PIXELWAVE              113
+#define FX_MODE_JUGGLES                114
+#define FX_MODE_MATRIPIX               115
+#define FX_MODE_GRAVIMETER             116
+#define FX_MODE_PLASMOID               117
+#define FX_MODE_PUDDLES                118
+#define FX_MODE_MIDNOISE               119
+#define FX_MODE_NOISEMETER             120
+#define FX_MODE_NOISEFIRE              121
+#define FX_MODE_PUDDLEPEAK             122
+#define FX_MODE_RIPPLEPEAK             123
+#define FX_MODE_WATERFALL			   124
+
+*/
+
+/*
+// Sound reactive external variables
+extern int sample;
+extern float sampleAvg;
+extern bool samplePeak;
+extern uint8_t myVals[32];
+extern int sampleAgc;
+extern uint8_t squelch;
+*/
+
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -419,6 +449,31 @@ class WS2812FX {
       _mode[FX_MODE_FLOW]                    = &WS2812FX::mode_flow;
       _mode[FX_MODE_CHUNCHUN]                = &WS2812FX::mode_chunchun;
 
+
+/*
+
+
+      _mode[FX_MODE_PIXELS]                  = &WS2812FX::mode_pixels;
+      _mode[FX_MODE_PIXELWAVE]               = &WS2812FX::mode_pixelwave;
+      _mode[FX_MODE_JUGGLES]                 = &WS2812FX::mode_juggles;
+      _mode[FX_MODE_MATRIPIX]                = &WS2812FX::mode_matripix;
+      _mode[FX_MODE_GRAVIMETER]              = &WS2812FX::mode_gravimeter;
+      _mode[FX_MODE_PLASMOID]                = &WS2812FX::mode_plasmoid;
+      _mode[FX_MODE_PUDDLES]                 = &WS2812FX::mode_puddles;
+      _mode[FX_MODE_MIDNOISE]                = &WS2812FX::mode_midnoise;
+      _mode[FX_MODE_NOISEMETER]              = &WS2812FX::mode_noisemeter;
+      _mode[FX_MODE_NOISEFIRE]               = &WS2812FX::mode_noisefire;
+      _mode[FX_MODE_PUDDLEPEAK]              = &WS2812FX::mode_puddlepeak;
+      _mode[FX_MODE_RIPPLEPEAK]              = &WS2812FX::mode_ripplepeak;
+      _mode[FX_MODE_WATERFALL]				 = &WS2812FX::mode_waterfall;
+
+*/
+
+
+
+
+
+
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
       targetPalette = CloudColors_p;
@@ -615,6 +670,29 @@ class WS2812FX {
       mode_flow(void),
       mode_chunchun(void);
 
+/*
+
+      mode_pixels(void),
+      mode_pixelwave(void),
+      mode_juggles(void),
+      mode_matripix(void),
+      mode_gravimeter(void),
+      mode_plasmoid(void),
+      mode_puddles(void),
+      mode_midnoise(void),
+      mode_noisemeter(void),
+      mode_noisefire(void),
+      mode_puddlepeak(void),
+      mode_ripplepeak(void),
+      mode_waterfall(void);
+
+*/
+
+
+
+
+
+
   private:
     NeoPixelWrapper *bus;
 
@@ -703,6 +781,11 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
 "Flow","Chunchun"
 ])=====";
+
+/*
+,"* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise",
+"* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
+*/
 
 
 const char JSON_palette_names[] PROGMEM = R"=====([

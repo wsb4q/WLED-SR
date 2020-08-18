@@ -3564,3 +3564,346 @@ uint16_t WS2812FX::mode_chunchun(void)
   }
   return FRAMETIME;
 }
+
+
+/*
+
+////////////////////////////////
+//   Begin volume routines    //
+////////////////////////////////
+
+//////////////////////
+//   * PIXELS       //
+//////////////////////
+
+uint16_t WS2812FX::mode_pixels(void) {              // Pixels. By Andrew Tuline.
+
+  fade_out(4);
+
+  for (int i=0; i <SEGMENT.intensity/16; i++) {
+    uint16_t segLoc = random(SEGLEN);               // 16 bit for larger strands of LED's.
+    setPixelColor(segLoc, color_blend(SEGCOLOR(1), color_from_palette(myVals[i%32]+i*4, false, PALETTE_SOLID_WRAP, 0), sampleAgc));
+  }
+
+  return FRAMETIME;
+} // mode_pixels()
+
+
+//////////////////////
+//   * PIXELWAVE    //
+//////////////////////
+
+uint16_t WS2812FX::mode_pixelwave(void) {                                 // Pixelwave. By Andrew Tuline.
+
+  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to . .
+
+    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!! By Andrew Tuline.
+    int pixBri = sample * SEGMENT.intensity / 128;
+    setPixelColor(SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
+    for (int i=SEGLEN-1; i>SEGLEN/2; i--) {                               // Move to the right.
+      setPixelColor(i,getPixelColor(i-1));
+    }
+
+    for (int i=0; i<SEGLEN/2; i++) {                                      // Move to the left.
+      setPixelColor(i,getPixelColor(i+1));
+    }
+  }
+
+  return FRAMETIME;
+} // mode_pixelwave()
+
+
+//////////////////////
+//   * JUGGLES      //
+//////////////////////
+
+uint16_t WS2812FX::mode_juggles(void) {                                   // Juggles. By Andrew Tuline.
+
+  static int thistime = 20;
+
+  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to
+
+    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!! By Andrew Tuline.
+
+    fade_out(224);
+
+    for (int i=0; i<SEGMENT.intensity/32; i++) {
+      setPixelColor(beatsin16(thistime+i*2,0,SEGLEN-1), color_blend(SEGCOLOR(1), color_from_palette(millis()/4+i*2, false, PALETTE_SOLID_WRAP, 0), sampleAgc));
+    }
+  }
+
+  return FRAMETIME;
+} // mode_juggles()
+
+
+//////////////////////
+//   * MATRIPIX     //
+//////////////////////
+
+uint16_t WS2812FX::mode_matripix(void) {                                  // Matripix. By Andrew Tuline.
+
+  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to . .
+
+    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!!
+    int pixBri = sample * SEGMENT.intensity / 64;
+    setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
+    for (int i=0; i<SEGLEN-1; i++) setPixelColor(i,getPixelColor(i+1));
+
+  }
+
+  return FRAMETIME;
+} // mode_matripix()
+
+
+///////////////////////
+//   * GRAVIMETER    //
+///////////////////////
+
+uint16_t WS2812FX::mode_gravimeter(void) {                                // Gravmeter. By Andrew Tuline.
+
+  static int topLED;
+  static int gravityCounter = 0;
+
+  fade_out(240);
+
+  sampleAvg = sampleAvg * SEGMENT.intensity / 255;
+
+  int tempsamp = constrain(sampleAvg*2,0,SEGLEN-1);                       // Keep the sample from overflowing.
+  uint8_t gravity = 8 - SEGMENT.speed/32;
+
+  for (int i=0; i<tempsamp; i++) {
+    uint8_t index = inoise8(i*sampleAvg+millis(), 5000+i*sampleAvg);
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), sampleAvg*8));
+  }
+
+  if (tempsamp >= topLED)
+    topLED = tempsamp;
+  else if (gravityCounter % gravity == 0)
+    topLED--;
+
+  if (topLED > 0) {
+    setPixelColor(topLED, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+  }
+  gravityCounter = (gravityCounter + 1) % gravity;
+
+  return FRAMETIME;
+} // mode_gravimeter()
+
+
+//////////////////////
+//   * PLASMOID     //
+//////////////////////
+
+uint16_t WS2812FX::mode_plasmoid(void) {                                  // Plasmoid. By Andrew Tuline.
+
+  static int16_t thisphase = 0;                                           // Phase of a cubicwave8.
+  static int16_t thatphase = 0;                                           // Phase of the cos8.
+
+  uint8_t thisbright;
+  uint8_t colorIndex;
+
+  thisphase += beatsin8(6,-4,4);                                          // You can change direction and speed individually.
+  thatphase += beatsin8(7,-4,4);                                          // Two phase values to make a complex pattern. By Andrew Tuline.
+
+  for (int i=0; i<SEGLEN; i++) {                                          // For each of the LED's in the strand, set a brightness based on a wave as follows.
+    thisbright = cubicwave8((i*13)+thisphase)/2;
+    thisbright += cos8((i*117)+thatphase)/2;                              // Let's munge the brightness a bit and animate it all with the phases.
+    colorIndex=thisbright;
+
+    if (sampleAvg * 8 * SEGMENT.intensity/256 > thisbright) {thisbright = 255;} else {thisbright = 0;}
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(colorIndex, false, PALETTE_SOLID_WRAP, 0), thisbright));
+  }
+
+  return FRAMETIME;
+} // mode_plasmoid()
+
+
+//////////////////////
+//   * PUDDLES      //
+//////////////////////
+
+uint16_t WS2812FX::mode_puddles(void) {                                   // Puddles. By Andrew Tuline.
+
+  uint16_t size = 0;
+  uint8_t fadeVal = map(SEGMENT.speed,0,255, 224, 255);
+  uint16_t pos = random(SEGLEN);                                          // Set a random starting position.
+
+  fade_out(fadeVal);
+
+  if (sample>0 ) {
+    size = sample * SEGMENT.intensity /256 /8 + 1;                        // Determine size of the flash based on the volume.
+    if (pos+size>= SEGLEN) size=SEGLEN-pos;
+  }
+
+  for(int i=0; i<size; i++) {                                             // Flash the LED's.
+    setPixelColor(pos+i, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+  }
+
+  return FRAMETIME;
+} // mode_puddles()
+
+
+//////////////////////
+//   * MIDNOISE     //
+//////////////////////
+
+uint16_t WS2812FX::mode_midnoise(void) {                                  // Midnoise. By Andrew Tuline.
+
+  static uint16_t xdist;
+  static uint16_t ydist;
+
+  fade_out(SEGMENT.speed);
+
+  uint16_t maxLen = sampleAvg * SEGMENT.intensity / 256;                  // Too sensitive.
+  maxLen = maxLen * SEGMENT.intensity / 256;                              // Reduce sensitity/length.
+
+  if (maxLen >SEGLEN/2) maxLen = SEGLEN/2;
+
+  for (int i=(SEGLEN/2-maxLen); i<(SEGLEN/2+maxLen); i++) {
+    uint8_t index = inoise8(i*sampleAvg+xdist, ydist+i*sampleAvg);        // Get a value from the noise function. I'm using both x and y axis.
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+  }
+
+  xdist=xdist+beatsin8(5,0,10);
+  ydist=ydist+beatsin8(4,0,10);
+
+  return FRAMETIME;
+} // mode_midnoise()
+
+
+///////////////////////
+//   * Noisemeter    //
+///////////////////////
+
+uint16_t WS2812FX::mode_noisemeter(void) {                                // Noisemeter. By Andrew Tuline.
+
+  static uint16_t xdist;
+  static uint16_t ydist;
+
+  fade_out(SEGMENT.speed);
+
+  int maxLen = sampleAvg;
+  if (sample > sampleAvg) maxLen = sample-sampleAvg;
+  maxLen = maxLen * SEGMENT.intensity / 256;                              // Still a bit too sensitive.
+  maxLen = maxLen * SEGMENT.intensity / 256;                              // Reduce sensitivity/length.
+  if (maxLen >SEGLEN) maxLen = SEGLEN;
+
+  for (int i=0; i<maxLen; i++) {                                          // The louder the sound, the wider the soundbar. By Andrew Tuline.
+    uint8_t index = inoise8(i*sampleAvg+xdist, ydist+i*sampleAvg);        // Get a value from the noise function. I'm using both x and y axis.
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+  }
+
+  xdist+=beatsin8(5,0,10);
+  ydist+=beatsin8(4,0,10);
+
+  return FRAMETIME;
+} // mode_noisemeter()
+
+
+//////////////////////
+//   * NOISEFIRE    //
+//////////////////////
+
+// I am the god of hellfire. . . Volume (only) reactive fire routine. Oh, look how short this is.
+uint16_t WS2812FX::mode_noisefire(void) {     // Noisefire. By Andrew Tuline.
+
+  const uint8_t xscale = 20;                  // How far apart they are
+  const uint8_t yscale = 3;                   // How fast they move
+
+  CRGB color;
+  uint16_t index;                             // Current colour lookup value.
+
+  currentPalette = CRGBPalette16(CHSV(0,255,2), CHSV(0,255,4), CHSV(0,255,8), CHSV(0, 255, 8),    // Fire palette definition. Lower value = darker.
+                                 CHSV(0, 255, 16), CRGB::Red, CRGB::Red, CRGB::Red,
+                                 CRGB::DarkOrange,CRGB::DarkOrange, CRGB::Orange, CRGB::Orange,
+                                 CRGB::Yellow, CRGB::Orange, CRGB::Yellow, CRGB::Yellow);
+
+  for (int i = 0; i < SEGLEN; i++) {
+    index = inoise8(i*xscale,millis()*yscale*SEGLEN/255);                       // X location is constant, but we move along the Y at the rate of millis(). By Andrew Tuline.
+    index = (255 - i*256/SEGLEN) * index/128;                                   // Now we need to scale index so that it gets blacker as we get close to one of the ends.
+    color = ColorFromPalette(currentPalette, index, sampleAvg*2, LINEARBLEND);  // Use the my own palette.
+    setPixelColor(i, color.red, color.green, color.blue);                       // This is a simple y=mx+b equation that's been scaled. index/128 is another scaling.
+  }
+
+  return FRAMETIME;
+} // mode_noisefire()
+
+
+///////////////////////
+//   * PUDDLEPEAK    //
+///////////////////////
+
+// Andrew's crappy peak detector. If I were 40+ years younger, I'd learn signal processing.
+uint16_t WS2812FX::mode_puddlepeak(void) {                                // Puddlepeak. By Andrew Tuline.
+
+  uint16_t size = 0;
+  uint8_t fadeVal = map(SEGMENT.speed,0,255, 224, 255);
+  uint16_t pos = random(SEGLEN);                                          // Set a random starting position.
+
+  fade_out(fadeVal);
+
+  if (samplePeak == 1 ) {
+    size = sample * SEGMENT.intensity /256 /8 + 1;                        // Determine size of the flash based on the volume.
+    if (pos+size>= SEGLEN) size=SEGLEN-pos;
+    samplePeak = 0;
+  }
+
+  for(int i=0; i<size; i++) {                                             // Flash the LED's.
+    setPixelColor(pos+i, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+
+  }
+
+  return FRAMETIME;
+} // mode_puddlepeak()
+
+
+/////////////////////////////////
+//     * Ripple Peak           //
+/////////////////////////////////
+
+uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. By Andrew Tuline.
+                                                              // This currently has no controls.
+  #define maxsteps 16                                         // Case statement wouldn't allow a variable.
+
+  static uint8_t colour;                                      // Ripple colour is randomized.
+  static uint16_t centre;                                     // Center of the current ripple.
+  static int8_t steps = -1;                                   // -1 is the initializing step.
+  static uint8_t ripFade = 255;                               // Starting brightness.
+
+  fade_out(240);                                              // Lower frame rate means less effective fading than FastLED
+  fade_out(240);
+
+   if (samplePeak == 1) {samplePeak = 0; steps = -1;}
+
+  switch (steps) {
+
+    case -1:                                                  // Initialize ripple variables.
+      centre = random16(SEGLEN);
+      colour = random8();
+      steps = 0;
+      break;
+
+    case 0:
+      setPixelColor(centre, color_blend(SEGCOLOR(1), color_from_palette(colour, false, PALETTE_SOLID_WRAP, 0), ripFade));
+      steps ++;
+      break;
+
+    case maxsteps:                                            // At the end of the ripples.
+//        steps = -1;
+      break;
+
+    default:                                                  // Middle of the ripples.
+
+      setPixelColor((centre + steps + SEGLEN) % SEGLEN, color_blend(SEGCOLOR(1), color_from_palette(colour, false, PALETTE_SOLID_WRAP, 0), ripFade/steps*2));
+      setPixelColor((centre - steps + SEGLEN) % SEGLEN, color_blend(SEGCOLOR(1), color_from_palette(colour, false, PALETTE_SOLID_WRAP, 0), ripFade/steps*2));
+      steps ++;                                               // Next step.
+      break;
+  } // switch step
+
+  return FRAMETIME;
+} // mode_ripplepeak()
+
+
+
+*/
+

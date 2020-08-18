@@ -3566,7 +3566,7 @@ uint16_t WS2812FX::mode_chunchun(void)
 }
 
 
-/*
+
 
 ////////////////////////////////
 //   Begin volume routines    //
@@ -3904,6 +3904,29 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. 
 } // mode_ripplepeak()
 
 
+///////////////////////
+//  * WATERFALL      //
+///////////////////////
 
-*/
+// Experimenting with volume only as a fallback if no FFT.
+uint16_t WS2812FX::mode_waterfall(void) {                  // Waterfall. By: Andrew Tuline
 
+  static unsigned long prevMillis;
+  unsigned long curMillis = millis();
+
+  if ((curMillis - prevMillis) >= ((256-SEGMENT.speed) >>2)) {
+    prevMillis = curMillis;
+
+    uint8_t pixCol = sample * SEGMENT.intensity / 128;
+
+    if (samplePeak) {
+      samplePeak = 0;
+      setPixelColor(SEGLEN-1,92,92,92);
+    } else {
+      setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixCol));
+    }
+    for (int i=0; i<SEGLEN-1; i++) setPixelColor(i,getPixelColor(i+1));
+  }
+
+  return FRAMETIME;
+} // mode_waterfall()

@@ -192,6 +192,9 @@ WLED_GLOBAL byte col[]    _INIT_N(({ 255, 160, 0, 0 }));  // current RGB(W) prim
 WLED_GLOBAL byte colSec[] _INIT_N(({ 0, 0, 0, 0 }));      // current RGB(W) secondary color
 WLED_GLOBAL byte briS     _INIT(128);                     // default brightness
 
+WLED_GLOBAL byte soundSquelch   _INIT(10);          // default squelch value for volume reactive routines
+WLED_GLOBAL byte sampleGain     _INIT(20);           // default sample gain
+
 WLED_GLOBAL byte nightlightTargetBri _INIT(0);      // brightness after nightlight is over
 WLED_GLOBAL byte nightlightDelayMins _INIT(60);
 WLED_GLOBAL byte nightlightMode      _INIT(NL_MODE_FADE); // See const.h for available modes. Was nightlightFade
@@ -372,8 +375,12 @@ WLED_GLOBAL byte effectSpeed _INIT(128);
 WLED_GLOBAL byte effectIntensity _INIT(128);
 WLED_GLOBAL byte effectPalette _INIT(0);
 
+//  0th bit - transmit enabled/disabled. 1st bit - receive enabled/disabled
+WLED_GLOBAL byte audioSyncEnabled _INIT(0);
+WLED_GLOBAL uint16_t audioSyncPort _INIT(11988);
+
 // network
-WLED_GLOBAL bool udpConnected _INIT(false), udpRgbConnected _INIT(false);
+WLED_GLOBAL bool udpConnected _INIT(false), udpRgbConnected _INIT(false), udpSyncConnected _INIT(false);
 
 // ui style
 WLED_GLOBAL bool showWelcomePage _INIT(false);
@@ -490,6 +497,7 @@ WLED_GLOBAL AsyncMqttClient* mqtt _INIT(NULL);
 // udp interface objects
 WLED_GLOBAL WiFiUDP notifierUdp, rgbUdp;
 WLED_GLOBAL WiFiUDP ntpUdp;
+WLED_GLOBAL WiFiUDP fftUdp;
 WLED_GLOBAL ESPAsyncE131 e131 _INIT_N(((handleE131Packet)));
 WLED_GLOBAL bool e131NewData _INIT(false);
 

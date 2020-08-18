@@ -39,7 +39,11 @@ void XML_response(AsyncWebServerRequest *request, char* dest)
   oappendi(nightlightDelayMins);
   oappend("</nd><nt>");
   oappendi(nightlightTargetBri);
-  oappend("</nt><fx>");
+  oappend("</nt><sq>");
+  oappendi(soundSquelch);
+  oappend("</sq><gn>");
+  oappendi(sampleGain);
+  oappend("</gn><fx>");
   oappendi(effectCurrent);
   oappend("</fx><sx>");
   oappendi(effectSpeed);
@@ -302,6 +306,8 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('v',"TB",nightlightTargetBri);
     sappend('v',"TL",nightlightDelayMinsDefault);
     sappend('v',"TW",nightlightMode);
+    sappend('v',"SQ",soundSquelch);
+    sappend('v',"GN",sampleGain);    
     sappend('i',"PB",strip.paletteBlend);
     sappend('c',"RV",strip.reverseMode);
     sappend('c',"SL",skipFirstLed);
@@ -341,6 +347,19 @@ void getSettingsJS(byte subPage, char* dest)
     sappends('s',"AI",alexaInvocationName);
     sappend('c',"SA",notifyAlexa);
     sappends('s',"BK",(char*)((blynkEnabled)?"Hidden":""));
+    if (!(((audioSyncEnabled)>>(0)) & 1) && !(((audioSyncEnabled)>>(1)) & 1)) {
+      // 0 == udp audio sync off
+      sappend('v',"ASE", 0);
+    }
+    else if ((((audioSyncEnabled)>>(0)) & 1) && !(((audioSyncEnabled)>>(1)) & 1)) {
+      // 1 == transmit only
+      sappend('v',"ASE", 1);
+    }
+    else if (!(((audioSyncEnabled)>>(0)) & 1) && (((audioSyncEnabled)>>(1)) & 1)) {
+      // 2 == receive only
+      sappend('v',"ASE", 2);
+    }
+    sappend('v', "ASP", audioSyncPort);
 
     #ifdef WLED_ENABLE_MQTT
     sappend('c',"MQ",mqttEnabled);

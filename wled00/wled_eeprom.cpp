@@ -31,6 +31,9 @@
 //20-> 0.9.1p
 //21-> 0.10.1p
 
+#define EEP_AUDIO 3072         // Start of Audio Reactive EEPROM Settings - END 3299
+
+
 void commit()
 {
   if (!EEPROM.commit()) errorFlag = 2;
@@ -283,6 +286,15 @@ void saveSettingsToEEPROM()
     EEPROM.write(2535+i, DMXFixtureMap[i]);
   } // last used: 2549. maybe leave a few bytes for future expansion and go on with 2600 kthxbye.
   #endif
+
+
+// Audio Reactive SEGMENT specific write settings
+  EEPROM.write(EEP_AUDIO, soundSquelch);
+  Serial.print(audioSyncPort);
+  EEPROM.write(EEP_AUDIO+1, audioSyncPort & 0xFF);
+  EEPROM.write(EEP_AUDIO+2, (audioSyncPort >> 8) & 0xFF);
+  EEPROM.write(EEP_AUDIO+3, audioSyncEnabled);
+  EEPROM.write(EEP_AUDIO+12, sampleGain);
 
   commit();
 }
@@ -587,6 +599,13 @@ void loadSettingsFromEEPROM(bool first)
   //2551 - 2559 reserved for Usermods, usable by default
   //2560 - 2943 usable, NOT reserved (need to increase EEPSIZE accordingly, new WLED core features may override this section)
   //2944 - 3071 reserved for Usermods (need to increase EEPSIZE to 3072 in const.h)
+
+  if (lastEEPROMversion > 20) {                                   // Version sanity checking
+    soundSquelch =  EEPROM.read(EEP_AUDIO);
+    audioSyncPort = EEPROM.read(EEP_AUDIO+1) + ((EEPROM.read(EEP_AUDIO+2) << 8) & 0xFF00);
+    audioSyncEnabled = EEPROM.read(EEP_AUDIO + 3);
+    sampleGain = EEPROM.read(EEP_AUDIO+12);
+  }
 
   overlayCurrent = overlayDefault;
 

@@ -101,8 +101,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  112
-// define MODE_COUNT 125
+#define MODE_COUNT  125
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -216,9 +215,6 @@
 #define FX_MODE_PHASEDNOISE            109
 #define FX_MODE_FLOW                   110
 #define FX_MODE_CHUNCHUN               111
-
-
-/*
 #define FX_MODE_PIXELS                 112
 #define FX_MODE_PIXELWAVE              113
 #define FX_MODE_JUGGLES                114
@@ -231,11 +227,9 @@
 #define FX_MODE_NOISEFIRE              121
 #define FX_MODE_PUDDLEPEAK             122
 #define FX_MODE_RIPPLEPEAK             123
-#define FX_MODE_WATERFALL			   124
+#define FX_MODE_WATERFALL			         124
 
-*/
 
-/*
 // Sound reactive external variables
 extern int sample;
 extern float sampleAvg;
@@ -243,7 +237,7 @@ extern bool samplePeak;
 extern uint8_t myVals[32];
 extern int sampleAgc;
 extern uint8_t squelch;
-*/
+
 
 
 class WS2812FX {
@@ -448,11 +442,6 @@ class WS2812FX {
       _mode[FX_MODE_PHASEDNOISE]             = &WS2812FX::mode_phased_noise;
       _mode[FX_MODE_FLOW]                    = &WS2812FX::mode_flow;
       _mode[FX_MODE_CHUNCHUN]                = &WS2812FX::mode_chunchun;
-
-
-/*
-
-
       _mode[FX_MODE_PIXELS]                  = &WS2812FX::mode_pixels;
       _mode[FX_MODE_PIXELWAVE]               = &WS2812FX::mode_pixelwave;
       _mode[FX_MODE_JUGGLES]                 = &WS2812FX::mode_juggles;
@@ -465,13 +454,7 @@ class WS2812FX {
       _mode[FX_MODE_NOISEFIRE]               = &WS2812FX::mode_noisefire;
       _mode[FX_MODE_PUDDLEPEAK]              = &WS2812FX::mode_puddlepeak;
       _mode[FX_MODE_RIPPLEPEAK]              = &WS2812FX::mode_ripplepeak;
-      _mode[FX_MODE_WATERFALL]				 = &WS2812FX::mode_waterfall;
-
-*/
-
-
-
-
+      _mode[FX_MODE_WATERFALL]      				 = &WS2812FX::mode_waterfall;
 
 
       _brightness = DEFAULT_BRIGHTNESS;
@@ -668,10 +651,7 @@ class WS2812FX {
       mode_sinewave(void),
       mode_phased_noise(void),
       mode_flow(void),
-      mode_chunchun(void);
-
-/*
-
+      mode_chunchun(void),
       mode_pixels(void),
       mode_pixelwave(void),
       mode_juggles(void),
@@ -685,11 +665,6 @@ class WS2812FX {
       mode_puddlepeak(void),
       mode_ripplepeak(void),
       mode_waterfall(void);
-
-*/
-
-
-
 
 
 
@@ -779,13 +754,9 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
-"Flow","Chunchun"
-])=====";
-
-/*
-,"* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise",
+"Flow","Chunchun","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise",
 "* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
-*/
+])=====";
 
 
 const char JSON_palette_names[] PROGMEM = R"=====([

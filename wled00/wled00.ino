@@ -1,4 +1,4 @@
-/*
+-/*
  * WLED Arduino IDE compatibility file.
  * 
  * Where has everything gone?

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/images/wled_logo.png">
+  <img src="/images/wled_logo_akemi.png">
   <a href="https://github.com/atuline/WLED/releases"><img src="https://img.shields.io/github/release/Aircoookie/WLED.svg?style=flat-square"></a>
   <a href="https://wled.discourse.group"><img src="https://img.shields.io/discourse/topics?colorB=blue&label=forum&server=https%3A%2F%2Fwled.discourse.group%2F&style=flat-square"></a>
   <a href="https://discord.gg/KuqP7NE"><img src="https://img.shields.io/discord/473448917040758787.svg?colorB=blue&label=discord&style=flat-square"></a>
@@ -40,7 +40,7 @@ Join Discord to discuss AirCookie's WLED:
 
 
 
-And now onto regular WLED . . . 
+And now onto regular WLED . . .
 
 
 
@@ -68,12 +68,12 @@ A fast and feature-rich implementation of an ESP8266/ESP32 webserver to control 
 - JSON and HTTP request APIs
 - MQTT
 - Blynk IoT
-- E1.31
+- E1.31, Art-Net and TPM2.net
 - [Hyperion](https://github.com/hyperion-project/hyperion.ng)
 - UDP realtime
 - Alexa voice control (including dimming and color)
 - Sync to Philips hue lights
-- Adalight (PC ambilight via serial)
+- Adalight (PC ambilight via serial) and TPM2
 - Sync color of multiple WLED devices (UDP notifier)
 - Infrared remotes (24-key RGB, receiver required)
 - Simple timers/schedules (time from NTP, timezones/DST supported)
@@ -108,6 +108,14 @@ TM1814 | 12v | RGBW
 WS2811 | 12v | 3-LED segments
 WS2815 | 12v |
 GS8208 | 12v |
+
+## 🧊 Compatibe PC RGB Fans and ARGB accessories
+Brand | Model | Comments
+|---|---|---|
+Corsair | HD120 Fan | Uses WS2812B, data-in only
+PCCOOLER | Moonlight 5-pack Fans | Uses WS2812B, includes Data-out connector to keep each fan uniquely addressable if wired in series like traditional LED strips
+Any | 5v 3-pin ARGB for PC | Any PC RGB device that supports the 5v 3-pin ARGB motherboard header should work fine with WLED. All the major motherboard vendors support the Corsair HD120 and PCCOOLER fans listed, so we can safely assume any device that supports motherboard ARGB 5V 3-Pin standard will work with WLED.
+
 
 ## ✌️ Other
 

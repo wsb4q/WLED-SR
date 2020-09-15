@@ -51,13 +51,13 @@
 			for (i = 0; i < l; i++) {
 				myC[i].style.display = (d.getElementById('rgbw').checked) ? 'inline':'none';
 			}
-      
+
       d.getElementById('ledwarning').style.display = (d.Sf.LC.value > 1000) ? 'inline':'none';
       d.getElementById('ampwarning').style.display = (d.Sf.MA.value > 7200) ? 'inline':'none';
-	  
+
 	  if (d.Sf.LA.value == 255) laprev = 12;
 	  else if (d.Sf.LA.value > 0) laprev = d.Sf.LA.value;
-			
+
 			var val = Math.ceil((100 + d.Sf.LC.value * laprev)/500)/2;
 			val = (val > 5) ? Math.ceil(val) : val;
 			var s = "";
@@ -171,9 +171,6 @@
 			<option value="2">Fade Color</option>
 			<option value="3">Sunrise</option>
 		</select>
-    <h3>Sound</h3>
-    Squelch: <input name="SQ" type="number" min="1" max="255" required><br>
-    Gain: <input name="GN" type="number" min="1" max="255" required><br>    
 		<h3>Advanced</h3>
 		Palette blending:
 		<select name="PB">

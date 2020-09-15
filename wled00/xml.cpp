@@ -93,7 +93,7 @@ void URL_response(AsyncWebServerRequest *request)
   for (int i = 0; i < 3; i++)
   {
    sprintf(s,"%02X", col[i]);
-   oappend(s); 
+   oappend(s);
   }
   oappend("&C2=h");
   for (int i = 0; i < 3; i++)
@@ -116,7 +116,7 @@ void URL_response(AsyncWebServerRequest *request)
   oappend((const char*)F("<html><body><a href=\""));
   oappend(s2buf);
   oappend((const char*)F("\" target=\"_blank\">"));
-  oappend(s2buf);  
+  oappend(s2buf);
   oappend((const char*)F("</a></body></html>"));
 
   if (request != nullptr) request->send(200, "text/html", obuf);
@@ -185,7 +185,7 @@ void getSettingsJS(byte subPage, char* dest)
   obuf = dest;
   olen = 0;
 
-  if (subPage <1 || subPage >7) return;
+  if (subPage <1 || subPage >8) return;
 
   if (subPage == 1) {
     sappends('s',"CS",clientSSID);
@@ -277,8 +277,6 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('v',"TB",nightlightTargetBri);
     sappend('v',"TL",nightlightDelayMinsDefault);
     sappend('v',"TW",nightlightMode);
-    sappend('v',"SQ",soundSquelch);
-    sappend('v',"GN",sampleGain);    
     sappend('i',"PB",strip.paletteBlend);
     sappend('c',"RV",strip.reverseMode);
     sappend('c',"SL",skipFirstLed);
@@ -371,7 +369,7 @@ void getSettingsJS(byte subPage, char* dest)
       case HUE_ERROR_TIMEOUT      : strcpy(hueErrorString,(char*)F("Timeout"));                 break;
       default: sprintf(hueErrorString,"Bridge Error %i",hueError);
     }
-    
+
     sappends('m',"(\"sip\")[0]",hueErrorString);
     #endif
   }
@@ -442,17 +440,17 @@ void getSettingsJS(byte subPage, char* dest)
     oappendi(VERSION);
     oappend(")\";");
   }
-  
+
   #ifdef WLED_ENABLE_DMX // include only if DMX is enabled
   if (subPage == 7)
   {
     sappend('v',"PU",e131ProxyUniverse);
-    
+
     sappend('v',"CN",DMXChannels);
     sappend('v',"CG",DMXGap);
     sappend('v',"CS",DMXStart);
     sappend('v',"SL",DMXStartLED);
-    
+
     sappend('i',"CH1",DMXFixtureMap[0]);
     sappend('i',"CH2",DMXFixtureMap[1]);
     sappend('i',"CH3",DMXFixtureMap[2]);
@@ -470,5 +468,11 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('i',"CH15",DMXFixtureMap[14]);
     }
   #endif
+
+  if (subPage == 8)
+  {
+    sappend('v',"SQ",soundSquelch);
+    sappend('v',"GN",sampleGain);
+    }
   oappend("}</script>");
 }

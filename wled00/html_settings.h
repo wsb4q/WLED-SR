@@ -446,7 +446,8 @@ Press the pushlink button on the bridge, after that save this page!</b><br>
 (when first connecting)<br>Hue status: <span class="sip">Disabled in this build
 </span><hr><h3>Audio Sync</h3>Mode: <select name="ASE"><option value="0">
 Disabled</option><option value="1">Transmit</option><option value="2">Receive
-</option></select> Port: <input name="ASP" type="number"><hr><button 
+</option></select> Port: <input name="ASP" type="number" class="d5"><br>
+Please reboot your ESP to have these changes take effect!<hr><button 
 type="button" onclick="B()">Back</button><button type="submit">Save</button>
 </form></body></html>)=====";
 

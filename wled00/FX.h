@@ -37,6 +37,7 @@
 #define DEFAULT_BRIGHTNESS (uint8_t)127
 #define DEFAULT_MODE       (uint8_t)0
 #define DEFAULT_SPEED      (uint8_t)128
+#define DEFAULT_INTENSITY  (uint8_t)128
 #define DEFAULT_COLOR      (uint32_t)0xFFAA00
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -102,7 +103,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  126
+#define MODE_COUNT                     126
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -738,7 +739,7 @@ class WS2812FX {
     uint8_t _segment_index_palette_last = 99;
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 24 bytes per element
       // start, stop, speed, intensity, palette, mode, options, grouping, spacing, opacity (unused), color[]
-      { 0, 7, DEFAULT_SPEED, 128, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
+      { 0, 7, DEFAULT_SPEED, DEFAULT_INTENSITY, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 28 bytes per element
     friend class Segment_runtime;
@@ -758,7 +759,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Noise 1","Noise 2","Noise 3","Noise 4","Colortwinkles","Lake","Meteor","Meteor Smooth","Railway","Ripple",
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
-"Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
+"Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal","Sine","Phased Noise",
 "Flow","Chunchun","Dancing Shadows","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles",
 "* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
 ])=====";

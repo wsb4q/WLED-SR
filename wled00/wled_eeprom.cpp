@@ -33,7 +33,6 @@
 
 #define EEP_AUDIO 3072         // Start of Audio Reactive EEPROM Settings - END 3299
 
-
 void commit()
 {
   if (!EEPROM.commit()) errorFlag = 2;
@@ -287,7 +286,6 @@ void saveSettingsToEEPROM()
   } // last used: 2549. maybe leave a few bytes for future expansion and go on with 2600 kthxbye.
   #endif
 
-
 // Audio Reactive SEGMENT specific write settings
   EEPROM.write(EEP_AUDIO, soundSquelch);
   Serial.print(audioSyncPort);
@@ -295,6 +293,14 @@ void saveSettingsToEEPROM()
   EEPROM.write(EEP_AUDIO+2, (audioSyncPort >> 8) & 0xFF);
   EEPROM.write(EEP_AUDIO+3, audioSyncEnabled);
   EEPROM.write(EEP_AUDIO+12, sampleGain);
+
+// RESERVE 3175-3299 for FFT Preset saves and future expansion (Not currently used on ESP8266)
+// 3175:      FFT1
+// 3176:      FFT2
+// 3177:      FFT3
+// 3178-3179: ZEROs
+
+// End of Audio Reactive SEGMENT specific write settings
 
   commit();
 }
@@ -388,9 +394,9 @@ void loadSettingsFromEEPROM(bool first)
   turnOnAtBoot = EEPROM.read(369);
   useRGBW = EEPROM.read(372);
   //374 - strip.paletteFade
-  
+
   apBehavior = EEPROM.read(376);
-    
+
   //377 = lastEEPROMversion
   if (lastEEPROMversion > 3) {
     aOtaEnabled = EEPROM.read(390);
@@ -398,7 +404,7 @@ void loadSettingsFromEEPROM(bool first)
     receiveNotificationEffects = EEPROM.read(392);
   }
   receiveNotifications = (receiveNotificationBrightness || receiveNotificationColor || receiveNotificationEffects);
-  
+
   if (lastEEPROMversion > 4) {
     huePollingEnabled = EEPROM.read(2048);
     //hueUpdatingEnabled = EEPROM.read(2049);
@@ -588,7 +594,7 @@ void loadSettingsFromEEPROM(bool first)
   DMXChannels = EEPROM.read(2530);
   DMXGap = EEPROM.read(2531) + ((EEPROM.read(2532) << 8) & 0xFF00);
   DMXStart = EEPROM.read(2533) + ((EEPROM.read(2534) << 8) & 0xFF00);
-  
+
   for (int i=0;i<15;i++) {
     DMXFixtureMap[i] = EEPROM.read(2535+i);
   } //last used: 2549
@@ -600,12 +606,24 @@ void loadSettingsFromEEPROM(bool first)
   //2560 - 2943 usable, NOT reserved (need to increase EEPSIZE accordingly, new WLED core features may override this section)
   //2944 - 3071 reserved for Usermods (need to increase EEPSIZE to 3072 in const.h)
 
+
+// Audio Reactive specific read settings
+
   if (lastEEPROMversion > 20) {                                   // Version sanity checking
     soundSquelch =  EEPROM.read(EEP_AUDIO);
     audioSyncPort = EEPROM.read(EEP_AUDIO+1) + ((EEPROM.read(EEP_AUDIO+2) << 8) & 0xFF00);
     audioSyncEnabled = EEPROM.read(EEP_AUDIO + 3);
     sampleGain = EEPROM.read(EEP_AUDIO+12);
   }
+
+// FFT Slider Data Preset Protocol 5 bytes, 25 "slots" (Not currently used on ESP8266)
+// RESERVE 3175-3299 for FFT Preset saves and future expansion
+// 3175:      FFT1
+// 3176:      FFT2
+// 3177:      FFT3
+// 3178-3179: ZEROs
+
+// End of Audio Reactive SEGMENT specific read settings
 
   overlayCurrent = overlayDefault;
 
@@ -642,18 +660,18 @@ bool applyPreset(byte index, bool loadBri)
 {
   if (index == 255 || index == 0)
   {
-    loadSettingsFromEEPROM(false);//load boot defaults
+    loadSettingsFromEEPROM(false);    //load boot defaults
     return true;
   }
   if (index > 16 || index < 1) return false;
-  uint16_t i = 380 + index*20;
+  uint16_t i = 380 + index*20;        // Begin main WLED preset data - min400
   byte ver = EEPROM.read(i);
 
   if (index < 16) {
     if (ver != 1) return false;
     strip.applyToAllSelected = true;
     if (loadBri) bri = EEPROM.read(i+1);
-    
+
     for (byte j=0; j<4; j++)
     {
       col[j] = EEPROM.read(i+j+2);
@@ -689,8 +707,8 @@ void savePreset(byte index, bool persist)
 {
   if (index > 16) return;
   if (index < 1) {saveSettingsToEEPROM();return;}
-  uint16_t i = 380 + index*20;//min400
-  
+  uint16_t i = 380 + index*20;        // Begin main WLED preset data - min400
+
   if (index < 16) {
     EEPROM.write(i, 1);
     EEPROM.write(i+1, bri);
@@ -707,7 +725,7 @@ void savePreset(byte index, bool persist)
     EEPROM.write(i+13, (colTer >>  8) & 0xFF);
     EEPROM.write(i+14, (colTer >>  0) & 0xFF);
     EEPROM.write(i+15, (colTer >> 24) & 0xFF);
-  
+
     EEPROM.write(i+16, effectIntensity);
     EEPROM.write(i+17, effectPalette);
   } else { //segment 16 can save segments
@@ -716,7 +734,7 @@ void savePreset(byte index, bool persist)
     WS2812FX::Segment* seg = strip.getSegments();
     memcpy(EEPROM.getDataPtr() +i+2, seg, 240);
   }
-  
+
   if (persist) commit();
   savedToPresets();
   currentPreset = index;

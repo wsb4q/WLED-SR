@@ -20,28 +20,29 @@
 //#define WLED_DISABLE_OTA         // saves 14kb
 
 // You need to choose some of these features to disable:
-#define WLED_DISABLE_ALEXA       // saves 11kb
-#define WLED_DISABLE_BLYNK       // saves 6kb
-#define WLED_DISABLE_CRONIXIE    // saves 3kb
-#define WLED_DISABLE_HUESYNC     // saves 4kb
-#define WLED_DISABLE_INFRARED    // there is no pin left for this on ESP8266-01, saves 12kb
+#define WLED_DISABLE_ALEXA         // saves 11kb
+#define WLED_DISABLE_BLYNK         // saves 6kb
+#define WLED_DISABLE_CRONIXIE      // saves 3kb
+#define WLED_DISABLE_HUESYNC       // saves 4kb
+#define WLED_DISABLE_INFRARED      // there is no pin left for this on ESP8266-01, saves 12kb
 #ifndef WLED_DISABLE_MQTT
-//  #define WLED_ENABLE_MQTT         // saves 12kb
+//  #define WLED_ENABLE_MQTT       // saves 12kb
 #endif
-//#define WLED_ENABLE_ADALIGHT       // saves 500b only
+//#define WLED_ENABLE_ADALIGHT     // saves 500b only
 //#define WLED_ENABLE_DMX          // uses 3.5kb (use LEDPIN other than 2)
 #ifndef WLED_DISABLE_WEBSOCKETS
   #define WLED_ENABLE_WEBSOCKETS
 #endif
+//#define WLED_DISABLE_SOUND       // saves 1kb
 
-#define WLED_DISABLE_FILESYSTEM        // SPIFFS is not used by any WLED feature yet
+#define WLED_DISABLE_FILESYSTEM    // SPIFFS is not used by any WLED feature yet
 //#define WLED_ENABLE_FS_SERVING   // Enable sending html file from SPIFFS before serving progmem version
 //#define WLED_ENABLE_FS_EDITOR    // enable /edit page for editing SPIFFS content. Will also be disabled with OTA lock
 
 // to toggle usb serial debug (un)comment the following line
 //#define WLED_DEBUG
 
-// Library inclusions. 
+// Library inclusions.
 #include <Arduino.h>
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -195,7 +196,7 @@ WLED_GLOBAL byte colSec[] _INIT_N(({ 0, 0, 0, 0 }));      // current RGB(W) seco
 WLED_GLOBAL byte briS     _INIT(128);                     // default brightness
 
 WLED_GLOBAL byte soundSquelch   _INIT(10);          // default squelch value for volume reactive routines
-WLED_GLOBAL byte sampleGain     _INIT(20);           // default sample gain
+WLED_GLOBAL byte sampleGain     _INIT(20);          // default sample gain
 
 WLED_GLOBAL byte nightlightTargetBri _INIT(0);      // brightness after nightlight is over
 WLED_GLOBAL byte nightlightDelayMins _INIT(60);
@@ -207,7 +208,7 @@ WLED_GLOBAL bool skipFirstLed  _INIT(false);        // ignore first LED in strip
 WLED_GLOBAL byte briMultiplier _INIT(100);          // % of brightness to set (to limit power, if you set it to 50 and set bri to 255, actual brightness will be 127)
 
 // User Interface CONFIG
-WLED_GLOBAL char serverDescription[33] _INIT("WLED");  // Name of module
+WLED_GLOBAL char serverDescription[33] _INIT("WLED-AudioReactive");  // Name of module
 WLED_GLOBAL bool syncToggleReceive     _INIT(false);   // UIs which only have a single button for sync should toggle send+receive if this is true, only send otherwise
 
 // Sync CONFIG

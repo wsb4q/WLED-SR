@@ -69,30 +69,32 @@ void getSample() {
   static long peakTime;
 
   #ifdef WLED_DISABLE_SOUND
-    micIn = inoise8(millis(), millis());                      // Simulated analog read
+    micIn = inoise8(millis(), millis());            // Simulated analog read
   #else
-    micIn = analogRead(MIC_PIN);                          // Poor man's analog read
+    micIn = analogRead(MIC_PIN);                    // Poor man's analog read
   #endif
 
-  micLev = ((micLev * 31) + micIn) / 32; // Smooth it out over the last 32 samples for automatic centering
-  micIn -= micLev;                       // Let's center it to 0 now
-  micIn = abs(micIn);                    // And get the absolute value of each sample
+  micLev = ((micLev * 31) + micIn) / 32;            // Smooth it out over the last 32 samples for automatic centering
+  micIn -= micLev;                                  // Let's center it to 0 now
+  micIn = abs(micIn);                               // And get the absolute value of each sample
 
   lastSample = micIn;
 
-  sample = (micIn <= soundSquelch) ? 0 : (sample * 3 + micIn) / 4; // Using a ternary operator, the resultant sample is either 0 or it's a bit smoothed out with the last sample.
+  // Using a ternary operator, the resultant sample is either 0 or it's a bit smoothed out with the last sample.
+  sample = (micIn <= soundSquelch) ? 0 : (sample * 3 + micIn) / 4;
 
   sampleAdj = sample * sampleGain / 40 + sample / 16; // Adjust the gain.
   sampleAdj = min(sampleAdj, 255);
-  sample = sampleAdj; // We'll now make our rebase our sample to be adjusted.
+  sample = sampleAdj;                                 // We'll now make our rebase our sample to be adjusted.
 
-  sampleAvg = ((sampleAvg * 15) + sample) / 16; // Smooth it out over the last 16 samples.
+  sampleAvg = ((sampleAvg * 15) + sample) / 16;       // Smooth it out over the last 16 samples.
 
   if (userVar1 == 0)
     samplePeak = 0;
-  if (sample > (sampleAvg + maxVol) && millis() > (peakTime + 100))
-  {                 // Poor man's beat detection by seeing if sample > Average + some value.
-    samplePeak = 1; // Then we got a peak, else we don't. Display routines need to reset the samplepeak value in case they miss the trigger.
+  // Poor man's beat detection by seeing if sample > Average + some value.
+  if (sample > (sampleAvg + maxVol) && millis() > (peakTime + 100)) {
+  // Then we got a peak, else we don't. Display routines need to reset the samplepeak value in case they miss the trigger.
+    samplePeak = 1;
     #ifdef ESP32
       udpSamplePeak = 1;
     #endif
@@ -104,9 +106,9 @@ void getSample() {
 
 
 
-void agcAvg() {                                                       // A simple averaging multiplier to automatically adjust sound sensitivity.
+void agcAvg() {                                                     // A simple averaging multiplier to automatically adjust sound sensitivity.
 
-  multAgc = (sampleAvg < 1) ? targetAgc : targetAgc / sampleAvg;      // Make the multiplier so that sampleAvg * multiplier = setpoint
+  multAgc = (sampleAvg < 1) ? targetAgc : targetAgc / sampleAvg;    // Make the multiplier so that sampleAvg * multiplier = setpoint
   sampleAgc = sample * multAgc;
   if (sampleAgc > 255) sampleAgc = 0;
 
@@ -138,5 +140,4 @@ void logAudio() {
     Serial.println(xPortGetCoreID());
   #endif
 #endif
-
-}
+}  // logAudio()

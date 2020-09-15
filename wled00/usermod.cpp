@@ -29,11 +29,11 @@ void userConnected()
 // userLoop. You can use "if (WLED_CONNECTED)" to check for successful connection
 void userLoop() {
 
-  if (millis()-lastTime > delayMs) {                       // I need to run this continuously because the animations are too slow
-    if (!(audioSyncEnabled & (1 << 1))) {                  // Only run the sampling code IF we're not in Receive mode
+  if (millis()-lastTime > delayMs) {                        // I need to run this continuously because the animations are too slow
+    if (!(audioSyncEnabled & (1 << 1))) {                   // Only run the sampling code IF we're not in Receive mode
       lastTime = millis();
-      getSample();                                              // Sample the microphone
-      agcAvg();                                                 // Calculated the PI adjusted value as sampleAvg
+      getSample();                                          // Sample the microphone
+      agcAvg();                                             // Calculated the PI adjusted value as sampleAvg
       myVals[millis()%32] = sampleAgc;
       logAudio();
     }

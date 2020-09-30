@@ -18,7 +18,6 @@
 // This gets called once at boot. Do all initialization that doesn't depend on network here
 void userSetup()
 {
-
 }
 
 // This gets called every time WiFi is (re-)connected. Initialize own network interfaces here

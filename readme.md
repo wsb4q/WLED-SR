@@ -109,7 +109,7 @@ WS2811 | 12v | 3-LED segments
 WS2815 | 12v |
 GS8208 | 12v |
 
-## 🧊 Compatibe PC RGB Fans and ARGB accessories
+## 🧊 Compatible PC RGB Fans and ARGB accessories
 Brand | Model | Comments
 |---|---|---|
 Corsair | HD120 Fan | Uses WS2812B, data-in only
@@ -134,7 +134,7 @@ If WLED really brightens up your every day, you can [![](https://img.shields.io/
 
 
 *Disclaimer:*
-If you are prone to photo epileptic seizures, it is not recommended that you use this software.
-If you still want to try, **DO NOT** use strobe, lightning or noise modes or high effect-speed settings.
+If you are sensitive to photosensitive epilepsy it is not recommended that you use this software.
+In case you still want to try, don't use strobe, lighting or noise modes or high effect speed settings.
 As per the MIT license, I assume no liability for any damage to you or any other person or equipment.
 

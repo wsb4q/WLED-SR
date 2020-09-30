@@ -3713,6 +3713,25 @@ uint16_t WS2812FX::mode_dancing_shadows(void)
   return FRAMETIME;
 }
 
+/*
+  Imitates a washing machine, rotating same waves forward, then pause, then backward.
+  By Stefan Seegel
+*/
+uint16_t WS2812FX::mode_washing_machine(void) {
+  float speed = tristate_square8(now >> 7, 90, 15);
+  float quot  = 32.0f - ((float)SEGMENT.speed / 16.0f);
+  speed /= quot;
+
+  SEGENV.step += (speed * 128.0f);
+
+  for (int i=0; i<SEGLEN; i++) {
+    uint8_t col = sin8(((SEGMENT.intensity / 25 + 1) * 255 * i / SEGLEN) + (SEGENV.step >> 7));
+    setPixelColor(i, color_from_palette(col, false, PALETTE_SOLID_WRAP, 3));
+  }
+
+  return FRAMETIME;
+}
+
 
 ////////////////////////////////
 //   Begin volume routines    //
@@ -4008,6 +4027,14 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                                // Pud
 /////////////////////////////////
 
 uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. By Andrew Tuline.
+
+  #ifdef ESP32
+  extern double FFT_MajorPeak;
+//  Serial.println(FFT_MajorPeak);
+  Serial.println(log10(FFT_MajorPeak)*128-140);
+//  Serial.println(pow(FFT_MajorPeak, .3));
+  #endif
+
                                                               // This currently has no controls.
   #define maxsteps 16                                         // Case statement wouldn't allow a variable.
 

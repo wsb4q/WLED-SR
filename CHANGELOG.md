@@ -2,6 +2,52 @@
 
 ### Development versions after the 0.10.2 release
 
+#### Build 2009290
+
+-   Added basic DDP protocol support
+-   Added Washing Machine effect (PR #1208)
+
+#### Build 2009260
+
+-   Added Loxone parser (PR #1185)
+-   Added support for kelvin input via `K=` HTTP and `"col":[[val]]` JSON API calls
+-   Added supplementary UDP socket (#1205)
+-   TMP2.net receivable by default
+-   UDP sockets accept HTTP and JSON API commands
+-   Fixed missing timezones (#1201)
+
+#### Build 2009202
+
+-   Fixed LPD8806 compilation
+
+#### Build 2009201
+
+-   Added support for preset cycle toggling using CY=2
+-   Added ESP32 touch pin support (#1190)
+-   Fixed modem sleep on ESP8266 (#1184)
+
+#### Build 2009200
+
+-   Increased available heap memory by 4kB
+-   Use F() macro for the majority of strings
+-   Restructure timezone code
+-   Restructured settings saved code
+-   Updated ArduinoJSON to 6.16.1
+
+#### Build 2009170
+
+-   New WLED logo on Welcome screen (#1164)
+-   Fixed 170th pixel dark in E1.31
+
+#### Build 2009100
+
+-   Fixed sunrise mode not reinitializing
+-   Fixed passwords not clearable
+
+#### Build 2009070
+
+-   New Segments are now initialized with default speed and intensity
+
 #### Build 2009030
 
 -   Fixed bootloop if mDNS is used on builds without OTA support

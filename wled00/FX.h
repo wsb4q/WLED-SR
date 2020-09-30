@@ -49,7 +49,11 @@
 
 /* each segment uses 52 bytes of SRAM memory, so if you're application fails because of
   insufficient memory, decreasing MAX_NUM_SEGMENTS may help */
-#define MAX_NUM_SEGMENTS 10
+#ifdef ESP8266
+  #define MAX_NUM_SEGMENTS 10
+#else
+  #define MAX_NUM_SEGMENTS 10
+#endif
 
 /* How much data bytes all segments combined may allocate */
 #ifdef ESP8266
@@ -103,7 +107,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     126
+#define MODE_COUNT                     127
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -218,19 +222,20 @@
 #define FX_MODE_FLOW                   110
 #define FX_MODE_CHUNCHUN               111
 #define FX_MODE_DANCING_SHADOWS        112
-#define FX_MODE_PIXELS                 113
-#define FX_MODE_PIXELWAVE              114
-#define FX_MODE_JUGGLES                115
-#define FX_MODE_MATRIPIX               116
-#define FX_MODE_GRAVIMETER             117
-#define FX_MODE_PLASMOID               118
-#define FX_MODE_PUDDLES                119
-#define FX_MODE_MIDNOISE               120
-#define FX_MODE_NOISEMETER             121
-#define FX_MODE_NOISEFIRE              122
-#define FX_MODE_PUDDLEPEAK             123
-#define FX_MODE_RIPPLEPEAK             124
-#define FX_MODE_WATERFALL			         125
+#define FX_MODE_WASHING_MACHINE        113
+#define FX_MODE_PIXELS                 114
+#define FX_MODE_PIXELWAVE              115
+#define FX_MODE_JUGGLES                116
+#define FX_MODE_MATRIPIX               117
+#define FX_MODE_GRAVIMETER             118
+#define FX_MODE_PLASMOID               119
+#define FX_MODE_PUDDLES                120
+#define FX_MODE_MIDNOISE               121
+#define FX_MODE_NOISEMETER             122
+#define FX_MODE_NOISEFIRE              123
+#define FX_MODE_PUDDLEPEAK             124
+#define FX_MODE_RIPPLEPEAK             125
+#define FX_MODE_WATERFALL			         126
 
 
 // Sound reactive external variables
@@ -240,7 +245,6 @@ extern bool samplePeak;
 extern uint8_t myVals[32];
 extern int sampleAgc;
 extern uint8_t squelch;
-
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -445,6 +449,7 @@ class WS2812FX {
       _mode[FX_MODE_FLOW]                    = &WS2812FX::mode_flow;
       _mode[FX_MODE_CHUNCHUN]                = &WS2812FX::mode_chunchun;
       _mode[FX_MODE_DANCING_SHADOWS]         = &WS2812FX::mode_dancing_shadows;
+      _mode[FX_MODE_WASHING_MACHINE]         = &WS2812FX::mode_washing_machine;
       _mode[FX_MODE_PIXELS]                  = &WS2812FX::mode_pixels;
       _mode[FX_MODE_PIXELWAVE]               = &WS2812FX::mode_pixelwave;
       _mode[FX_MODE_JUGGLES]                 = &WS2812FX::mode_juggles;
@@ -517,6 +522,9 @@ class WS2812FX {
       getMainSegmentId(void),
       gamma8(uint8_t),
       get_random_wheel_index(uint8_t);
+
+    int8_t
+      tristate_square8(uint8_t x, uint8_t pulsewidth, uint8_t attdec);
 
     uint16_t
       ablMilliampsMax,
@@ -659,6 +667,7 @@ class WS2812FX {
       mode_flow(void),
       mode_chunchun(void),
       mode_dancing_shadows(void),
+      mode_washing_machine(void),
       mode_pixels(void),
       mode_pixelwave(void),
       mode_juggles(void),
@@ -760,8 +769,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal","Sine","Phased Noise",
-"Flow","Chunchun","Dancing Shadows","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles",
-"* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
+"Flow","Chunchun","Dancing Shadows","Washing Machine","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid",
+"* Puddles","* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
 ])=====";
 
 

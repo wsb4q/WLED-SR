@@ -9,7 +9,7 @@
 
 //#define MIC_SAMPLING_LOG
 
-const int SAMPLE_RATE = 16000;
+const int SAMPLE_RATE = 10240;
 
 //Use userVar0 and userVar1 (API calls &U0=,&U1=, uint16_t)
 #ifndef MIC_PIN

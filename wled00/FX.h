@@ -107,7 +107,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     127
+#define MODE_COUNT                     129
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -236,6 +236,8 @@
 #define FX_MODE_PUDDLEPEAK             124
 #define FX_MODE_RIPPLEPEAK             125
 #define FX_MODE_WATERFALL			         126
+#define FX_MODE_GRAVCENTER             127
+#define FX_MODE_GRAVCENTRIC            128
 
 
 // Sound reactive external variables
@@ -463,6 +465,8 @@ class WS2812FX {
       _mode[FX_MODE_PUDDLEPEAK]              = &WS2812FX::mode_puddlepeak;
       _mode[FX_MODE_RIPPLEPEAK]              = &WS2812FX::mode_ripplepeak;
       _mode[FX_MODE_WATERFALL]      				 = &WS2812FX::mode_waterfall;
+      _mode[FX_MODE_GRAVCENTER]              = &WS2812FX::mode_gravcenter;
+      _mode[FX_MODE_GRAVCENTRIC]             = &WS2812FX::mode_gravcentric;
 
 
       _brightness = DEFAULT_BRIGHTNESS;
@@ -680,7 +684,9 @@ class WS2812FX {
       mode_noisefire(void),
       mode_puddlepeak(void),
       mode_ripplepeak(void),
-      mode_waterfall(void);
+      mode_waterfall(void),
+      mode_gravcenter(void),
+      mode_gravcentric(void);
 
 
 
@@ -770,7 +776,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal","Sine","Phased Noise",
 "Flow","Chunchun","Dancing Shadows","Washing Machine","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid",
-"* Puddles","* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall"
+"* Puddles","* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall","* Gravcenter","* Gravcentric"
 ])=====";
 
 

@@ -3760,9 +3760,9 @@ uint16_t WS2812FX::mode_pixels(void) {              // Pixels. By Andrew Tuline.
 
 uint16_t WS2812FX::mode_pixelwave(void) {                                 // Pixelwave. By Andrew Tuline.
 
-  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to . .
-
-    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!! By Andrew Tuline.
+  uint8_t secondHand = millis()/(256-SEGMENT.speed) % 10;
+  if(SEGENV.aux0 != secondHand) {
+    SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 128;
     setPixelColor(SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
     for (int i=SEGLEN-1; i>SEGLEN/2; i--) {                               // Move to the right.
@@ -3784,22 +3784,13 @@ uint16_t WS2812FX::mode_pixelwave(void) {                                 // Pix
 
 uint16_t WS2812FX::mode_juggles(void) {                                   // Juggles. By Andrew Tuline.
 
-  static int thistime = 20;
-
-  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to
-
-    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!! By Andrew Tuline.
-
-    fade_out(224);
-
-    for (int i=0; i<SEGMENT.intensity/32; i++) {
-      setPixelColor(beatsin16(thistime+i*2,0,SEGLEN-1), color_blend(SEGCOLOR(1), color_from_palette(millis()/4+i*2, false, PALETTE_SOLID_WRAP, 0), sampleAgc));
-    }
+  fade_out(224);
+  for (int i=0; i<SEGMENT.intensity/32+1; i++) {
+          setPixelColor(beatsin16(SEGMENT.speed/4+i*2,0,SEGLEN-1), color_blend(SEGCOLOR(1), color_from_palette(millis()/4+i*2, false, PALETTE_SOLID_WRAP, 0), sampleAgc));
   }
 
   return FRAMETIME;
 } // mode_juggles()
-
 
 //////////////////////
 //   * MATRIPIX     //
@@ -3807,13 +3798,12 @@ uint16_t WS2812FX::mode_juggles(void) {                                   // Jug
 
 uint16_t WS2812FX::mode_matripix(void) {                                  // Matripix. By Andrew Tuline.
 
-  EVERY_N_MILLISECONDS_I(pixTimer, SEGMENT.speed) {                       // Using FastLED's timer. You want to change speed? You need to . .
-
-    pixTimer.setPeriod((256 - SEGMENT.speed) >> 2);                       // change it down here!!!
+  uint8_t secondHand = millis()/(256-SEGMENT.speed) % 10;
+  if(SEGENV.aux0 != secondHand) {
+    SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 64;
     setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
-    for (int i=0; i<SEGLEN-1; i++) setPixelColor(i,getPixelColor(i+1));
-
+    for (int i=0; i<SEGLEN-1; i++) setPixelColor(i,getPixelColor(i+1));  
   }
 
   return FRAMETIME;
@@ -4085,7 +4075,7 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                                // Pud
   if (samplePeak == 1 ) {
     size = sampleAgc * SEGMENT.intensity /256 /4 + 1;                        // Determine size of the flash based on the volume.
     if (pos+size>= SEGLEN) size=SEGLEN-pos;
-    samplePeak = 0;
+//    samplePeak = 0;
   }
 
   for(int i=0; i<size; i++) {                                             // Flash the LED's.
@@ -4103,14 +4093,6 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                                // Pud
 
 uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. By Andrew Tuline.
 
-  #ifdef ESP32
-  extern double FFT_MajorPeak;
-//  Serial.println(FFT_MajorPeak);
-  Serial.println(log10(FFT_MajorPeak)*128-140);
-//  Serial.println(pow(FFT_MajorPeak, .3));
-  #endif
-
-                                                              // This currently has no controls.
   #define maxsteps 16                                         // Case statement wouldn't allow a variable.
 
   uint16_t maxRipples = 32;
@@ -4130,7 +4112,7 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. 
 
   for (uint16_t i = 0; i < maxRipples; i++) {
 
-    if (samplePeak) {samplePeak = 0; ripples[i].state = -1;}
+    if (samplePeak) {ripples[i].state = -1;}
 
     switch (ripples[i].state) {
 
@@ -4169,22 +4151,19 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                    // * Ripple peak. 
 //  * WATERFALL      //
 ///////////////////////
 
+
 // Experimenting with volume only as a fallback if no FFT.
 uint16_t WS2812FX::mode_waterfall(void) {                  // Waterfall. By: Andrew Tuline
 
-  static unsigned long prevMillis;
-  unsigned long curMillis = millis();
-
-  if ((curMillis - prevMillis) >= ((256-SEGMENT.speed) >>2)) {
-    prevMillis = curMillis;
-
+  uint8_t secondHand = millis()/(256-SEGMENT.speed) % 10;
+  if(SEGENV.aux0 != secondHand) {
+    SEGENV.aux0 = secondHand;
     uint8_t pixCol = sample * SEGMENT.intensity / 128;
-
     if (samplePeak) {
-      samplePeak = 0;
+//      samplePeak = 0;
       setPixelColor(SEGLEN-1,92,92,92);
     } else {
-      setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixCol));
+  setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixCol));
     }
     for (int i=0; i<SEGLEN-1; i++) setPixelColor(i,getPixelColor(i+1));
   }

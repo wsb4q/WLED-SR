@@ -109,11 +109,6 @@ void deserializeConfig() {
   skipFirstLed = hw_led_ins_0[F("skip")]; // 0
   useRGBW = (hw_led_ins_0[F("type")] == TYPE_SK6812_RGBW);
 
-  // 2D Matrix Settings
-  strip.matrixWidth = hw_led_ins_0[F("mxw")]; //
-  strip.matrixHeight = hw_led_ins_0[F("mxh")];
-  strip.matrixSerpentine = hw_led_ins_0[F("mxs")];
-
   JsonObject hw_btn_ins_0 = hw[F("btn")][F("ins")][0];
   buttonEnabled = hw_btn_ins_0[F("en")] | buttonEnabled;
 
@@ -333,11 +328,6 @@ void deserializeConfig() {
   CJSON(soundSquelch, snd_cfg[F("sq")]);
   CJSON(sampleGain, snd_cfg[F("gn")]);
 
-  JsonObject snd_fft = sound[F("fft")]; // FFT Settings
-  CJSON(effectFFT1, snd_fft[F("f1")]);
-  CJSON(effectFFT2, snd_fft[F("f2")]);
-  CJSON(effectFFT3, snd_fft[F("f3")]);
-
   JsonObject snd_sync = sound[F("sync")]; // Sound Reactive audio sync
   CJSON(audioSyncPort, snd_sync[F("port")]); // 11988
   CJSON(audioSyncEnabled, snd_sync[F("en")]);
@@ -442,11 +432,6 @@ void serializeConfig() {
   #endif
 
   hw_led_ins_0[F("type")] = ledType;
-
-  // 2D Matrix Settings
-  hw_led_ins_0[F("mxw")] = strip.matrixWidth; //
-  hw_led_ins_0[F("mxh")] = strip.matrixHeight;
-  hw_led_ins_0[F("mxs")] = strip.matrixSerpentine;
 
   JsonObject hw_btn = hw.createNestedObject("btn");
 
@@ -640,11 +625,6 @@ void serializeConfig() {
   JsonObject snd_cfg = sound.createNestedObject("cfg"); // Sound Reactive Configuration
   snd_cfg[F("sq")] = soundSquelch;
   snd_cfg[F("gn")] = sampleGain;
-
-  JsonObject snd_fft = sound.createNestedObject("fft"); // FFT Settings
-  snd_fft[F("f1")] = effectFFT1;
-  snd_fft[F("f2")] = effectFFT2;
-  snd_fft[F("f3")] = effectFFT3;
 
   JsonObject snd_sync = sound.createNestedObject("sync"); // Sound Reactive audio sync
   snd_sync[F("port")] = audioSyncPort; // 11988

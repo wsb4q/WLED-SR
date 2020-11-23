@@ -362,13 +362,6 @@ void loadSettingsFromEEPROM()
     sampleGain = EEPROM.read(EEP_AUDIO+12);
   }
 
-// FFT Slider Data Preset Protocol 5 bytes, 25 "slots" (Not currently used on ESP8266)
-// RESERVE 3175-3299 for FFT Preset saves and future expansion
-// 3175:      FFT1
-// 3176:      FFT2
-// 3177:      FFT3
-// 3178-3179: ZEROs
-
 // End of Audio Reactive SEGMENT specific read settings
 
   overlayCurrent = overlayDefault;
@@ -395,7 +388,6 @@ void deEEP() {
   if (EEPROM.read(233) == 233) { //valid EEPROM save
     for (uint16_t index = 1; index <= 16; index++) { //copy presets to presets.json
       uint16_t i = 380 + index*20;        // Begin main WLED preset data - min400
-      uint16_t k = 3170 + index*5;        // Begin FFT slider preset data - min3175
       byte ver = EEPROM.read(i);
 
       if ((index < 16 && ver != 1) || (index == 16 && (ver < 2 || ver > 3))) continue;
@@ -430,9 +422,6 @@ void deEEP() {
         segObj[F("sx")]  = EEPROM.read(i+11);
         segObj[F("ix")]  = EEPROM.read(i+16);
         segObj[F("pal")] = EEPROM.read(i+17);
-        segObj[F("f1x")] = EEPROM.read(k);      // Read FFT Slider values from EEPROM for presets
-        segObj[F("f2x")] = EEPROM.read(k+1);    // Read FFT Slider values from EEPROM for presets
-        segObj[F("f3x")] = EEPROM.read(k+2);    // Read FFT Slider values from EEPROM for presets
       } else {
         WS2812FX::Segment* seg = strip.getSegments();
         memcpy(seg, EEPROM.getDataPtr() +i+2, 240);

@@ -510,13 +510,7 @@ class WS2812FX {
       show(void),
       setRgbwPwm(void),
       setColorOrder(uint8_t co),
-      setPixelSegment(uint8_t n),
-      noise8_help(uint8_t),
-      mapNoiseToLEDsUsingPalette(),
-      blur1d( CRGB* leds, uint16_t numLeds, fract8 blur_amount),
-      blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount);
+      setPixelSegment(uint8_t n);
 
     bool
       reverseMode = false,      //is the entire LED strip reversed?

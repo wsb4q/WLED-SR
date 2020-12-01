@@ -27,7 +27,12 @@
 #ifndef WS2812FX_h
 #define WS2812FX_h
 
-#include "NpbWrapper.h"
+#ifdef ESP32_MULTISTRIP
+  #include "../usermods/esp32_multistrip/NpbWrapper.h"
+#else
+  #include "NpbWrapper.h"
+#endif
+
 #include "const.h"
 
 #define FASTLED_INTERNAL //remove annoying pragma messages
@@ -219,10 +224,10 @@
 #define FX_MODE_SOLID_GLITTER          103
 #define FX_MODE_SUNRISE                104
 #define FX_MODE_PHASED                 105
-#define FX_MODE_TWINKLEUP              106
-#define FX_MODE_NOISEPAL               107
-#define FX_MODE_SINEWAVE               108
-#define FX_MODE_PHASEDNOISE            109
+#define FX_MODE_PHASEDNOISE            106
+#define FX_MODE_TWINKLEUP              107
+#define FX_MODE_NOISEPAL               108
+#define FX_MODE_SINEWAVE               109
 #define FX_MODE_FLOW                   110
 #define FX_MODE_CHUNCHUN               111
 #define FX_MODE_DANCING_SHADOWS        112
@@ -448,10 +453,10 @@ class WS2812FX {
       _mode[FX_MODE_SOLID_GLITTER]           = &WS2812FX::mode_solid_glitter;
       _mode[FX_MODE_SUNRISE]                 = &WS2812FX::mode_sunrise;
       _mode[FX_MODE_PHASED]                  = &WS2812FX::mode_phased;
+      _mode[FX_MODE_PHASEDNOISE]             = &WS2812FX::mode_phased_noise;
       _mode[FX_MODE_TWINKLEUP]               = &WS2812FX::mode_twinkleup;
       _mode[FX_MODE_NOISEPAL]                = &WS2812FX::mode_noisepal;
       _mode[FX_MODE_SINEWAVE]                = &WS2812FX::mode_sinewave;
-      _mode[FX_MODE_PHASEDNOISE]             = &WS2812FX::mode_phased_noise;
       _mode[FX_MODE_FLOW]                    = &WS2812FX::mode_flow;
       _mode[FX_MODE_CHUNCHUN]                = &WS2812FX::mode_chunchun;
       _mode[FX_MODE_DANCING_SHADOWS]         = &WS2812FX::mode_dancing_shadows;
@@ -504,7 +509,14 @@ class WS2812FX {
       setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
       setRgbwPwm(void),
-      setPixelSegment(uint8_t n);
+      setColorOrder(uint8_t co),
+      setPixelSegment(uint8_t n),
+      noise8_help(uint8_t),
+      mapNoiseToLEDsUsingPalette(),
+      blur1d( CRGB* leds, uint16_t numLeds, fract8 blur_amount),
+      blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
+      blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
+      blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount);
 
     bool
       reverseMode = false,      //is the entire LED strip reversed?
@@ -519,7 +531,6 @@ class WS2812FX {
       rgbwMode = RGBW_MODE_DUAL,
       paletteFade = 0,
       paletteBlend = 0,
-      colorOrder = 0,
       milliampsPerLed = 55,
       getBrightness(void),
       getMode(void),
@@ -529,6 +540,7 @@ class WS2812FX {
       getMaxSegments(void),
       //getFirstSelectedSegment(void),
       getMainSegmentId(void),
+      getColorOrder(void),
       gamma8(uint8_t),
       gamma8_cal(uint8_t, float),
       get_random_wheel_index(uint8_t);
@@ -670,10 +682,10 @@ class WS2812FX {
       mode_solid_glitter(void),
       mode_sunrise(void),
       mode_phased(void),
+      mode_phased_noise(void),
       mode_twinkleup(void),
       mode_noisepal(void),
       mode_sinewave(void),
-      mode_phased_noise(void),
       mode_flow(void),
       mode_chunchun(void),
       mode_dancing_shadows(void),
@@ -781,7 +793,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Noise 1","Noise 2","Noise 3","Noise 4","Colortwinkles","Lake","Meteor","Meteor Smooth","Railway","Ripple",
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
-"Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal","Sine","Phased Noise",
+"Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Phased Noise","Twinkleup","Noise Pal","Sine",
 "Flow","Chunchun","Dancing Shadows","Washing Machine","* Pixels","* Pixelwave","* Juggles","* Matripix","* Gravimeter","* Plasmoid",
 "* Puddles","* Midnoise","* Noisemeter","* Noisefire","* Puddlepeak","* Ripplepeak","* Waterfall","* Gravcenter","* Gravcentric"
 ])=====";

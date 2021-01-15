@@ -1,6 +1,7 @@
 #include "wled.h"
 #include <driver/i2s.h>
 #include "audio_reactive.h"
+#include "usermod_soundreactive.h"
 
 /******************* UDP SYNC DEFINITIONS **************/
 
@@ -407,10 +408,10 @@ void logAudio() {
 #endif // FFT_SAMPLING_LOG
 } // logAudio()
 
-/******************* USERMOD CODE **************/
+/******************* USERMOD V2 CODE **************/
 
 // This gets called once at boot. Do all initialization that doesn't depend on network here
-void userSetup() {
+void SoundreactiveUsermod::setup() {
   // Attempt to configure INMP441 Microphone
   esp_err_t err;
   const i2s_config_t i2s_config = {
@@ -482,12 +483,8 @@ void userSetup() {
         0);                               // Core where the task should run
 }
 
-// This gets called every time WiFi is (re-)connected. Initialize own network interfaces here
-void userConnected() {
-}
-
 // userLoop. You can use "if (WLED_CONNECTED)" to check for successful connection
-void userLoop() {
+void SoundreactiveUsermod::loop() {
 
   if (!(audioSyncEnabled & (1 << 1))) { // Only run the sampling code IF we're not in Receive mode
     lastTime = millis();
@@ -554,3 +551,25 @@ void userLoop() {
     }
   }
 } // userLoop()
+
+/******************* USERMOD LEGACY CODE **************/
+
+// TODO: rename this file and restore default usermod.cpp
+
+void userSetup()
+{
+  
+}
+
+//gets called every time WiFi is (re-)connected. Initialize own network interfaces here
+void userConnected()
+{
+
+}
+
+//loop. You can use "if (WLED_CONNECTED)" to check for successful connection
+void userLoop()
+{
+  
+}
+

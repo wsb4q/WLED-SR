@@ -18,6 +18,8 @@
 #include "../usermods/buzzer/usermod_v2_buzzer.h"
 #endif
 
+#include "usermod_soundreactive.h"
+
 void registerUsermods()
 {
   /*
@@ -33,4 +35,6 @@ void registerUsermods()
   #ifdef USERMOD_BUZZER
   usermods.add(new BuzzerUsermod());
   #endif
+
+  usermods.add(new SoundreactiveUsermod());
 }

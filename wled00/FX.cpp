@@ -24,6 +24,7 @@
   Modified heavily for WLED
 */
 
+#include "audio_reactive.h"
 #include "FX.h"
 
 #define IBN 5100
@@ -3760,14 +3761,6 @@ uint32_t ledData[MAX_LEDS];                     // See const.h for a value of 15
 uint32_t dataStore[4096];                       // we are declaring a storage area or 64 x 64 (4096) words.
 
 extern byte soundSquelch;
-
-// FFT based variables
-extern double FFT_MajorPeak;
-extern double FFT_Magnitude;
-extern double fftBin[];                         // raw FFT data
-extern int fftResult[];                         // summary of bins array. 16 summary bins.
-
-
 
 ///////////////////////////////////////
 // Helper function(s)                //

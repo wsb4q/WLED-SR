@@ -407,7 +407,7 @@ void logAudio() {
 #endif // FFT_SAMPLING_LOG
 } // logAudio()
 
-/******************* USERMODE CODE **************/
+/******************* USERMOD CODE **************/
 
 // This gets called once at boot. Do all initialization that doesn't depend on network here
 void userSetup() {

@@ -33,7 +33,6 @@
   #define I2S_SCK 14       // aka BCLK
 #endif
 
-//Use userVar0 and userVar1 (API calls &U0=,&U1=, uint16_t)
 #ifndef MIC_PIN
   #define MIC_PIN   36  // Changed to direct pin name - ESP32: 36(ADC1_0) Analog port for microphone
 #endif
@@ -42,7 +41,7 @@
   #define LED_BUILTIN 3
 #endif
 
-/******************* SAMPLING AND FFT DEFINITIONS **************/
+/******************* SHARED AUDIO VARIABLES **************/
 
 // TODO: put comments in one place only so they don't get out of sync as they change
 

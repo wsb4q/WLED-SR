@@ -550,25 +550,3 @@ void SoundreactiveUsermod::loop() {
     }
   }
 } // userLoop()
-
-/******************* USERMOD LEGACY CODE **************/
-
-// TODO: rename this file and restore default usermod.cpp
-
-void userSetup()
-{
-  
-}
-
-//gets called every time WiFi is (re-)connected. Initialize own network interfaces here
-void userConnected()
-{
-
-}
-
-//loop. You can use "if (WLED_CONNECTED)" to check for successful connection
-void userLoop()
-{
-  
-}
-

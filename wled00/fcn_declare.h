@@ -14,11 +14,6 @@ void alexaInit();
 void handleAlexa();
 void onAlexaChange(EspalexaDevice* dev);
 
-//audio_reactive.cpp                               // Which functions do we declare here???
-//void agcAvg();
-//void FFTcode(void * parameter);
-//void getSample();
-
 //blynk.cpp
 void initBlynk(const char* auth);
 void handleBlynk();

@@ -24,7 +24,7 @@
   Modified heavily for WLED
 */
 
-#include "audio_reactive.h"
+#include "sound_reactive.h"
 #include "FX.h"
 
 #define IBN 5100

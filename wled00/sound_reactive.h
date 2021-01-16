@@ -1,5 +1,5 @@
-#ifndef AUDIO_REACTIVE_H
-#define AUDIO_REACTIVE_H
+#ifndef SOUND_REACTIVE_H
+#define SOUND_REACTIVE_H
 
 #include <stdint.h>
 #include "wled.h"

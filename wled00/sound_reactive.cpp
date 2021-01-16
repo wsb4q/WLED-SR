@@ -1,7 +1,6 @@
 #include "wled.h"
 #include <driver/i2s.h>
-#include "audio_reactive.h"
-#include "usermod_soundreactive.h"
+#include "sound_reactive.h"
 
 /******************* UDP SYNC DEFINITIONS **************/
 

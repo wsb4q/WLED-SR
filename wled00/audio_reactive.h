@@ -2,6 +2,7 @@
 #define AUDIO_REACTIVE_H
 
 #include <stdint.h>
+#include "wled.h"
 
 /******************* COMMON OPTION DEFINITIONS **************/
 
@@ -71,5 +72,15 @@ extern uint16_t mAvg;
 // Oh, and bins 0,1,2 are no good, so we'll zero them out.
 extern double fftBin[samples];                      // raw FFT data
 extern int fftResult[16];                           // summary of bins array. 16 summary bins.
+
+
+class SoundreactiveUsermod : public Usermod {
+  public:
+    void setup();
+
+    void loop();
+    
+  private:
+};
 
 #endif

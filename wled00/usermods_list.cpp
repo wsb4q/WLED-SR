@@ -18,7 +18,7 @@
 #include "../usermods/buzzer/usermod_v2_buzzer.h"
 #endif
 
-#include "usermod_soundreactive.h"
+#include "audio_reactive.h"
 
 void registerUsermods()
 {

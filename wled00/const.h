@@ -71,6 +71,7 @@
 #define DMX_MODE_EFFECT           3            //trigger standalone effects of WLED (11 channels)
 #define DMX_MODE_MULTIPLE_RGB     4            //every LED is addressed with its own RGB (ledCount * 3 channels)
 #define DMX_MODE_MULTIPLE_DRGB    5            //every LED is addressed with its own RGB and share a master dimmer (ledCount * 3 + 1 channels)
+#define DMX_MODE_MULTIPLE_RGBW    6            //every LED is addressed with its own RGBW (ledCount * 4 channels)
 
 //Light capability byte (unused) 0bRRCCTTTT
 //bits 0/1/2/3: specifies a type of LED driver. A single "driver" may have different chip models but must have the same protocol/behavior
@@ -121,6 +122,10 @@
 #define BTN_TYPE_SWITCH           4 //not implemented
 #define BTN_TYPE_SWITCH_ACT_HIGH  5 //not implemented
 
+//Ethernet board types
+#define WLED_ETH_NONE             0
+#define WLED_ETH_WT32_ETH01       1
+#define WLED_ETH_ESP32_POE        2
 
 //Hue error codes
 #define HUE_ERROR_INACTIVE        0

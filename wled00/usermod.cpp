@@ -21,8 +21,7 @@ void userSetup()
 }
 
 // This gets called every time WiFi is (re-)connected. Initialize own network interfaces here
-void userConnected()
-{
+void userConnected() {
 }
 
 // userLoop. You can use "if (WLED_CONNECTED)" to check for successful connection
@@ -39,11 +38,10 @@ void userLoop() {
   }
 
   // Begin UDP Microphone Sync
-  if (audioSyncEnabled & (1 << 1)) {
-    // Only run the audio listener code if we're in Receive mode
+  if (audioSyncEnabled & (1 << 1)) {    // Only run the audio listener code if we're in Receive mode
     if (millis()-lastTime > delayMs) {
       if (udpSyncConnected) {
-//        Serial.println("Checking for UDP Microphone Packet");
+        //Serial.println("Checking for UDP Microphone Packet");
         int packetSize = fftUdp.parsePacket();
         if (packetSize) {
           // Serial.println("Received UDP Sync Packet");
@@ -69,7 +67,8 @@ void userLoop() {
             sample = receivedPacket.sample;
             sampleAvg = receivedPacket.sampleAvg;
 
-            // Only change samplePeak IF it's currently false.  If it's true already, then the animation still needs to respond
+            // Only change samplePeak IF it's currently false.
+            // If it's true already, then the animation still needs to respond.
             if (!samplePeak) {
               samplePeak = receivedPacket.samplePeak;
             }

@@ -75,6 +75,11 @@ void deserializeConfig() {
   if (apHide > 1) apHide = 1;
 
   CJSON(apBehavior, ap[F("behav")]);
+  
+  #ifdef WLED_USE_ETHERNET
+  JsonObject ethernet = doc[F("eth")];
+  CJSON(ethernetType, ethernet[F("type")]);
+  #endif
 
   /*
   JsonArray ap_ip = ap[F("ip")];
@@ -96,6 +101,7 @@ void deserializeConfig() {
   CJSON(strip.ablMilliampsMax, hw_led[F("maxpwr")]);
   CJSON(strip.milliampsPerLed, hw_led[F("ledma")]);
   CJSON(strip.reverseMode, hw_led[F("rev")]);
+  CJSON(strip.rgbwMode, hw_led[F("rgbwm")]);
 
   JsonObject hw_led_ins_0 = hw_led[F("ins")][0];
   //bool hw_led_ins_0_en = hw_led_ins_0[F("en")]; // true
@@ -158,7 +164,6 @@ void deserializeConfig() {
   CJSON(bootPreset, def[F("ps")]);
   CJSON(turnOnAtBoot, def["on"]); // true
   CJSON(briS, def["bri"]); // 128
-  if (briS == 0) briS = 255;
 
   JsonObject def_cy = def[F("cy")];
   CJSON(presetCyclingEnabled, def_cy["on"]);
@@ -167,7 +172,7 @@ void deserializeConfig() {
   CJSON(presetCycleMax, def_cy[F("range")][1]);
 
   tdd = def_cy[F("dur")] | -1;
-  if (tdd >= 0) presetCycleTime = tdd * 100;
+  if (tdd > 0) presetCycleTime = tdd;
 
   // if   == interfaces
   JsonObject interfaces = doc["if"];
@@ -218,6 +223,10 @@ void deserializeConfig() {
   if (tdd > 20 || tdd == 0)
     getStringFromJson(blynkApiKey, apikey, 36); //normally not present due to security
 
+  JsonObject if_blynk = interfaces[F("blynk")];
+  getStringFromJson(blynkHost, if_blynk[F("host")], 33);
+  CJSON(blynkPort, if_blynk[F("port")]);
+
   JsonObject if_mqtt = interfaces[F("mqtt")];
   CJSON(mqttEnabled, if_mqtt[F("en")]);
   getStringFromJson(mqttServer, if_mqtt[F("broker")], 33);
@@ -258,7 +267,11 @@ void deserializeConfig() {
   CJSON(countdownMode, ol[F("cntdwn")]);
   overlayCurrent = overlayDefault;
 
-  JsonArray ol_cntdwn = ol[F("cntdwn")]; //[20,12,31,23,59,59]
+  CJSON(overlayMin, ol[F("min")]);
+  CJSON(overlayMax, ol[F("max")]);
+  CJSON(analogClock12pixel, ol[F("o12pix")]);
+  CJSON(analogClock5MinuteMarks, ol[F("o5m")]);
+  CJSON(analogClockSecondsTrail, ol[F("osec")]);
 
   //timed macro rules
   JsonObject tm = doc[F("timers")];
@@ -271,6 +284,7 @@ void deserializeConfig() {
   CJSON(countdownMin,   cntdwn_goal[4]);
   CJSON(countdownSec,   cntdwn_goal[5]);
   CJSON(macroCountdown, cntdwn[F("macro")]);
+  setCountdown();
 
   JsonArray timers = tm[F("ins")];
   uint8_t it = 0;
@@ -281,11 +295,13 @@ void deserializeConfig() {
     CJSON(timerMacro[it], timer[F("macro")]);
 
     byte dowPrev =  timerWeekday[it];
-    bool actPrev = timerWeekday[it] & 0x01;
+    //note: act is currently only 0 or 1.
+    //the reason we are not using bool is that the on-disk type in 0.11.0 was already int
+    int actPrev = timerWeekday[it] & 0x01;
     CJSON(timerWeekday[it], timer[F("dow")]);
     if (timerWeekday[it] != dowPrev) { //present in JSON
       timerWeekday[it] <<= 1; //add active bit
-      bool act = timer[F("en")] | actPrev;
+      int act = timer[F("en")] | actPrev;
       if (act) timerWeekday[it]++;
     }
 
@@ -312,11 +328,11 @@ void deserializeConfig() {
   CJSON(DMXStart, dmx[F("start")]);
   CJSON(DMXStartLED,dmx[F("start-led")]);
 
-  JsonArray dmx_fixmap = dmx.createNestedArray("fixmap");
+  JsonArray dmx_fixmap = dmx[F("fixmap")];
   it = 0;
   for (int i : dmx_fixmap) {
     if (it > 14) break;
-    DMXFixtureMap[i] = i;
+    CJSON(DMXFixtureMap[i],dmx_fixmap[i]);
     it++;
   }
   #endif
@@ -377,6 +393,7 @@ void serializeConfig() {
   ap[F("ssid")] = apSSID;
   ap[F("pskl")] = strlen(apPass);
   ap[F("chan")] = apChannel;
+  ap[F("hide")] = apHide;
   ap[F("behav")] = apBehavior;
 
   JsonArray ap_ip = ap.createNestedArray("ip");
@@ -389,6 +406,11 @@ void serializeConfig() {
   wifi[F("sleep")] = !noWifiSleep;
   wifi[F("phy")] = 1;
 
+  #ifdef WLED_USE_ETHERNET
+  JsonObject ethernet = doc.createNestedObject("eth");
+  ethernet[F("type")] = ethernetType;
+  #endif
+
   JsonObject hw = doc.createNestedObject("hw");
 
   JsonObject hw_led = hw.createNestedObject("led");
@@ -396,6 +418,7 @@ void serializeConfig() {
   hw_led[F("maxpwr")] = strip.ablMilliampsMax;
   hw_led[F("ledma")] = strip.milliampsPerLed;
   hw_led[F("rev")] = strip.reverseMode;
+  hw_led[F("rgbwm")] = strip.rgbwMode;
 
   JsonArray hw_led_ins = hw_led.createNestedArray("ins");
 
@@ -453,7 +476,7 @@ void serializeConfig() {
   #if defined(IRPIN) && IRPIN > -1
   JsonObject hw_ir = hw.createNestedObject("ir");
   hw_ir[F("pin")] = IRPIN;
-  hw_ir[F("type")] = 0;
+  hw_ir[F("type")] = irEnabled;              // the byte 'irEnabled' does contain the IR-Remote Type ( 0=disabled )
   #endif
 
   #if defined(RLYPIN) && RLYPIN > -1
@@ -496,7 +519,7 @@ void serializeConfig() {
     JsonArray def_cy_range = def_cy.createNestedArray("range");
     def_cy_range.add(presetCycleMin);
     def_cy_range.add(presetCycleMax);
-    def_cy[F("dur")] = presetCycleTime / 100;
+    def_cy[F("dur")] = presetCycleTime;
   }
 
   JsonObject interfaces = doc.createNestedObject("if");
@@ -541,6 +564,8 @@ void serializeConfig() {
   if_va_macros.add(macroAlexaOff);
   JsonObject if_blynk = interfaces.createNestedObject("blynk");
   if_blynk[F("token")] = strlen(blynkApiKey) ? "Hidden":"";
+  if_blynk[F("host")] = blynkHost;
+  if_blynk[F("port")] = blynkPort;
 
   JsonObject if_mqtt = interfaces.createNestedObject("mqtt");
   if_mqtt[F("en")] = mqttEnabled;
@@ -579,6 +604,12 @@ void serializeConfig() {
   JsonObject ol = doc.createNestedObject("ol");
   ol[F("clock")] = overlayDefault;
   ol[F("cntdwn")] = countdownMode;
+
+  ol[F("min")] = overlayMin;
+  ol[F("max")] = overlayMax;
+  ol[F("o12pix")] = analogClock12pixel;
+  ol[F("o5m")] = analogClock5MinuteMarks;
+  ol[F("osec")] = analogClockSecondsTrail;
 
   JsonObject timers = doc.createNestedObject("timers");
 

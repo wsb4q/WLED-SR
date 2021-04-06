@@ -4070,28 +4070,14 @@ uint16_t WS2812FX::mode_aurora(void) {
 /////////////////////////////////////////
 
 // FastLED array, so we can refer to leds[i] instead of the lossy getPixel() and setPixel()
-uint32_t ledData[MAX_LEDS];                     // See const.h for a value of 1500.
+uint32_t ledData[MAX_LEDS];                     // See const.h for a value of 8192.
 uint32_t dataStore[4096];                       // we are declaring a storage area or 64 x 64 (4096) words.
 
-
 // Sound reactive external variables
-extern int sample;
-extern float sampleAvg;
-extern bool samplePeak;
-extern uint8_t myVals[32];
-extern int sampleAgc;
-extern uint8_t squelch;
-extern byte soundSquelch;
-extern uint8_t maxVol;
-extern uint8_t binNum;
-
+// MOVED TO SOUND_REACTIVE.H
 
 // FFT based variables
-extern double FFT_MajorPeak;
-extern double FFT_Magnitude;
-extern double fftBin[];                         // raw FFT data
-extern int fftResult[];                         // summary of bins array. 16 summary bins.
-extern float fftAvg[];
+// MOVED TO SOUND_REACTIVE.H
 
 
 ///////////////////////////////////////
@@ -4107,7 +4093,6 @@ void WS2812FX::setPixels(CRGB* leds) {
       setPixelColor(i, leds[i].red, leds[i].green, leds[i].blue);
    }
 }
-
 
 
 /////////////////////////////
@@ -4310,6 +4295,7 @@ uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andre
   return FRAMETIME;
 } // mode_pixelwave()
 
+
 //////////////////////
 //   * JUGGLES      //
 //////////////////////
@@ -4344,7 +4330,6 @@ uint16_t WS2812FX::mode_matripix(void) {                  // Matripix. By Andrew
   setPixels(leds);
   return FRAMETIME;
 } // mode_matripix()
-
 
 
 typedef struct Gravity {
@@ -4466,7 +4451,6 @@ uint16_t WS2812FX::mode_gravcentric(void) {               // Gravcenter. By Andr
 } // mode_gravcentric()
 
 
-
 //////////////////////
 //   * MIDNOISE     //
 //////////////////////
@@ -4554,6 +4538,7 @@ typedef struct Plasphase {
   int16_t    thatphase;
 } plasphase;
 
+
 //////////////////////
 //   * PLASMOID     //
 //////////////////////
@@ -4625,8 +4610,8 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                // Puddlepeak. By Andr
   uint8_t fadeVal = map(SEGMENT.speed,0,255, 224, 255);
   uint16_t pos = random(SEGLEN);                          // Set a random starting position.
 
-  binNum = SEGMENT.fft2;                               // Select a bin.
-  maxVol = SEGMENT.fft3/2;                             // Our volume comparator.
+  binNum = SEGMENT.fft2;                                  // Select a bin.
+  maxVol = SEGMENT.fft3/2;                                // Our volume comparator.
 
 
   fade_out(fadeVal);
@@ -4722,7 +4707,6 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
 
   return FRAMETIME;
 } // mode_ripplepeak()
-
 
 
 ///////////////////////////////
@@ -4944,7 +4928,7 @@ uint16_t WS2812FX::mode_freqwave(void) {                  // Freqwave. By Andrea
     // Serial.println(color);
     leds[SEGLEN/2] =  (c.h << 16) + (c.s << 8)  + (c.v );
 
-// shift the pixels one pixel outwards
+    // shift the pixels one pixel outwards
     for (int i = SEGLEN; i > SEGLEN/2; i--) {             // Move to the right.
       leds[i] = leds[i-1];
     }
@@ -5094,7 +5078,6 @@ uint16_t WS2812FX::mode_DJLight(void) {                   // Written by ??? Adap
   setPixels(leds);
   return FRAMETIME;
 } // mode_DJLight()
-
 
 
 //////////////////////////////////////////////

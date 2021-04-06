@@ -2,7 +2,7 @@
 #include <driver/i2s.h>
 #include "sound_reactive.h"
 
-/******************* UDP SYNC DEFINITIONS **************/
+/****************** UDP SYNC DEFINITIONS ******************/
 
 #define UDP_SYNC_HEADER "00001"
 
@@ -18,7 +18,7 @@ struct audioSyncPacket {
   double FFT_MajorPeak;   //  08 Bytes
 };
 
-/******************* UDP SYNC CODE **************/
+/********************* UDP SYNC CODE **********************/
 
 bool isValidUdpSyncVersion(char header[6]) {
   if (strncmp(header, UDP_SYNC_HEADER, 6) == 0) {
@@ -64,18 +64,18 @@ void transmitAudioData() {
   return;
 } // transmitAudioData()
 
-/******************* SHARED AUDIO VARIABLES **************/
+/***************** SHARED AUDIO VARIABLES *****************/
 
 // TODO: put comments in one place only so they don't get out of sync as they change
 
 uint8_t myVals[32];                             // Used to store a pile of samples because WLED frame rate and WLED sample rate are not synchronized. Frame rate is too low.
 int sample;                                     // Current sample. Must only be updated ONCE!!!
-bool samplePeak = 0;                            // Boolean flag for peak. Responding routine must reset this flag
 int sampleAgc;                                  // Our AGC sample
+bool samplePeak = 0;                            // Boolean flag for peak. Responding routine must reset this flag
 float sampleAvg = 0;                            // Smoothed Average
 double beat = 0;                                // beat Detection
-double FFT_MajorPeak = 0;                       // Optional inclusion for our volume routines
 double FFT_Magnitude = 0;                       // Same here. Not currently used though
+double FFT_MajorPeak = 0;                       // Optional inclusion for our volume routines
 uint16_t mAvg = 0;
 
 // Try and normalize fftBin values to a max of 4096, so that 4096/16 = 256.
@@ -83,23 +83,24 @@ uint16_t mAvg = 0;
 double fftBin[samples];                 // raw FFT data
 int fftResult[16];                      // summary of bins array. 16 summary bins.
 
-/******************* SAMPLING AND FFT LOCAL VARIABLES **************/
+/************ SAMPLING AND FFT LOCAL VARIABLES ************/
 
+uint8_t binNum;                                 // Used to select the bin for FFT based beat detection
 uint8_t maxVol = 10;                            // Reasonable value for constant volume for 'peak detector', as it won't always trigger
 uint8_t targetAgc = 60;                         // This is our setPoint at 20% of max for the adjusted output
 bool udpSamplePeak = 0;                         // Boolean flag for peak. Set at the same tiem as samplePeak, but reset by transmitAudioData
 int delayMs = 10;                               // I don't want to sample too often and overload WLED
-int micIn;                                      // Current sample starts with negative values and large values, which is why it's 16 bit signed
-int tmpSample;                                  // An interim sample variable used for calculatioins.
 int sampleAdj;                                  // Gain adjusted sample value
+int micIn;                                      // Current sample starts with negative values and large values, which is why it's 16 bit signed
+int tmpSample;                                  // An interim sample variable used for calculatioins
 uint16_t micData;                               // Analog input for FFT
 uint16_t micDataSm;                             // Smoothed mic data, as it's a bit twitchy
-long timeOfPeak = 0;
 long lastTime = 0;
+long timeOfPeak = 0;
 float micLev = 0;                               // Used to convert returned value to have '0' as minimum. A leveller
 float multAgc;                                  // sample * multAgc = sampleAgc. Our multiplier
 
-/******************* SAMPLING AND FFT CODE **************/
+/************* SAMPLING AND FFT CODE ************/
 
 #include "arduinoFFT.h"
 
@@ -107,7 +108,6 @@ TaskHandle_t FFT_Task;
 
 const i2s_port_t I2S_PORT = I2S_NUM_0;
 const int BLOCK_SIZE = 64;
-
 const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
 
 unsigned int sampling_period_us;
@@ -174,7 +174,7 @@ void FFTcode( void * parameter) {
         micData = analogRead(audioPin);           // Analog Read
       } else {
         int32_t digitalSample = 0;
-        // TODO: I2S_POP_SAMLE DEPRECATED, FIND ALTERNATE SOLUTION
+// TODO: I2S_POP_SAMLE DEPRECATED, FIND ALTERNATE SOLUTION
         int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
         if (bytes_read > 0) {
           micData = abs(digitalSample >> 16);
@@ -277,7 +277,7 @@ void FFTcode( void * parameter) {
 } // FFTcode()
 
 void getSample() {
-  const float weighting = 0.2;                          // Exponential filter weighting. Will be adjustable in a future release.
+  const float weighting = 0.2;                    // Exponential filter weighting. Will be adjustable in a future release.
   float expAdjF;                                  // Used for exponential filter.
   static long peakTime;
 
@@ -295,6 +295,7 @@ void getSample() {
     DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(micIn);
 /*-------END DEBUG-------*/
   #endif
+
   micLev = ((micLev * 31) + micIn) / 32;          // Smooth it out over the last 32 samples for automatic centering
   micIn -= micLev;                                // Let's center it to 0 now
   micIn = abs(micIn);                             // And get the absolute value of each sample
@@ -331,13 +332,22 @@ void getSample() {
   if (userVar1 == 0) samplePeak = 0;
 
   // Poor man's beat detection by seeing if sample > Average + some value.
-  if (sample > (sampleAvg + maxVol) && millis() > (peakTime + 100)) {
+/*------FFT DEBUG--------*/
+  DEBUGFFT_PRINT(binNum); DEBUGFFT_PRINT("\t");
+  DEBUGFFT_PRINT(fftBin[binNum]); DEBUGFFT_PRINT("\t");
+  DEBUGFFT_PRINT(fftAvg[binNum/16]); DEBUGFFT_PRINT("\t");
+  DEBUGFFT_PRINT(maxVol); DEBUGFFT_PRINT("\t");
+  DEBUGFFT_PRINT(samplePeak); DEBUGFFT_PRINT("\n\n");
+/*-------END DEBUG-------*/
+
+  if (fftBin[binNum] > ( maxVol) && millis() > (peakTime + 100)) {  // This goes through ALL of the 255 bins
+  //if (sample > (sampleAvg + maxVol) && millis() > (peakTime + 100)) {
     // Then we got a peak, else we don't. Display routines need to reset the samplepeak value in case they miss the trigger.
     samplePeak = 1;
     timeOfPeak = millis();
     udpSamplePeak = 1;
     userVar1 = samplePeak;
-    peakTime=millis();
+    peakTime = millis();
   }
 } // getSample()
 
@@ -418,10 +428,11 @@ void logAudio() {
 #endif // FFT_SAMPLING_LOG
 } // logAudio()
 
-/******************* USERMOD V2 CODE **************/
+/**************** USERMOD V2 CODE ***************/
 
-// This gets called once at boot. Do all initialization that doesn't depend on network here
+// usermodv2 setup - setup() is called once at boot. WiFi is not yet connected at this point.
 void SoundreactiveUsermod::setup() {
+  delay(100);                                   // Give that poor microphone some time to setup.
   // Attempt to configure INMP441 Microphone
   esp_err_t err;
   const i2s_config_t i2s_config = {
@@ -435,10 +446,10 @@ void SoundreactiveUsermod::setup() {
     .dma_buf_len = BLOCK_SIZE                           // samples per buffer
   };
   const i2s_pin_config_t pin_config = {
-    .bck_io_num = i2sckPin,      // BCLK aka SCK
-    .ws_io_num = i2swsPin,        // LRCL aka WS
+    .bck_io_num = i2sckPin,     // BCLK aka SCK
+    .ws_io_num = i2swsPin,      // LRCL aka WS
     .data_out_num = -1,         // not used (only for speakers)
-    .data_in_num = i2ssdPin       // DOUT aka SD
+    .data_in_num = i2ssdPin     // DOUT aka SD
   };
   // Configuring the I2S driver and pins.
   // This function must be called before any I2S driver read/write operations.
@@ -453,13 +464,12 @@ void SoundreactiveUsermod::setup() {
     while (true);
   }
   Serial.println("I2S driver installed.");
-  delay(100);
-
+  delay(250);
 
   // Test to see if we have a digital microphone installed or not.
   float mean = 0.0;
   int32_t samples[BLOCK_SIZE];
-  // TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
+// TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
   int num_bytes_read = i2s_read_bytes(I2S_PORT,
                                       (char *)samples,
                                       BLOCK_SIZE,     // the doc says bytes, but its elements.
@@ -494,7 +504,7 @@ void SoundreactiveUsermod::setup() {
         0);                               // Core where the task should run
 }
 
-// userLoop. You can use "if (WLED_CONNECTED)" to check for successful connection
+// usermodv2 loop - loop() is called continuously. Here you can check for events, read sensors, etc.
 void SoundreactiveUsermod::loop() {
 
   if (!(audioSyncEnabled & (1 << 1))) { // Only run the sampling code IF we're not in Receive mode
@@ -506,10 +516,9 @@ void SoundreactiveUsermod::loop() {
   }
   if (audioSyncEnabled & (1 << 0)) {    // Only run the transmit code IF we're in Transmit mode
     //Serial.println("Transmitting UDP Mic Packet");
-
-      EVERY_N_MILLIS(20) {
-        transmitAudioData();
-      }
+    EVERY_N_MILLIS(20) {
+      transmitAudioData();
+    }
 
   }
 

@@ -59,18 +59,19 @@ void registerUsermods()
   usermods.add(new SoundreactiveUsermod());
 
   #ifdef USERMOD_DALLASTEMPERATURE
-  usermods.add(new UsermodTemperature());
+    usermods.add(new UsermodTemperature());
   #endif
 
   //usermods.add(new UsermodRenameMe());
 
   #ifdef USERMOD_BUZZER
-  usermods.add(new BuzzerUsermod());
+    usermods.add(new BuzzerUsermod());
   #endif
 
   #ifdef USERMOD_BME280
-  usermods.add(new UsermodBME280());
+    usermods.add(new UsermodBME280());
   #endif
+
   #ifdef USERMOD_SENSORSTOMQTT
     usermods.add(new UserMod_SensorsToMQTT());
   #endif
@@ -78,12 +79,15 @@ void registerUsermods()
   #ifdef USERMOD_MODE_SORT
     usermods.add(new ModeSortUsermod());
   #endif
+
   #ifdef USERMOD_FOUR_LINE_DISLAY
     usermods.add(new FourLineDisplayUsermod());
   #endif
+
   #ifdef USERMOD_ROTARY_ENCODER_UI
     usermods.add(new RotaryEncoderUIUsermod());
   #endif
+  
   #ifdef USERMOD_AUTO_SAVE
     usermods.add(new AutoSaveUsermod());
   #endif

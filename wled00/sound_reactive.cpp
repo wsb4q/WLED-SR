@@ -21,7 +21,11 @@ struct audioSyncPacket {
 /******************* UDP SYNC CODE **************/
 
 bool isValidUdpSyncVersion(char header[6]) {
-  return (header == UDP_SYNC_HEADER);
+  if (strncmp(header, UDP_SYNC_HEADER, 6) == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void transmitAudioData() {
@@ -45,7 +49,7 @@ void transmitAudioData() {
   transmitData.sample = sample;
   transmitData.sampleAvg = sampleAvg;
   transmitData.samplePeak = udpSamplePeak;
-  udpSamplePeak = 0;                              // Reset udpSamplePeak after we've transmitted it
+  udpSamplePeak = 0;                            // Reset udpSamplePeak after we've transmitted it
 
   for (int i = 0; i < 16; i++) {
     transmitData.fftResult[i] = (uint8_t)constrain(fftResult[i], 0, 254);
@@ -78,6 +82,7 @@ uint16_t mAvg = 0;
 // Oh, and bins 0,1,2 are no good, so we'll zero them out.
 double fftBin[samples];                 // raw FFT data
 int fftResult[16];                      // summary of bins array. 16 summary bins.
+float fftAvg[16];
 
 /******************* SAMPLING AND FFT LOCAL VARIABLES **************/
 
@@ -149,8 +154,8 @@ double fftAdd( int from, int to) {
 // FFT main code
 void FFTcode( void * parameter) {
   //DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
-  double beatSample = 0;
-  double envelope = 0;
+  double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
+  double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
   unsigned long microseconds;
 
   for(;;) {
@@ -162,19 +167,19 @@ void FFTcode( void * parameter) {
       continue;
 
     microseconds = micros();
-    extern double volume;
+    //extern double volume;   // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
 
     for(int i=0; i<samples; i++) {
       if (digitalMic == false) {
-        micData = analogRead(MIC_PIN);            // Analog Read
+        micData = analogRead(audioPin);           // Analog Read
       } else {
         int32_t digitalSample = 0;
+        // TODO: I2S_POP_SAMLE DEPRECATED, FIND ALTERNATE SOLUTION
         int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
         if (bytes_read > 0) {
           micData = abs(digitalSample >> 16);
         }
       }
-
       micDataSm = ((micData * 3) + micData)/4;    // We'll be passing smoothed micData to the volume routines as the A/D is a bit twitchy.
       vReal[i] = micData;                         // Store Mic Data in an array
       vImag[i] = 0;
@@ -258,6 +263,7 @@ void FFTcode( void * parameter) {
     for (int i=0; i < 16; i++) {
         // fftResult[i] = (int)fftCalc[i];
         fftResult[i] = constrain((int)fftCalc[i],0,254);
+        fftAvg[i] = (float)fftResult[i]*.05 + (1-.05)*fftAvg[i];
     }
 
 // Looking for fftResultMax for each bin using Pink Noise
@@ -279,19 +285,22 @@ void getSample() {
     micIn = inoise8(millis(), millis());          // Simulated analog read
   #else
     micIn = micDataSm;      // micDataSm = ((micData * 3) + micData)/4;
-    //////
+/*---------DEBUG---------*/
     DEBUGSR_PRINT("micIn:\tmicData:\tmicIn>>2:\tmic_In_abs:\tsample:\tsampleAdj:\tsampleAvg:\n");
     DEBUGSR_PRINT(micIn); DEBUGSR_PRINT("\t"); DEBUGSR_PRINT(micData);
+/*-------END DEBUG-------*/
 
     if (digitalMic == false) micIn = micIn >> 2;  // ESP32 has 2 more bits of A/D than ESP8266, so we need to normalize to 10 bit.
-    //////
+/*---------DEBUG---------*/
     DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(micIn);
+/*-------END DEBUG-------*/
   #endif
   micLev = ((micLev * 31) + micIn) / 32;          // Smooth it out over the last 32 samples for automatic centering
   micIn -= micLev;                                // Let's center it to 0 now
   micIn = abs(micIn);                             // And get the absolute value of each sample
-  //////
+/*---------DEBUG---------*/
   DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(micIn);
+/*-------END DEBUG-------*/
 
   // Using an exponential filter to smooth out the signal. We'll add controls for this in a future release.
   expAdjF = (weighting * micIn + (1.0-weighting) * expAdjF);
@@ -299,18 +308,20 @@ void getSample() {
 
   tmpSample = (int)expAdjF;
 
-  //////
+/*---------DEBUG---------*/
   DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(sample);
+/*-------END DEBUG-------*/
 
   sampleAdj = tmpSample * sampleGain / 40 + tmpSample / 16; // Adjust the gain.
   sampleAdj = min(sampleAdj, 255);
   sample = sampleAdj;                             // ONLY update sample ONCE!!!!
 
   sampleAvg = ((sampleAvg * 15) + sample) / 16;   // Smooth it out over the last 16 samples.
-  //////
 
+/*---------DEBUG---------*/
   DEBUGSR_PRINT("\t"); DEBUGSR_PRINT(sample);
   DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(sampleAvg); DEBUGSR_PRINT("\n\n");
+/*-------END DEBUG-------*/
 
   if (millis() - timeOfPeak > MIN_SHOW_DELAY) {   // Auto-reset of samplePeak after a complete frame has passed.
     samplePeak = 0;
@@ -424,10 +435,10 @@ void SoundreactiveUsermod::setup() {
     .dma_buf_len = BLOCK_SIZE                           // samples per buffer
   };
   const i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_SCK,      // BCLK aka SCK
-    .ws_io_num = I2S_WS,        // LRCL aka WS
+    .bck_io_num = i2sckPin,      // BCLK aka SCK
+    .ws_io_num = i2swsPin,        // LRCL aka WS
     .data_out_num = -1,         // not used (only for speakers)
-    .data_in_num = I2S_SD       // DOUT aka SD
+    .data_in_num = i2ssdPin       // DOUT aka SD
   };
   // Configuring the I2S driver and pins.
   // This function must be called before any I2S driver read/write operations.
@@ -448,6 +459,7 @@ void SoundreactiveUsermod::setup() {
   // Test to see if we have a digital microphone installed or not.
   float mean = 0.0;
   int32_t samples[BLOCK_SIZE];
+  // TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
   int num_bytes_read = i2s_read_bytes(I2S_PORT,
                                       (char *)samples,
                                       BLOCK_SIZE,     // the doc says bytes, but its elements.

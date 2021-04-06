@@ -1,5 +1,5 @@
-  /*
-   * WS2812FX.h - Library for WS2812 LED effects.
+/*
+  WS2812FX.h - Library for WS2812 LED effects.
   Harm Aldick - 2016
   www.aldick.org
   LICENSE
@@ -24,14 +24,10 @@
   Modified for WLED
 */
 
+#include "wled.h"
+
 #ifndef WS2812FX_h
 #define WS2812FX_h
-
-#ifdef ESP32_MULTISTRIP
-  #include "../usermods/esp32_multistrip/NpbWrapper.h"
-#else
-  #include "NpbWrapper.h"
-#endif
 
 #include "const.h"
 
@@ -43,9 +39,9 @@
 #define DEFAULT_MODE       (uint8_t)0
 #define DEFAULT_SPEED      (uint8_t)128
 #define DEFAULT_INTENSITY  (uint8_t)128
-#define DEFAULT_FFT1       (uint8_t)6
+#define DEFAULT_FFT1       (uint8_t)128
 #define DEFAULT_FFT2       (uint8_t)128
-#define DEFAULT_FFT3       (uint8_t)252
+#define DEFAULT_FFT3       (uint8_t)128
 #define DEFAULT_COLOR      (uint32_t)0xFFAA00
 
 #ifndef MIN
@@ -121,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     152
+#define MODE_COUNT                     153
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -167,7 +163,7 @@
 #define FX_MODE_COMET                   41
 #define FX_MODE_FIREWORKS               42
 #define FX_MODE_RAIN                    43
-#define FX_MODE_MERRY_CHRISTMAS         44
+#define FX_MODE_TETRIX                  44
 #define FX_MODE_FIRE_FLICKER            45
 #define FX_MODE_GRADIENT                46
 #define FX_MODE_LOADING                 47
@@ -275,6 +271,7 @@
 #define FX_MODE_DJLIGHT                149
 #define FX_MODE_2DFUNKYPLANK           150
 #define FX_MODE_2DCENTERBARS           151
+#define FX_MODE_2DJULIA                152
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -540,7 +537,7 @@ class WS2812FX {
       _mode[FX_MODE_COMET]                   = &WS2812FX::mode_comet;
       _mode[FX_MODE_FIREWORKS]               = &WS2812FX::mode_fireworks;
       _mode[FX_MODE_RAIN]                    = &WS2812FX::mode_rain;
-      _mode[FX_MODE_MERRY_CHRISTMAS]         = &WS2812FX::mode_merry_christmas;
+      _mode[FX_MODE_TETRIX]                  = &WS2812FX::mode_tetrix;
       _mode[FX_MODE_FIRE_FLICKER]            = &WS2812FX::mode_fire_flicker;
       _mode[FX_MODE_GRADIENT]                = &WS2812FX::mode_gradient;
       _mode[FX_MODE_LOADING]                 = &WS2812FX::mode_loading;
@@ -650,6 +647,7 @@ class WS2812FX {
       _mode[FX_MODE_DJLIGHT]                 = &WS2812FX::mode_DJLight;
       _mode[FX_MODE_2DFUNKYPLANK]            = &WS2812FX::mode_2DFunkyPlank;
       _mode[FX_MODE_2DCENTERBARS]            = &WS2812FX::mode_2DCenterBars;
+      _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -657,12 +655,11 @@ class WS2812FX {
       ablMilliampsMax = 850;
       currentMilliamps = 0;
       timebase = 0;
-      bus = new NeoPixelWrapper();
       resetSegments();
     }
 
     void
-      init(bool supportWhite, uint16_t countPixels, bool skipFirst),
+      finalizeInit(uint16_t countPixels, bool skipFirst),
       service(void),
       blur(uint8_t),
       fill(uint32_t),
@@ -683,7 +680,6 @@ class WS2812FX {
       setPixelColor(uint16_t n, uint32_t c),
       setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
-      setRgbwPwm(void),
       setColorOrder(uint8_t co),
       setPixelSegment(uint8_t n),
       noise8_help(uint8_t),
@@ -695,7 +691,7 @@ class WS2812FX {
       setPixels(CRGB* leds);
 
     bool
-      reverseMode = false,      //is the entire LED strip reversed?
+      isRgbw = false,
       gammaCorrectBri = false,
       gammaCorrectCol = true,
       applyToAllSelected = true,
@@ -709,6 +705,8 @@ class WS2812FX {
       paletteFade = 0,
       paletteBlend = 0,
       milliampsPerLed = 55,
+//      getStripType(uint8_t strip=0),
+//      setStripType(uint8_t type, uint8_t strip=0),
       getBrightness(void),
       getMode(void),
       getSpeed(void),
@@ -723,12 +721,19 @@ class WS2812FX {
       get_random_wheel_index(uint8_t);
 
     int8_t
+//      setStripPin(uint8_t strip, int8_t pin),
+//      getStripPin(uint8_t strip=0),
+//      setStripPinClk(uint8_t strip, int8_t pin),
+//      getStripPinClk(uint8_t strip=0),
       tristate_square8(uint8_t x, uint8_t pulsewidth, uint8_t attdec);
 
     uint16_t
       ablMilliampsMax,
       currentMilliamps,
+//      setStripLen(uint8_t strip, uint16_t len),
+//      getStripLen(uint8_t strip=0),
       triwave16(uint16_t),
+      getFps(),
       XY(int,int);
 
     uint32_t
@@ -805,7 +810,7 @@ class WS2812FX {
       mode_comet(void),
       mode_fireworks(void),
       mode_rain(void),
-      mode_merry_christmas(void),
+      mode_tetrix(void),
       mode_halloween(void),
       mode_fire_flicker(void),
       mode_gradient(void),
@@ -913,11 +918,10 @@ class WS2812FX {
       mode_gravfreq(void),
       mode_DJLight(void),
       mode_2DFunkyPlank(void),
-      mode_2DCenterBars(void);
+      mode_2DCenterBars(void),
+      mode_2DJulia(void);
 
   private:
-    NeoPixelWrapper *bus;
-
     uint32_t crgb_to_col(CRGB fastled);
     CRGB col_to_crgb(uint32_t);
     CRGBPalette16 currentPalette;
@@ -929,12 +933,12 @@ class WS2812FX {
     uint16_t _usedSegmentData = 0;
     uint16_t _transitionDur = 750;
 
+    uint16_t _cumulativeFps = 2;
+
     void load_gradient_palette(uint8_t);
     void handle_palette(void);
 
     bool
-      shouldStartBus = false,
-      _useRgbw = false,
       _skipFirstMode,
       _triggered;
 
@@ -969,20 +973,17 @@ class WS2812FX {
 
     void
       blendPixelColor(uint16_t n, uint32_t color, uint8_t blend),
-      startTransition(uint8_t oldBri, uint32_t oldCol, uint16_t dur, uint8_t segn, uint8_t slot);
+      startTransition(uint8_t oldBri, uint32_t oldCol, uint16_t dur, uint8_t segn, uint8_t slot),
+      deserializeMap(void);
+
+    uint16_t* customMappingTable = nullptr;
+    uint16_t  customMappingSize  = 0;
 
     uint32_t _lastPaletteChange = 0;
     uint32_t _lastShow = 0;
 
     uint32_t _colors_t[3];
     uint8_t _bri_t;
-
-    #ifdef WLED_USE_ANALOG_LEDS
-    uint32_t _analogLastShow = 0;
-    RgbwColor _analogLastColor = 0;
-    uint8_t _analogLastBri = 0;
-    #endif
-
     uint8_t _segment_index = 0;
     uint8_t _segment_index_palette_last = 99;
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 27 bytes per element
@@ -1006,7 +1007,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Scan","Scan Dual","Fade","Theater","Theater Rainbow","Running","Saw","Twinkle","Dissolve","Dissolve Rnd",
 "Sparkle","Sparkle Dark","Sparkle+","Strobe","Strobe Rainbow","Strobe Mega","Blink Rainbow","Android","Chase","Chase Random",
 "Chase Rainbow","Chase Flash","Chase Flash Rnd","Rainbow Runner","Colorful","Traffic Light","Sweep Random","Running 2","Aurora","Stream",
-"Scanner","Lighthouse","Fireworks","Rain","Merry Christmas","Fire Flicker","Gradient","Loading","Police","Police All",
+"Scanner","Lighthouse","Fireworks","Rain","Tetrix","Fire Flicker","Gradient","Loading","Police","Police All",
 "Two Dots","Two Areas","Circus","Halloween","Tri Chase","Tri Wipe","Tri Fade","Lightning","ICU","Multi Comet",
 "Scanner Dual","Stream 2","Oscillate","Pride 2015","Juggle","Palette","Fire 2012","Colorwaves","Bpm","Fill Noise",
 "Noise 1","Noise 2","Noise 3","Noise 4","Colortwinkles","Lake","Meteor","Meteor Smooth","Railway","Ripple",
@@ -1017,7 +1018,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Meatballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars"
+"** 2D Funky Plank","** 2D CenterBars","2D Julia"
 ])=====";
 
 

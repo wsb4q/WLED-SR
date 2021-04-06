@@ -23,21 +23,6 @@
 // #define MIC_SAMPLING_LOG
 // #define FFT_SAMPLING_LOG
 
-// The following 3 defines are for Digital Microphone support
-#ifndef I2S_WS
-  #define I2S_WS 15        // aka LRCL
-#endif
-#ifndef I2S_SD
-  #define I2S_SD 32        // aka DOUT
-#endif
-#ifndef I2S_SCK
-  #define I2S_SCK 14       // aka BCLK
-#endif
-
-#ifndef MIC_PIN
-  #define MIC_PIN   36  // Changed to direct pin name - ESP32: 36(ADC1_0) Analog port for microphone
-#endif
-
 #ifndef LED_BUILTIN     // Set LED_BUILTIN if it is not defined by Arduino framework
   #define LED_BUILTIN 3
 #endif
@@ -56,22 +41,22 @@
 // Otherwise, the animations may asynchronously read interim values of these variables.
 //
 
-const uint16_t samples = 512;                       // This value MUST ALWAYS be a power of 2
+const uint16_t samples = 512;                   // This value MUST ALWAYS be a power of 2
 
-extern uint8_t myVals[32];                          // Used to store a pile of samples because WLED frame rate and WLED sample rate are not synchronized. Frame rate is too low.
-extern int sample;                                  // Current sample. Must only be updated ONCE!!!
-extern bool samplePeak;                             // Boolean flag for peak. Responding routine must reset this flag
-extern int sampleAgc;                               // Our AGC sample
-extern float sampleAvg;                             // Smoothed Average
-extern double beat;                                 // beat Detection
-extern double FFT_MajorPeak;                        // Optional inclusion for our volume routines
-extern double FFT_Magnitude;                        // Same here. Not currently used though
+extern uint8_t myVals[32];                      // Used to store a pile of samples because WLED frame rate and WLED sample rate are not synchronized. Frame rate is too low.
+extern int sample;                              // Current sample. Must only be updated ONCE!!!
+extern bool samplePeak;                         // Boolean flag for peak. Responding routine must reset this flag
+extern int sampleAgc;                           // Our AGC sample
+extern float sampleAvg;                         // Smoothed Average
+extern double beat;                             // beat Detection
+extern double FFT_MajorPeak;                    // Optional inclusion for our volume routines
+extern double FFT_Magnitude;                    // Same here. Not currently used though
 extern uint16_t mAvg;
 
 // Try and normalize fftBin values to a max of 4096, so that 4096/16 = 256.
 // Oh, and bins 0,1,2 are no good, so we'll zero them out.
-extern double fftBin[samples];                      // raw FFT data
-extern int fftResult[16];                           // summary of bins array. 16 summary bins.
+extern double fftBin[samples];                  // raw FFT data
+extern int fftResult[16];                       // summary of bins array. 16 summary bins.
 
 
 class SoundreactiveUsermod : public Usermod {
@@ -79,7 +64,7 @@ class SoundreactiveUsermod : public Usermod {
     void setup();
 
     void loop();
-    
+
   private:
 };
 

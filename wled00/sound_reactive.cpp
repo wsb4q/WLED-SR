@@ -82,7 +82,6 @@ uint16_t mAvg = 0;
 // Oh, and bins 0,1,2 are no good, so we'll zero them out.
 double fftBin[samples];                 // raw FFT data
 int fftResult[16];                      // summary of bins array. 16 summary bins.
-float fftAvg[16];
 
 /******************* SAMPLING AND FFT LOCAL VARIABLES **************/
 
@@ -119,6 +118,7 @@ double vImag[samples];
 
 double fftCalc[16];
 double fftResultMax[16];                // A table used for testing to determine how our post-processing is working.
+float fftAvg[16];
 
 // Table of linearNoise results to be multiplied by soundSquelch in order to reduce squelch across fftResult bins.
 int linearNoise[16] = { 34, 28, 26, 25, 20, 12, 9, 6, 4, 4, 3, 2, 2, 2, 2, 2 };
@@ -154,8 +154,8 @@ double fftAdd( int from, int to) {
 // FFT main code
 void FFTcode( void * parameter) {
   //DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
-  double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
+  //double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
+  //double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
   unsigned long microseconds;
 
   for(;;) {

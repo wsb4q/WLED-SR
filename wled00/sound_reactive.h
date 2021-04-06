@@ -51,7 +51,6 @@ extern float sampleAvg;                         // Smoothed Average
 extern double beat;                             // beat Detection
 extern double FFT_MajorPeak;                    // Optional inclusion for our volume routines
 extern double FFT_Magnitude;                    // Same here. Not currently used though
-extern uint16_t mAvg;
 
 // Try and normalize fftBin values to a max of 4096, so that 4096/16 = 256.
 // Oh, and bins 0,1,2 are no good, so we'll zero them out.

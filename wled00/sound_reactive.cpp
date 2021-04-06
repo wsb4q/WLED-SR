@@ -111,6 +111,7 @@ const int BLOCK_SIZE = 64;
 const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
 
 unsigned int sampling_period_us;
+unsigned long microseconds;
 
 // These are the input and output vectors.  Input vectors receive computed results from FFT.
 double vReal[samples];
@@ -156,7 +157,6 @@ void FFTcode( void * parameter) {
   //DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
   //double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
   //double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  unsigned long microseconds;
 
   for(;;) {
     delay(1);           // DO NOT DELETE THIS LINE! It is needed to give the IDLE(0) task enough time and to keep the watchdog happy.

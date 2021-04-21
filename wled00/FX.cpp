@@ -4153,9 +4153,6 @@ uint16_t WS2812FX::mode_aurora(void) {
 //    Start of Audio Reactive fork     //
 /////////////////////////////////////////
 
-// FastLED array, so we can refer to leds[i] instead of the lossy getPixel() and setPixel()
-uint32_t ledData[100];                     // See const.h for a value of 1500.
-
 extern byte soundSquelch;
 
 ///////////////////////////////////////
@@ -4198,27 +4195,27 @@ uint16_t WS2812FX::mode_pixels(void) {                    // Pixels. By Andrew T
 //   * PIXELWAVE    //
 //////////////////////
 
-uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andrew Tuline.
+ uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andrew Tuline.
 
-  CRGB *leds = (CRGB*) ledData;
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill(SEGCOLOR(0));
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500+1 % 16;
 
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 64;
-    leds[SEGLEN/2] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
+
+    setPixelColor(SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
 
     for (int i=SEGLEN-1; i>SEGLEN/2; i--) {               // Move to the right.
-      leds[i] = leds[i-1];
+      setPixelColor(i, getPixelColor(i-1));
     }
     for (int i=0; i<SEGLEN/2; i++) {                      // Move to the left.
-      leds[i]=leds[i+1];
+      setPixelColor(i, getPixelColor(i+1));
     }
   }
 
-  setPixels(leds);
   return FRAMETIME;
+
 } // mode_pixelwave()
 
 //////////////////////
@@ -4240,18 +4237,14 @@ uint16_t WS2812FX::mode_juggles(void) {                   // Juggles. By Andrew 
 //////////////////////
 
 uint16_t WS2812FX::mode_matripix(void) {                  // Matripix. By Andrew Tuline.
-  CRGB *leds = (CRGB*) ledData;
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
-
+  if (SEGENV.call == 0) fill(SEGCOLOR(0));
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500 % 16;
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 64;
-    leds[SEGLEN-1] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
-    for (int i=0; i<SEGLEN-1; i++) leds[i] = leds[i+1];
+    setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
+    for (int i=0; i<SEGLEN-1; i++)  setPixelColor(i, getPixelColor(i+1));
   }
-
-  setPixels(leds);
   return FRAMETIME;
 } // mode_matripix()
 
@@ -4328,7 +4321,6 @@ uint16_t WS2812FX::mode_gravcenter(void) {                // Gravcenter. By Andr
 } // mode_gravcenter()
 
 
-
 ///////////////////////
 //   * GRAVCENTRIC   //
 ///////////////////////
@@ -4402,8 +4394,6 @@ uint16_t WS2812FX::mode_midnoise(void) {                  // Midnoise. By Andrew
 // I am the god of hellfire. . . Volume (only) reactive fire routine. Oh, look how short this is.
 uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andrew Tuline.
 
-  CRGB *leds = (CRGB*) ledData;
-
   currentPalette = CRGBPalette16(CHSV(0,255,2), CHSV(0,255,4), CHSV(0,255,8), CHSV(0, 255, 8),  // Fire palette definition. Lower value = darker.
                                  CHSV(0, 255, 16), CRGB::Red, CRGB::Red, CRGB::Red,
                                  CRGB::DarkOrange,CRGB::DarkOrange, CRGB::Orange, CRGB::Orange,
@@ -4413,13 +4403,11 @@ uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andre
     uint16_t index = inoise8(i*SEGMENT.speed/64,millis()*SEGMENT.speed/64*SEGLEN/255);  // X location is constant, but we move along the Y at the rate of millis(). By Andrew Tuline.
     index = (255 - i*256/SEGLEN) * index/(256-SEGMENT.intensity);                       // Now we need to scale index so that it gets blacker as we get close to one of the ends.
                                                                                         // This is a simple y=mx+b equation that's been scaled. index/128 is another scaling.
-    CRGB color = ColorFromPalette(currentPalette, index, sampleAvg*2, LINEARBLEND);     // Use the my own palette.
-    leds[i] = color;
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), sampleAvg*2));
   }
-
-  setPixels(leds);
   return FRAMETIME;
 } // mode_noisefire()
+
 
 
 ///////////////////////
@@ -4558,7 +4546,6 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
   fade_out(240);                                          // Lower frame rate means less effective fading than FastLED
   fade_out(240);
 
-
   for (uint16_t i = 0; i < SEGMENT.intensity/16; i++) {   // Limit the number of ripples.
 
     if (samplePeak) {
@@ -4602,7 +4589,6 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
 ///////////////////////
 //  * WATERFALL      //
 ///////////////////////
-
 
 // Experimenting with volume only as a fallback if no FFT.
 uint16_t WS2812FX::mode_waterfall(void) {                  // Waterfall. By: Andrew Tuline

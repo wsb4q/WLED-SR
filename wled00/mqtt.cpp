@@ -110,7 +110,7 @@ void publishMqtt()
   char s[10];
   char subuf[38];
 
-  sprintf(s, "%ld", bri);
+  sprintf(s, "%u", bri);
   strcpy(subuf, mqttDeviceTopic);
   strcat(subuf, "/g");
   mqtt->publish(subuf, 0, true, s);
@@ -136,7 +136,6 @@ void publishMqtt()
 
 bool initMqtt()
 {
-  lastMqttReconnectAttempt = millis();
   if (!mqttEnabled || mqttServer[0] == 0 || !WLED_CONNECTED) return false;
 
   if (mqtt == nullptr) {

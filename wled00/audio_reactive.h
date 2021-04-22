@@ -57,14 +57,11 @@ int sample;                                     // Current sample. Must only be 
 int tmpSample;                                  // An interim sample variable used for calculatioins.
 int sampleAdj;                                  // Gain adjusted sample value
 int sampleAgc;                                  // Our AGC sample
-uint16_t micData;                               // Analog input for FFT
-uint16_t micDataSm;                             // Smoothed mic data, as it's a bit twitchy
 long timeOfPeak = 0;
 long lastTime = 0;
 float micLev = 0;                               // Used to convert returned value to have '0' as minimum. A leveller
 float multAgc;                                  // sample * multAgc = sampleAgc. Our multiplier
 float sampleAvg = 0;                            // Smoothed Average
-double beat = 0;                                // beat Detection
 
 float expAdjF;                                  // Used for exponential filter.
 float weighting = 0.2;                          // Exponential filter weighting. Will be adjustable in a future release.
@@ -100,8 +97,8 @@ void getSample() {
   #endif
 
 //////
-    DEBUGSR_PRINT("micIn:\tmicData:\tmicIn>>2:\tmic_In_abs:\tsample:\tsampleAdj:\tsampleAvg:\n");
-    DEBUGSR_PRINT(micIn); DEBUGSR_PRINT("\t"); DEBUGSR_PRINT(micData);
+    DEBUGSR_PRINT("micIn:\tmicIn>>2:\tmic_In_abs:\tsample:\tsampleAdj:\tsampleAvg:\n");
+    DEBUGSR_PRINT(micIn);
 //////
     DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(micIn);
   micLev = ((micLev * 31) + micIn) / 32;          // Smooth it out over the last 32 samples for automatic centering
@@ -168,8 +165,6 @@ void logAudio() {
 //  Serial.print(sample); Serial.print(" ");
 //  Serial.print(sampleAvg); Serial.print(" ");
 //  Serial.print(sampleAgc);  Serial.print(" ");
-//  Serial.print(micData);    Serial.print(" ");
-//  Serial.print(micDataSm);  Serial.print(" ");
   Serial.println(" ");
 
 #endif

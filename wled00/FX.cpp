@@ -4070,6 +4070,13 @@ uint16_t WS2812FX::mode_aurora(void) {
 //    Start of Audio Reactive fork     //
 /////////////////////////////////////////
 
+// Sound reactive external variables
+extern int sample;
+extern float sampleAvg;
+extern bool samplePeak;
+extern uint8_t myVals[32];
+extern int sampleAgc;
+extern uint8_t squelch;
 extern byte soundSquelch;
 
 ///////////////////////////////////////

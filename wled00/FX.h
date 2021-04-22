@@ -250,13 +250,6 @@
 #define FX_MODE_GRAVCENTER             131
 #define FX_MODE_GRAVCENTRIC            132
 
-// Sound reactive external variables
-extern int sample;
-extern float sampleAvg;
-extern bool samplePeak;
-extern uint8_t myVals[32];
-extern int sampleAgc;
-extern uint8_t squelch;
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);

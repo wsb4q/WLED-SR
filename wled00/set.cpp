@@ -31,7 +31,7 @@ bool isAsterisksOnly(const char* str, byte maxLen)
 void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
 {
 
-  //0: menu 1: wifi 2: leds 3: ui 4: sync 5: time 6: sec 7: DMX
+  //0: menu 1: wifi 2: leds 3: ui 4: sync 5: time 6: sec 7: DMX 8: sound
   if (subPage <1 || subPage >8) return;
 
   //WIFI SETTINGS
@@ -314,6 +314,11 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     //start ntp if not already connected
     if (ntpEnabled && WLED_CONNECTED && !ntpConnected) ntpConnected = ntpUdp.begin(ntpLocalPort);
 
+    longitude = request->arg(F("LN")).toFloat();
+    latitude = request->arg(F("LT")).toFloat();
+    // force a sunrise/sunset re-calculation
+    calculateSunriseAndSunset();
+
     if (request->hasArg(F("OL"))) {
       overlayDefault = request->arg(F("OL")).toInt();
       overlayCurrent = overlayDefault;
@@ -345,7 +350,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     macroDoublePress = request->arg(F("MD")).toInt();
 
     char k[3]; k[2] = 0;
-    for (int i = 0; i<8; i++)
+    for (int i = 0; i<10; i++)
     {
       k[1] = i+48;//ascii 0,1,2,3
 
@@ -438,6 +443,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
   if (subPage != 2 && (subPage != 6 || !doReboot)) serializeConfig(); //do not save if factory reset or LED settings (which are saved after LED re-init)
   if (subPage == 4) alexaInit();
 }
+
 
 
 //helper to get int value at a position in string

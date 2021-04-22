@@ -2,6 +2,11 @@
 #include "wled.h"
 #include <Arduino.h>
 
+#if defined(ARDUINO_ARCH_ESP32) && defined(WLED_DISABLE_BROWNOUT_DET)
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+#endif
+
 /*
  * Main WLED class implementation. Mostly initialization and connection logic
  */
@@ -273,7 +278,6 @@ void WLED::loop()
     }
     lastWifiState = WiFi.status();
     DEBUG_PRINT("State time: ");    DEBUG_PRINTLN(wifiStateChangedTime);
-    DEBUG_PRINT("WiFi running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
     DEBUG_PRINT("NTP last sync: "); DEBUG_PRINTLN(ntpLastSyncTime);
     DEBUG_PRINT("Client IP: ");     DEBUG_PRINTLN(Network.localIP());
     DEBUG_PRINT("Loops/sec: ");     DEBUG_PRINTLN(loops / 10);
@@ -286,6 +290,10 @@ void WLED::loop()
 
 void WLED::setup()
 {
+  #if defined(ARDUINO_ARCH_ESP32) && defined(WLED_DISABLE_BROWNOUT_DET)
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detection
+  #endif
+
   Serial.begin(115200);
   Serial.setTimeout(50);
   DEBUG_PRINTLN();
@@ -338,8 +346,6 @@ void WLED::setup()
     pinMode(STATUSLED, OUTPUT);
 #endif
 
-  //DEBUG_PRINTLN(F("Load EEPROM"));
-  //loadSettingsFromEEPROM();
   beginStrip();
   userSetup();
   usermods.setup();
@@ -444,11 +450,9 @@ void WLED::initAP(bool resetAP)
     if (udpRgbPort > 0 && udpRgbPort != ntpLocalPort && udpRgbPort != udpPort) {
       udpRgbConnected = rgbUdp.begin(udpRgbPort);
     }
-
     if (udpPort2 > 0 && udpPort2 != ntpLocalPort && udpPort2 != udpPort && udpPort2 != udpRgbPort) {
       udp2Connected = notifier2Udp.begin(udpPort2);
     }
-
     if (audioSyncPort > 0 || (((audioSyncEnabled)>>(0)) & 1) || (((audioSyncEnabled)>>(1)) & 1)) {
     #ifdef ESP8266
       udpSyncConnected = fftUdp.beginMulticast(WiFi.localIP(), IPAddress(239, 0, 0, 1), audioSyncPort);

@@ -173,6 +173,7 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
       r -= w; g -= w; b -= w;
     }
   }
+
   uint16_t skip = _skipFirstMode ? LED_SKIP_AMOUNT : 0;
   if (SEGLEN) {//from segment
 
@@ -190,7 +191,7 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     uint16_t realIndex = realPixelIndex(i);
 
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
-      int16_t indexSet = realIndex + (reversed ? -j : j);
+      int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
       if (indexSet >= SEGMENT.start && indexSet < SEGMENT.stop) {
         busses.setPixelColor(indexSet + skip, col);
@@ -481,6 +482,7 @@ uint32_t WS2812FX::getColor(void) {
 uint32_t WS2812FX::getPixelColor(uint16_t i)
 {
   i = realPixelIndex(i);
+
   if (i < customMappingSize) i = customMappingTable[i];
 
   if (_skipFirstMode) i += LED_SKIP_AMOUNT;

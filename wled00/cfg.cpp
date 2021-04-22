@@ -49,7 +49,6 @@ void deserializeConfig() {
   //If it is present however, we will use it
   getStringFromJson(clientPass, nw_ins_0["psk"], 65);
 
-
   JsonArray nw_ins_0_ip = nw_ins_0["ip"];  // ip == IP Address
   JsonArray nw_ins_0_gw = nw_ins_0["gw"];  // gw == gateway
   JsonArray nw_ins_0_sn = nw_ins_0["sn"];  // sn == subnet
@@ -312,6 +311,8 @@ void deserializeConfig() {
   CJSON(currentTimezone, if_ntp[F("tz")]);
   CJSON(utcOffsetSecs, if_ntp[F("offset")]);
   CJSON(useAMPM, if_ntp[F("ampm")]);
+  CJSON(longitude, if_ntp[F("ln")]);
+  CJSON(latitude, if_ntp[F("lt")]);
 
   // ol   == overlay
   JsonObject ol = doc[F("ol")];
@@ -341,7 +342,8 @@ void deserializeConfig() {
   JsonArray timers = tm[F("ins")];
   uint8_t it = 0;
   for (JsonObject timer : timers) {
-    if (it > 7) break;
+    if (it > 9) break;
+    if (it<8 && timer[F("hour")]==255) it=8;  // hour==255 -> sunrise/sunset
     CJSON(timerHours[it], timer[F("hour")]);
     CJSON(timerMinutes[it], timer[F("min")]);
     CJSON(timerMacro[it], timer[F("macro")]);
@@ -635,6 +637,8 @@ void serializeConfig() {
   if_ntp[F("tz")] = currentTimezone;
   if_ntp[F("offset")] = utcOffsetSecs;
   if_ntp[F("ampm")] = useAMPM;
+  if_ntp[F("ln")] = longitude;
+  if_ntp[F("lt")] = latitude;
 
   JsonObject ol = doc.createNestedObject("ol");
   ol[F("clock")] = overlayDefault;
@@ -656,8 +660,8 @@ void serializeConfig() {
 
   JsonArray timers_ins = timers.createNestedArray("ins");
 
-  for (byte i = 0; i < 8; i++) {
-    if (timerMacro[i] == 0 && timerHours[i] == 0 && timerMinutes[i] == 0) continue;
+  for (byte i = 0; i < 10; i++) {
+    if (timerMacro[i] == 0 && timerHours[i] == 0 && timerMinutes[i] == 0) continue; // sunrise/sunset get saved always (timerHours=255)
     JsonObject timers_ins0 = timers_ins.createNestedObject();
     timers_ins0["en"] = (timerWeekday[i] & 0x01);
     timers_ins0[F("hour")] = timerHours[i];

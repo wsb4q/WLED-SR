@@ -36,7 +36,7 @@ void handleButton()
 
     if (millis() - buttonPressedTime > 600) //long press
     {
-      if (!buttonLongPressed) 
+      if (!buttonLongPressed)
       {
         if (macroLongPress) {applyPreset(macroLongPress);}
         else _setRandomColor(false,true);
@@ -77,7 +77,7 @@ void handleButton()
 void handleIO()
 {
   handleButton();
-  
+
   //set relay when LEDs turn on
   if (strip.getBrightness())
   {

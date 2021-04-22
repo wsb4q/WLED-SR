@@ -83,7 +83,11 @@ struct audioSyncPacket {
 };
 
 bool isValidUdpSyncVersion(char header[6]) {
-  return (header == UDP_SYNC_HEADER);
+  if (strncmp(header, UDP_SYNC_HEADER, 6) == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void getSample() {

@@ -298,8 +298,7 @@ button {
 	transition: 0.7s;
 	pointer-events: none;
 }
-/* Keep sliders on top when scrolling
-Effect Speed */
+
 .staytop {
 	display: block;
 	position: -webkit-sticky;
@@ -312,13 +311,9 @@ Effect Speed */
 	margin: auto;
 	border-radius: 25px;
 }
-/* Effect Intensity */
+
 #staytop1 {
-	top: 30px;
-}
-/* Solid Effect Mode */
-#staytop2 {
-	top: 60px;
+	top: 28px;
 }
 
 #fxb0 {

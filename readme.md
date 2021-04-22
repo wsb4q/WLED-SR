@@ -10,7 +10,6 @@
 
   </p>
 
-
 # Sound Reactive WLED! 🎵
 
 Welcome to our Sound Reactive fork of WLED. In addition to the features of WLED below, we also support:
@@ -85,7 +84,7 @@ A fast and feature-rich implementation of an ESP8266/ESP32 webserver to control 
 
 ## 📲 Quick start guide and documentation
 
-See the [wiki](https://github.com/atuline/WLED/wiki)!
+See the [wiki](https://github.com/Aircoookie/WLED/wiki)!
 
 [On this page](https://github.com/Aircoookie/WLED/wiki/Learning-the-ropes) you can find excellent tutorials made by the community and helpful tools to help you get your new lamp up and running!
 

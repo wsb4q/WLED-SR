@@ -246,7 +246,7 @@
 #define FX_MODE_NOISEFIRE              127
 #define FX_MODE_PUDDLEPEAK             128
 #define FX_MODE_RIPPLEPEAK             129
-#define FX_MODE_WATERFALL			         130
+#define FX_MODE_WATERFALL              130
 #define FX_MODE_GRAVCENTER             131
 #define FX_MODE_GRAVCENTRIC            132
 
@@ -607,7 +607,7 @@ class WS2812FX {
       _mode[FX_MODE_NOISEFIRE]               = &WS2812FX::mode_noisefire;
       _mode[FX_MODE_PUDDLEPEAK]              = &WS2812FX::mode_puddlepeak;
       _mode[FX_MODE_RIPPLEPEAK]              = &WS2812FX::mode_ripplepeak;
-      _mode[FX_MODE_WATERFALL]      				 = &WS2812FX::mode_waterfall;
+      _mode[FX_MODE_WATERFALL]               = &WS2812FX::mode_waterfall;
       _mode[FX_MODE_GRAVCENTER]              = &WS2812FX::mode_gravcenter;
       _mode[FX_MODE_GRAVCENTRIC]             = &WS2812FX::mode_gravcentric;
 

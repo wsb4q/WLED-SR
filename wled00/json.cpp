@@ -182,6 +182,7 @@ bool deserializeState(JsonObject root)
     jsonTransitionOnce = true;
   }
   strip.setTransition(transitionDelayTemp);
+
   int cy = root[F("pl")] | -2;
   if (cy > -2) presetCyclingEnabled = (cy >= 0);
   JsonObject ccnf = root["ccnf"];
@@ -325,9 +326,9 @@ void serializeSegment(JsonObject& root, WS2812FX::Segment& seg, byte id, bool fo
     }
 	}
 
-	root[F("fx")] = seg.mode;
-	root[F("sx")] = seg.speed;
-	root[F("ix")] = seg.intensity;
+	root[F("fx")]  = seg.mode;
+	root[F("sx")]  = seg.speed;
+	root[F("ix")]  = seg.intensity;
 	root[F("pal")] = seg.palette;
 	root[F("sel")] = seg.isSelected();
 	root["rev"] = seg.getOption(SEG_OPTION_REVERSED);
@@ -635,7 +636,7 @@ void serializePalettes(JsonObject root, AsyncWebServerRequest* request)
         curPalette.add(F("c1"));
         break;
       case 5: {//primary + secondary (+tert if not off), more distinct
-
+      
         curPalette.add(F("c1"));
         curPalette.add(F("c1"));
         curPalette.add(F("c1"));

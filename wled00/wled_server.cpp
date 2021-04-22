@@ -261,7 +261,7 @@ void serveIndex(AsyncWebServerRequest* request)
 
   response->addHeader(F("Content-Encoding"),"gzip");
   setStaticContentCacheHeaders(response);
-
+  
   request->send(response);
 }
 

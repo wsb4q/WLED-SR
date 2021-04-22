@@ -1774,6 +1774,7 @@ uint16_t WS2812FX::mode_fire_2012()
   if (it != SEGENV.step)
   {
     uint8_t ignition = max(7,SEGLEN/10);  // ignition area: 10% of segment length or minimum 7 pixels
+
     // Step 1.  Cool down every cell a little
     for (uint16_t i = 0; i < SEGLEN; i++) {
       uint8_t temp = qsub8(heat[i], random8(0, (((20 + SEGMENT.speed /3) * 10) / SEGLEN) + 2));
@@ -2162,7 +2163,7 @@ uint16_t WS2812FX::mode_railway()
 
 //4 bytes
 typedef struct Ripple {
-  int8_t state;
+  uint8_t state;
   uint8_t color;
   uint16_t pos;
 } ripple;
@@ -3080,7 +3081,7 @@ uint16_t WS2812FX::mode_drip(void)
   gravity *= SEGLEN;
   int sourcedrop = 12;
 
-  for (int j=0;j<numDrops;j++) {
+  for (uint8_t j=0;j<numDrops;j++) {
     if (drops[j].colIndex == 0) { //init
       drops[j].pos = SEGLEN-1;    // start at end
       drops[j].vel = 0;           // speed
@@ -3091,7 +3092,7 @@ uint16_t WS2812FX::mode_drip(void)
     setPixelColor(SEGLEN-1,color_blend(BLACK,SEGCOLOR(0), sourcedrop));// water source
     if (drops[j].colIndex==1) {
       if (drops[j].col>255) drops[j].col=255;
-      setPixelColor(int(drops[j].pos),color_blend(BLACK,SEGCOLOR(0),drops[j].col));
+      setPixelColor(uint16_t(drops[j].pos),color_blend(BLACK,SEGCOLOR(0),drops[j].col));
 
       drops[j].col += map(SEGMENT.speed, 0, 255, 1, 6); // swelling
 
@@ -3106,8 +3107,9 @@ uint16_t WS2812FX::mode_drip(void)
         if (drops[j].pos < 0) drops[j].pos = 0;
         drops[j].vel += gravity;
 
-        for (int i=1;i<7-drops[j].colIndex;i++) { // some minor math so we don't expand bouncing droplets
-          setPixelColor(int(drops[j].pos)+i,color_blend(BLACK,SEGCOLOR(0),drops[j].col/i)); //spread pixel with fade while falling
+        for (uint16_t i=1;i<7-drops[j].colIndex;i++) { // some minor math so we don't expand bouncing droplets
+          uint16_t pos = uint16_t(drops[j].pos) +i; //this is BAD, returns a pos >= SEGLEN occasionally
+          setPixelColor(pos,color_blend(BLACK,SEGCOLOR(0),drops[j].col/i)); //spread pixel with fade while falling
         }
 
         if (drops[j].colIndex > 2) {       // during bounce, some water is on the floor
@@ -3847,31 +3849,31 @@ uint16_t WS2812FX::mode_tv_simulator(void) {
   if (!SEGENV.allocateData(sizeof(tvSim))) return mode_static(); //allocation failed
   TvSim* tvSimulator = reinterpret_cast<TvSim*>(SEGENV.data);
 
-  // initialize start of the TV-Colors
-  if (SEGENV.call == 0) {
+    // initialize start of the TV-Colors
+    if (SEGENV.call == 0) {
     tvSimulator->pixelNum = ((uint8_t)random(18)) * numTVPixels / 18; // Begin at random movie (18 in total)
   }
 
-  // Read next 16-bit (5/6/5) color
-  hi = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2    ]);
-  lo = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2 + 1]);
+    // Read next 16-bit (5/6/5) color
+    hi = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2    ]);
+    lo = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2 + 1]);
 
-  // Expand to 24-bit (8/8/8)
-  r8 = (hi & 0xF8) | (hi >> 5);
-  g8 = ((hi << 5) & 0xff) | ((lo & 0xE0) >> 3) | ((hi & 0x06) >> 1);
-  b8 = ((lo << 3) & 0xff) | ((lo & 0x1F) >> 2);
+    // Expand to 24-bit (8/8/8)
+    r8 = (hi & 0xF8) | (hi >> 5);
+    g8 = ((hi << 5) & 0xff) | ((lo & 0xE0) >> 3) | ((hi & 0x06) >> 1);
+    b8 = ((lo << 3) & 0xff) | ((lo & 0x1F) >> 2);
 
-  // Apply gamma correction, further expand to 16/16/16
-  nr = (uint8_t)gamma8(r8) * 257; // New R/G/B
-  ng = (uint8_t)gamma8(g8) * 257;
-  nb = (uint8_t)gamma8(b8) * 257;
+    // Apply gamma correction, further expand to 16/16/16
+    nr = (uint8_t)gamma8(r8) * 257; // New R/G/B
+    ng = (uint8_t)gamma8(g8) * 257;
+    nb = (uint8_t)gamma8(b8) * 257;
 
   if (SEGENV.aux0 == 0) {  // initialize next iteration
     SEGENV.aux0 = 1;
 
-    // increase color-index for next loop
-    tvSimulator->pixelNum++;
-    if (tvSimulator->pixelNum >= numTVPixels) tvSimulator->pixelNum = 0;
+      // increase color-index for next loop
+      tvSimulator->pixelNum++;
+      if (tvSimulator->pixelNum >= numTVPixels) tvSimulator->pixelNum = 0;
 
     // randomize total duration and fade duration for the actual color
     tvSimulator->totalTime = random(250, 2500);                   // Semi-random pixel-to-pixel time
@@ -3907,6 +3909,7 @@ uint16_t WS2812FX::mode_tv_simulator(void) {
     tvSimulator->pb = nb;
     SEGENV.aux0 = 0;
   }
+
   return FRAMETIME;
   #endif
 }
@@ -3972,6 +3975,7 @@ class AuroraWave {
       rgb.r = basecolor.r * factor;
       rgb.g = basecolor.g * factor;
       rgb.b = basecolor.b * factor;
+
       return rgb;
     };
 
@@ -4066,10 +4070,6 @@ uint16_t WS2812FX::mode_aurora(void) {
 //    Start of Audio Reactive fork     //
 /////////////////////////////////////////
 
-// FastLED array, so we can refer to leds[i] instead of the lossy getPixel() and setPixel()
-uint32_t ledData[MAX_LEDS];                     // See const.h for a value of 1500.
-uint32_t dataStore[4096];                       // we are declaring a storage area or 64 x 64 (4096) words.
-
 extern byte soundSquelch;
 
 ///////////////////////////////////////
@@ -4112,27 +4112,27 @@ uint16_t WS2812FX::mode_pixels(void) {                    // Pixels. By Andrew T
 //   * PIXELWAVE    //
 //////////////////////
 
-uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andrew Tuline.
+ uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andrew Tuline.
 
-  CRGB *leds = (CRGB*) ledData;
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill(SEGCOLOR(0));
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500+1 % 16;
 
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 64;
-    leds[SEGLEN/2] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
+
+    setPixelColor(SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
 
     for (int i=SEGLEN-1; i>SEGLEN/2; i--) {               // Move to the right.
-      leds[i] = leds[i-1];
+      setPixelColor(i, getPixelColor(i-1));
     }
     for (int i=0; i<SEGLEN/2; i++) {                      // Move to the left.
-      leds[i]=leds[i+1];
+      setPixelColor(i, getPixelColor(i+1));
     }
   }
 
-  setPixels(leds);
   return FRAMETIME;
+
 } // mode_pixelwave()
 
 //////////////////////
@@ -4154,18 +4154,14 @@ uint16_t WS2812FX::mode_juggles(void) {                   // Juggles. By Andrew 
 //////////////////////
 
 uint16_t WS2812FX::mode_matripix(void) {                  // Matripix. By Andrew Tuline.
-  CRGB *leds = (CRGB*) ledData;
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
-
+  if (SEGENV.call == 0) fill(SEGCOLOR(0));
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500 % 16;
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
     int pixBri = sample * SEGMENT.intensity / 64;
-    leds[SEGLEN-1] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
-    for (int i=0; i<SEGLEN-1; i++) leds[i] = leds[i+1];
+    setPixelColor(SEGLEN-1, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri));
+    for (int i=0; i<SEGLEN-1; i++)  setPixelColor(i, getPixelColor(i+1));
   }
-
-  setPixels(leds);
   return FRAMETIME;
 } // mode_matripix()
 
@@ -4242,7 +4238,6 @@ uint16_t WS2812FX::mode_gravcenter(void) {                // Gravcenter. By Andr
 } // mode_gravcenter()
 
 
-
 ///////////////////////
 //   * GRAVCENTRIC   //
 ///////////////////////
@@ -4316,8 +4311,6 @@ uint16_t WS2812FX::mode_midnoise(void) {                  // Midnoise. By Andrew
 // I am the god of hellfire. . . Volume (only) reactive fire routine. Oh, look how short this is.
 uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andrew Tuline.
 
-  CRGB *leds = (CRGB*) ledData;
-
   currentPalette = CRGBPalette16(CHSV(0,255,2), CHSV(0,255,4), CHSV(0,255,8), CHSV(0, 255, 8),  // Fire palette definition. Lower value = darker.
                                  CHSV(0, 255, 16), CRGB::Red, CRGB::Red, CRGB::Red,
                                  CRGB::DarkOrange,CRGB::DarkOrange, CRGB::Orange, CRGB::Orange,
@@ -4327,13 +4320,11 @@ uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andre
     uint16_t index = inoise8(i*SEGMENT.speed/64,millis()*SEGMENT.speed/64*SEGLEN/255);  // X location is constant, but we move along the Y at the rate of millis(). By Andrew Tuline.
     index = (255 - i*256/SEGLEN) * index/(256-SEGMENT.intensity);                       // Now we need to scale index so that it gets blacker as we get close to one of the ends.
                                                                                         // This is a simple y=mx+b equation that's been scaled. index/128 is another scaling.
-    CRGB color = ColorFromPalette(currentPalette, index, sampleAvg*2, LINEARBLEND);     // Use the my own palette.
-    leds[i] = color;
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), sampleAvg*2));
   }
-
-  setPixels(leds);
   return FRAMETIME;
 } // mode_noisefire()
+
 
 
 ///////////////////////
@@ -4472,7 +4463,6 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
   fade_out(240);                                          // Lower frame rate means less effective fading than FastLED
   fade_out(240);
 
-
   for (uint16_t i = 0; i < SEGMENT.intensity/16; i++) {   // Limit the number of ripples.
 
     if (samplePeak) {
@@ -4482,7 +4472,7 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
 
     switch (ripples[i].state) {
 
-       case -2:                                                   // Inactive mode
+       case -2:                                           // Inactive mode
         break;
 
        case -1:                                           // Initialize ripple variables.
@@ -4516,7 +4506,6 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
 ///////////////////////
 //  * WATERFALL      //
 ///////////////////////
-
 
 // Experimenting with volume only as a fallback if no FFT.
 uint16_t WS2812FX::mode_waterfall(void) {                  // Waterfall. By: Andrew Tuline

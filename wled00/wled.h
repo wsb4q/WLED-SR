@@ -48,6 +48,10 @@
 // filesystem specific debugging
 //#define WLED_DEBUG_FS
 
+//optionally disable brownout detector on ESP32.
+//This is generally a terrible idea, but improves boot success on boards with a 3.3v regulator + cap setup that can't provide 400mA peaks
+//#define WLED_DISABLE_BROWNOUT_DET
+
 // Library inclusions.
 #include <Arduino.h>
 #ifdef ESP8266
@@ -246,13 +250,13 @@ WLED_GLOBAL bool skipFirstLed  _INIT(false);        // ignore first LED in strip
 WLED_GLOBAL byte briMultiplier _INIT(100);          // % of brightness to set (to limit power, if you set it to 50 and set bri to 255, actual brightness will be 127)
 
 // User Interface CONFIG
-WLED_GLOBAL char serverDescription[33] _INIT("WLED-AudioReactive");  // Name of module
+WLED_GLOBAL char serverDescription[33] _INIT("WLED-SoundReactive");  // Name of module
 WLED_GLOBAL bool syncToggleReceive     _INIT(false);   // UIs which only have a single button for sync should toggle send+receive if this is true, only send otherwise
 
 // Sync CONFIG
 WLED_GLOBAL NodesMap Nodes;
-WLED_GLOBAL bool nodeListEnabled _INIT(true);
-WLED_GLOBAL bool nodeBroadcastEnabled _INIT(true);
+WLED_GLOBAL bool nodeListEnabled _INIT(false);
+WLED_GLOBAL bool nodeBroadcastEnabled _INIT(false);
 
 WLED_GLOBAL bool buttonEnabled  _INIT(true);
 WLED_GLOBAL byte irEnabled      _INIT(0);     // Infrared receiver
@@ -268,7 +272,7 @@ WLED_GLOBAL bool notifyDirect _INIT(false);                       // send notifi
 WLED_GLOBAL bool notifyButton _INIT(false);                       // send if updated by button or infrared remote
 WLED_GLOBAL bool notifyAlexa  _INIT(false);                       // send notification if updated via Alexa
 WLED_GLOBAL bool notifyMacro  _INIT(false);                       // send notification for macro
-WLED_GLOBAL bool notifyHue    _INIT(true);                        // send notification if Hue light changes
+WLED_GLOBAL bool notifyHue    _INIT(false);                       // send notification if Hue light changes
 WLED_GLOBAL bool notifyTwice  _INIT(false);                       // notifications use UDP: enable if devices don't sync reliably
 
 WLED_GLOBAL bool alexaEnabled _INIT(false);                       // enable device discovery by Amazon Echo
@@ -456,10 +460,10 @@ WLED_GLOBAL bool countdownOverTriggered _INIT(true);
 
 // timer
 WLED_GLOBAL byte lastTimerMinute _INIT(0);
-WLED_GLOBAL byte timerHours[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0 }));
-WLED_GLOBAL byte timerMinutes[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0 }));
-WLED_GLOBAL byte timerMacro[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0 }));
-WLED_GLOBAL byte timerWeekday[] _INIT_N(({ 255, 255, 255, 255, 255, 255, 255, 255 }));        // weekdays to activate on
+WLED_GLOBAL byte timerHours[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+WLED_GLOBAL int8_t timerMinutes[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+WLED_GLOBAL byte timerMacro[] _INIT_N(({ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+WLED_GLOBAL byte timerWeekday[] _INIT_N(({ 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 }));        // weekdays to activate on
 // bit pattern of arr elem: 0b11111111: sun,sat,fri,thu,wed,tue,mon,validity
 
 // blynk
@@ -507,6 +511,10 @@ WLED_GLOBAL unsigned long ntpPacketSentTime _INIT(999000000L);
 WLED_GLOBAL IPAddress ntpServerIP;
 WLED_GLOBAL uint16_t ntpLocalPort _INIT(2390);
 WLED_GLOBAL uint16_t rolloverMillis _INIT(0);
+WLED_GLOBAL float longitude _INIT(0.0);
+WLED_GLOBAL float latitude _INIT(0.0);
+WLED_GLOBAL time_t sunrise _INIT(0);
+WLED_GLOBAL time_t sunset _INIT(0);
 
 // Temp buffer
 WLED_GLOBAL char* obuf;
@@ -573,7 +581,7 @@ WLED_GLOBAL UsermodManager usermods _INIT(UsermodManager());
 #else
   #define DEBUG_PRINT(x)
   #define DEBUG_PRINTLN(x)
-  #define DEBUG_PRINTF(x)
+  #define DEBUG_PRINTF(x...)
 #endif
 
 #ifdef WLED_DEBUG_FS

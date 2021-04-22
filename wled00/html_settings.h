@@ -237,12 +237,13 @@ var d=document;function H(){window.open("https://github.com/atuline/WLED/wiki/Se
  id="form_s" name="Sf" method="post"><div class="helpB"><button type="button" 
 onclick="H()">?</button></div><button type="button" onclick="B()">Back</button>
 <button type="submit">Save</button><hr><h2>Sync setup</h2><h3>Button setup</h3>
-On/Off button enabled: <input type="checkbox" name="BT"><br>Infrared remote: 
-<select name="IR"><option value="0">Disabled</option><option value="1">
-24-key RGB</option><option value="2">24-key with CT</option><option value="3">
-40-key blue</option><option value="4">44-key RGB</option><option value="5">
-21-key RGB</option><option value="6">6-key black</option><option value="7">
-9-key red</option></select><br><a 
+Button type: <select name="BT"><option value="0">Disabled</option><option 
+value="2">Pushbutton</option><option value="4">Switch</option></select><br>
+Infrared remote: <select name="IR"><option value="0">Disabled</option><option 
+value="1">24-key RGB</option><option value="2">24-key with CT</option><option 
+value="3">40-key blue</option><option value="4">44-key RGB</option><option 
+value="5">21-key RGB</option><option value="6">6-key black</option><option 
+value="7">9-key red</option></select><br><a 
 href="https://github.com/atuline/WLED/wiki/Infrared-Control" target="_blank">
 IR info</a><h3>WLED Broadcast</h3>UDP Port: <input name="UP" type="number" 
 min="1" max="65535" class="d5" required><br>2nd Port: <input name="U2" 
@@ -393,7 +394,7 @@ Disable OTA when not in use, otherwise an attacker can reflash device software!
 </b><br><i>Settings on this page are only changable if OTA lock is disabled!</i>
 <br>Deny access to WiFi settings if locked: <input type="checkbox" name="OW">
 <br><br>Factory reset: <input type="checkbox" name="RS"><br>
-All EEPROM content (settings) will be erased.<br><br>
+All settings and presets will be erased.<br><br>
 HTTP traffic is unencrypted. An attacker in the same network can intercept form data!
 <h3>Software Update</h3><button type="button" onclick="U()">Manual OTA Update
 </button><br>Enable ArduinoOTA: <input type="checkbox" name="AO"><br><h3>About

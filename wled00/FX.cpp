@@ -4134,6 +4134,35 @@ uint16_t WS2812FX::mode_perlinmove(void) {
 
 
 /////////////////////////
+//     2DTartan        //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://editor.soulmatelights.com/gallery/3-tartan , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  uint8_t hue;
+  int offsetX = beatsin16(3, -360, 360);
+  int offsetY = beatsin16(2, -360, 360);
+
+  for (uint8_t x = 0; x < matrixWidth; x++) {
+    for (uint8_t y = 0; y < matrixHeight; y++) {
+      uint16_t index = XY(x, y);
+      hue = x * beatsin16(10, 1, 10) + offsetY;
+      leds[index] = ColorFromPalette(currentPalette, hue, sin8(x * SEGMENT.speed + offsetX) * sin8(x * SEGMENT.speed + offsetX) / 255, LINEARBLEND);
+      hue = y * 3 + offsetX;
+      leds[index] += ColorFromPalette(currentPalette, hue, sin8(y * SEGMENT.intensity + offsetY) * sin8(y * SEGMENT.intensity + offsetY) / 255, LINEARBLEND);
+    }
+  }
+  
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DTartan()
+
+
+/////////////////////////
 //     2D Julia        //
 /////////////////////////
 
@@ -4155,7 +4184,7 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  CRGB *leds = (CRGB*) ledData;
+//  CRGB *leds = (CRGB*) ledData;
 
   if (!SEGENV.allocateData(sizeof(julia))) return mode_static();  // We use this method for allocating memory for static variables.
   Julia* julias = reinterpret_cast<Julia*>(SEGENV.data);          // Because 'static' doesn't work with SEGMENTS.
@@ -5765,10 +5794,10 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
 
 
 /////////////////////////
-//     2D Meatballs    //
+//     2D Metaballs    //
 /////////////////////////
 
-uint16_t WS2812FX::mode_2Dmeatballs(void) {   // Metaballs by Stefan Petrick. Cannot have one of the dimensions be 2 or less. Adapted by Andrew Tuline.
+uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Cannot have one of the dimensions be 2 or less. Adapted by Andrew Tuline.
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
@@ -5825,7 +5854,7 @@ uint16_t WS2812FX::mode_2Dmeatballs(void) {   // Metaballs by Stefan Petrick. Ca
    }
 
   return FRAMETIME;
-} // mode_2Dmeatballs()
+} // mode_2Dmetaballs()
 
 /////////////////////////////////////////
 //   2D Cellular Automata Elementary   //

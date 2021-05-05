@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     155
+#define MODE_COUNT                     156
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -263,7 +263,7 @@
 #define FX_MODE_2DFIRE2012             141
 #define FX_MODE_2DDNA                  142
 #define FX_MODE_2DMATRIX               143
-#define FX_MODE_2DMEATBALLS            144
+#define FX_MODE_2DMETABALLS            144
 #define FX_MODE_FREQMAP                145
 #define FX_MODE_GRAVCENTER             146
 #define FX_MODE_GRAVCENTRIC            147
@@ -274,6 +274,8 @@
 #define FX_MODE_2DJULIA                152
 #define FX_MODE_BLURZ                  153
 #define FX_MODE_2DCAELEMENTARY         154
+#define FX_MODE_2DTARTAN               155
+
 
 class WS2812FX {
   typedef uint16_t (WS2812FX::*mode_ptr)(void);
@@ -641,7 +643,7 @@ class WS2812FX {
       _mode[FX_MODE_2DFIRE2012]              = &WS2812FX::mode_2Dfire2012;
       _mode[FX_MODE_2DDNA]                   = &WS2812FX::mode_2Ddna;
       _mode[FX_MODE_2DMATRIX]                = &WS2812FX::mode_2Dmatrix;
-      _mode[FX_MODE_2DMEATBALLS]             = &WS2812FX::mode_2Dmeatballs;
+      _mode[FX_MODE_2DMETABALLS]             = &WS2812FX::mode_2Dmetaballs;
       _mode[FX_MODE_FREQMAP]                 = &WS2812FX::mode_freqmap;
       _mode[FX_MODE_GRAVCENTER]              = &WS2812FX::mode_gravcenter;
       _mode[FX_MODE_GRAVCENTRIC]             = &WS2812FX::mode_gravcentric;
@@ -651,7 +653,9 @@ class WS2812FX {
       _mode[FX_MODE_2DCENTERBARS]            = &WS2812FX::mode_2DCenterBars;
       _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
       _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
-     _mode[FX_MODE_2DCAELEMENTARY]          = &WS2812FX::mode_2Dcaelementary;
+     _mode[FX_MODE_2DCAELEMENTARY]           = &WS2812FX::mode_2Dcaelementary;
+     _mode[FX_MODE_2DTARTAN]                 = &WS2812FX::mode_2Dtartan;
+
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -915,7 +919,7 @@ class WS2812FX {
       mode_2Dfire2012(void),
       mode_2Ddna(void),
       mode_2Dmatrix(void),
-      mode_2Dmeatballs(void),
+      mode_2Dmetaballs(void),
       mode_freqmap(void),
       mode_gravcenter(void),
       mode_gravcentric(void),
@@ -925,7 +929,8 @@ class WS2812FX {
       mode_2DCenterBars(void),
       mode_2DJulia(void),
       mode_blurz(void),
-      mode_2Dcaelementary(void);
+      mode_2Dcaelementary(void),
+      mode_2Dtartan(void);
 
   private:
     uint32_t crgb_to_col(CRGB fastled);
@@ -1023,8 +1028,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth","* Pixels","* Pixelwave",
 "* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
-"2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Meatballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary"
+"2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
+"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan"
 ])=====";
 
 

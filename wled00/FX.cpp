@@ -4133,8 +4133,35 @@ uint16_t WS2812FX::mode_perlinmove(void) {
 } // mode_perlinmove()
 
 
+//////////////////////////////
+//     Flow Stripe          //
+//////////////////////////////
+
+uint16_t WS2812FX::mode_FlowStripe(void) {                        // By: ldirko  https://editor.soulmatelights.com/gallery/392-flow-led-stripe , modifed by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+
+  const float hl = SEGLEN / 1.3;
+  uint8_t hue = millis() / SEGMENT.speed;
+  int t = millis() / (SEGMENT.intensity/8);
+
+  for (int i = 0; i < SEGLEN; i++) {
+    int c = (abs(i - hl) / hl) * 127;
+    c = sin8(c);
+    c = sin8(c / 2 + t);
+    byte b = sin8(c + t/8);
+    leds [i] = CHSV(b + hue, 255, 255);
+  }
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_FlowStripe()
+
+
 /////////////////////////
-//     2DTartan        //
+//     2D Tartan       //
 /////////////////////////
 
 uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://editor.soulmatelights.com/gallery/3-tartan , Modified by: Andrew Tuline
@@ -4160,6 +4187,35 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
 } // mode_2DTartan()
+
+
+/////////////////////////
+//     2D Hiphotic     //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  https://editor.soulmatelights.com/gallery/810 , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  int a = millis() / 8;
+
+  for (int x = 0; x < matrixWidth; x++) {
+    for (int y = 0; y < matrixHeight; y++) {
+      int index = XY(x, y);
+//      leds[index].b = sin8((x - 8) * cos8((y + 20) * 4) / 4 + a);
+//      leds[index].g = (sin8(x * 16 + a / 3) + cos8(y * 8 + a / 2)) / 2;
+//      leds[index].r = sin8(cos8(x * 8 + a / 3) + sin8(y * 8 + a / 4) + a);
+//      leds[index] = ColorFromPalette(currentPalette, sin8(cos8(x * 8 + a / 3) + sin8(y * 8 + a / 4) + a), 255, LINEARBLEND);
+      leds[index] = ColorFromPalette(currentPalette, sin8(cos8(x * SEGMENT.speed/16 + a / 3) + sin8(y * SEGMENT.intensity/16 + a / 4) + a), 255, LINEARBLEND);
+    }
+  }
+  
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DHiphotic()
+
 
 
 /////////////////////////

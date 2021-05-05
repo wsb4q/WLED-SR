@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     161
+#define MODE_COUNT                     163
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -280,6 +280,8 @@
 #define FX_MODE_2DLISSAJOUS            158
 #define FX_MODE_2DFRIZZLES             159
 #define FX_MODE_2DPLASMABALL           160
+#define FX_MODE_FLOWSTRIPE             161
+#define FX_MODE_2DHIPHOTIC             162
 
 
 class WS2812FX {
@@ -665,6 +667,8 @@ class WS2812FX {
      _mode[FX_MODE_2DLISSAJOUS]              = &WS2812FX::mode_2DLissajous;
      _mode[FX_MODE_2DFRIZZLES]               = &WS2812FX::mode_2DFrizzles;
      _mode[FX_MODE_2DPLASMABALL]             = &WS2812FX::mode_2DPlasmaball;
+     _mode[FX_MODE_FLOWSTRIPE]               = &WS2812FX::mode_FlowStripe;
+     _mode[FX_MODE_2DHIPHOTIC]               = &WS2812FX::mode_2DHiphotic;
 
 
       _brightness = DEFAULT_BRIGHTNESS;
@@ -945,7 +949,9 @@ class WS2812FX {
       mode_2DSwirl(void),
       mode_2DLissajous(void),
       mode_2DFrizzles(void),
-      mode_2DPlasmaball(void);
+      mode_2DPlasmaball(void),
+      mode_FlowStripe(void),
+      mode_2DHiphotic(void);
 
 
   private:
@@ -1046,7 +1052,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic"
 ])=====";
 
 

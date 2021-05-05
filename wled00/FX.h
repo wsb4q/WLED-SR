@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     159
+#define MODE_COUNT                     161
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -278,6 +278,8 @@
 #define FX_MODE_2DPOLARLIGHTS          156
 #define FX_MODE_2DSWIRL                157
 #define FX_MODE_2DLISSAJOUS            158
+#define FX_MODE_2DFRIZZLES             159
+#define FX_MODE_2DPLASMABALL           160
 
 
 class WS2812FX {
@@ -661,6 +663,8 @@ class WS2812FX {
      _mode[FX_MODE_2DPOLARLIGHTS]            = &WS2812FX::mode_2DPolarLights;
      _mode[FX_MODE_2DSWIRL]                  = &WS2812FX::mode_2DSwirl;
      _mode[FX_MODE_2DLISSAJOUS]              = &WS2812FX::mode_2DLissajous;
+     _mode[FX_MODE_2DFRIZZLES]               = &WS2812FX::mode_2DFrizzles;
+     _mode[FX_MODE_2DPLASMABALL]             = &WS2812FX::mode_2DPlasmaball;
 
 
       _brightness = DEFAULT_BRIGHTNESS;
@@ -939,7 +943,10 @@ class WS2812FX {
       mode_2Dtartan(void),
       mode_2DPolarLights(void),
       mode_2DSwirl(void),
-      mode_2DLissajous(void);
+      mode_2DLissajous(void),
+      mode_2DFrizzles(void),
+      mode_2DPlasmaball(void);
+
 
   private:
     uint32_t crgb_to_col(CRGB fastled);
@@ -1038,7 +1045,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous"
+"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
+"2D Plasma Ball"
 ])=====";
 
 

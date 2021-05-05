@@ -5656,6 +5656,65 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 } // mode_2DLissajous()
 
 
+//////////////////////////////
+//     2D Frizzles          //
+//////////////////////////////
+
+uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https://editor.soulmatelights.com/gallery/640-color-frizzles , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+
+  fadeToBlackBy(leds, SEGLEN, 16);
+  for (byte i = 8; i > 0; i--) {
+    leds[XY(beatsin8(SEGMENT.speed/8 + i, 0, matrixWidth - 1), beatsin8(SEGMENT.intensity/8 - i, 0, matrixHeight - 1))] += ColorFromPalette(currentPalette, beatsin8(12, 0, 255), 255, LINEARBLEND);
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 16);
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DLissajous()
+
+
+//////////////////////////////
+//     2D Plasma Ball       //
+//////////////////////////////
+
+uint16_t WS2812FX::mode_2DPlasmaball(void) {                   // By: Stepko https://editor.soulmatelights.com/gallery/659-plasm-ball , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+
+  fadeToBlackBy(leds, SEGLEN, 64);
+  double t = millis() / (33 - SEGMENT.speed/8);
+  for (byte i = 0; i < matrixWidth; i++) {
+    byte thisVal = inoise8(i * 30, t, t);
+    byte thisMax = map(thisVal, 0, 255, 0, matrixWidth);
+    for (byte j = 0; j < matrixHeight; j++) {
+      byte thisVal_ = inoise8(t, j * 30, t);
+      byte thisMax_ = map(thisVal_, 0, 255, 0, matrixHeight);
+      byte x = (i + thisMax_ - (matrixWidth * 2 - matrixWidth) / 2);
+      byte y = (j + thisMax - (matrixWidth * 2 - matrixWidth) / 2);
+      byte cx = (i + thisMax_);
+      byte cy = (j + thisMax);
+
+      leds[XY(i, j)] += ((x - y > -2) && (x - y < 2)) ||
+                        ((matrixWidth - 1 - x - y) > -2 && (matrixWidth - 1 - x - y < 2)) ||
+                        (matrixWidth - cx == 0) ||
+                        (matrixWidth - 1 - cx == 0) ||
+                        ((matrixHeight - cy == 0) ||
+                        (matrixHeight - 1 - cy == 0)) ? ColorFromPalette(currentPalette, beat8(5), thisVal, LINEARBLEND) : CHSV(0, 0, 0);
+    }
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 4);
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DPlasmaball()
+
+
 /////////////////////////
 //    * 2D Swirl        //
 /////////////////////////

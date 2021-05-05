@@ -5696,24 +5696,16 @@ uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at 
 
   fadeToBlackBy(leds, SEGLEN, 64);
 
-  static unsigned long prevMillis;
-  unsigned long curMillis = millis();
-
-  if ((curMillis - prevMillis) >= ((256-SEGMENT.speed) >>3)) {
-    prevMillis = curMillis;
-
   for(int i = 0; i < matrixHeight; i++) {
-      leds[XY(beatsin8(10, 0, matrixWidth-1, 0, i*4), i)] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
-      leds[XY(beatsin8(10, 0, matrixWidth-1, 0, i*4+128), i)] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
+      leds[XY(beatsin8(SEGMENT.speed/8, 0, matrixWidth-1, 0, i*4), i)] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
+      leds[XY(beatsin8(SEGMENT.speed/8, 0, matrixWidth-1, 0, i*4+128), i)] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
   }
 
-  blur2d(leds, matrixWidth, matrixHeight, 2);
+  blur2d(leds, matrixWidth, matrixHeight, SEGMENT.intensity/8);
 
    for (int i=0; i<SEGLEN; i++) {
       setPixelColor(i, leds[i].red, leds[i].green, leds[i].blue);
    }
-
-  } // if millis
 
   return FRAMETIME;
 } // mode_2Ddna()
@@ -5856,6 +5848,7 @@ uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Ca
   return FRAMETIME;
 } // mode_2Dmetaballs()
 
+
 /////////////////////////////////////////
 //   2D Cellular Automata Elementary   //
 /////////////////////////////////////////
@@ -5948,6 +5941,65 @@ uint16_t WS2812FX::mode_2Dcaelementary(void) {              // Written by Ewoud 
 
   return FRAMETIME;
 } // mode_2Dcaelementary()
+
+
+
+////////////////////////////////
+//  2D Polar Lights           //
+////////////////////////////////
+
+static float fmap(const float x, const float in_min, const float in_max, const float out_min, const float out_max) {
+  return (out_max - out_min) * (x - in_min) / (in_max - in_min) + out_min;
+}
+
+
+uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevskyy  https://editor.soulmatelights.com/gallery/762-polar-lights , Modified by: Andrew Tuline
+
+  CRGB *leds = (CRGB*) ledData;
+
+  // THIS will be a challenge.
+  CRGBPalette16 currentPalette  = {0x000000, 0x003300, 0x006600, 0x009900, 0x00cc00, 0x00ff00, 0x33ff00, 0x66ff00, 0x99ff00, 0xccff00, 0xffff00, 0xffcc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
+
+  float adjustHeight = fmap(matrixHeight, 8, 32, 28, 12);
+
+  uint16_t adjScale = map(matrixWidth, 8, 64, 310, 63);
+
+  static unsigned long timer;
+
+  if (SEGENV.aux1 != SEGMENT.fft1/12) {
+  
+    SEGENV.aux1 = SEGMENT.fft1;
+    for (int i = 0; i < 16; i++) {
+      long ilk;
+      ilk = (long)currentPalette[i].r << 16;
+      ilk += (long)currentPalette[i].g << 8;
+      ilk += (long)currentPalette[i].b;
+      ilk = (ilk << SEGENV.aux1) | (ilk >> (24 - SEGENV.aux1));
+      currentPalette[i].r = ilk >> 16;
+      currentPalette[i].g = ilk >> 8;
+      currentPalette[i].b = ilk;
+    }
+  }
+
+  uint16_t _scale = map(SEGMENT.intensity, 1, 255, 30, adjScale);
+  byte _speed = map(SEGMENT.speed, 1, 255, 128, 16);
+  
+  for (byte x = 0; x < matrixWidth; x++) {
+    for (byte y = 0; y < matrixHeight; y++) {
+      timer++;
+      leds[XY(x, y)] = ColorFromPalette(currentPalette,
+                       qsub8(
+                       inoise8(SEGENV.aux0 % 2 + x * _scale,
+                       y * 16 +timer % 16,
+                       timer / _speed),
+                       fabs((float)matrixHeight / 2 - (float)y) * adjustHeight));
+    }
+  }
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DPolarLights()
+
 
 
 ////////////////////////////////

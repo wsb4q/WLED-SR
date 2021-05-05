@@ -5627,6 +5627,39 @@ uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman.
 
 
 /////////////////////////
+//    * 2D Swirl        //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https://gist.github.com/kriegsman/5adca44e14ad025e6d3b , modified by Andrew Tuline 
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+  const uint8_t borderWidth = 2;
+
+  uint8_t blurAmount = beatsin8(2, 0, SEGMENT.intensity);
+  blur2d( leds, matrixWidth, matrixHeight, blurAmount);
+
+  uint8_t  i = beatsin8( 27*SEGMENT.speed/255, borderWidth, matrixHeight - borderWidth);
+  uint8_t  j = beatsin8( 41*SEGMENT.speed/255, borderWidth, matrixWidth - borderWidth);
+  uint8_t ni = (matrixWidth - 1) - i;
+  uint8_t nj = (matrixWidth - 1) - j;
+  uint16_t ms = millis();
+  leds[XY( i, j)]  += ColorFromPalette(currentPalette, ms / 11, sample*8, LINEARBLEND); //CHSV( ms / 11, 200, 255);
+  leds[XY( j, i)]  += ColorFromPalette(currentPalette, ms / 13, sample*8, LINEARBLEND); //CHSV( ms / 13, 200, 255);
+  leds[XY(ni, nj)] += ColorFromPalette(currentPalette, ms / 17, sample*8, LINEARBLEND); //CHSV( ms / 17, 200, 255);
+  leds[XY(nj, ni)] += ColorFromPalette(currentPalette, ms / 29, sample*8, LINEARBLEND); //CHSV( ms / 29, 200, 255);
+  leds[XY( i, nj)] += ColorFromPalette(currentPalette, ms / 37, sample*8, LINEARBLEND); //CHSV( ms / 37, 200, 255);
+  leds[XY(ni, j)]  += ColorFromPalette(currentPalette, ms / 41, sample*8, LINEARBLEND); //CHSV( ms / 41, 200, 255);
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DSwirl()
+
+
+
+
+/////////////////////////
 //     2D Fire2012     //
 /////////////////////////
 
@@ -5955,18 +5988,19 @@ static float fmap(const float x, const float in_min, const float in_max, const f
 
 uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevskyy  https://editor.soulmatelights.com/gallery/762-polar-lights , Modified by: Andrew Tuline
 
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
   CRGB *leds = (CRGB*) ledData;
 
-  // THIS will be a challenge.
   CRGBPalette16 currentPalette  = {0x000000, 0x003300, 0x006600, 0x009900, 0x00cc00, 0x00ff00, 0x33ff00, 0x66ff00, 0x99ff00, 0xccff00, 0xffff00, 0xffcc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 
   float adjustHeight = fmap(matrixHeight, 8, 32, 28, 12);
 
   uint16_t adjScale = map(matrixWidth, 8, 64, 310, 63);
 
-  static unsigned long timer;
+  static unsigned long timer;        // Cannot be uint16_t value (aka aux0)
 
-  if (SEGENV.aux1 != SEGMENT.fft1/12) {
+  if (SEGENV.aux1 != SEGMENT.fft1/12) {   // Hacky palette rotation. We need that black.
   
     SEGENV.aux1 = SEGMENT.fft1;
     for (int i = 0; i < 16; i++) {

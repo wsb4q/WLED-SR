@@ -4217,6 +4217,68 @@ uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  ht
 } // mode_2DHiphotic()
 
 
+/////////////////////////
+//     2D Poolnoise    //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DPoolnoise() {                // By: Stepko   https://editor.soulmatelights.com/gallery/517-poolnoise , modifed by Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  #define Sat 255
+  #define Hue 150
+  #define Scale 40
+//  #define Bri 0
+
+  uint8_t hue = Hue;
+
+  fill_solid(currentPalette, 16, CHSV(hue, Sat, 128));
+  currentPalette[9] = CHSV(hue, Sat - 60, 255);
+  currentPalette[8] = CHSV(hue, 255 - Sat, 210);
+  currentPalette[7] = CHSV(hue, 255 - Sat, 210);
+  currentPalette[6] = CHSV(hue, Sat - 60, 255);
+
+  blur2d(leds, matrixWidth, matrixHeight, 16);
+
+  for (byte y = 0; y < matrixHeight; y++) {
+    for (byte x = 0; x < matrixWidth; x++) {
+      uint8_t pixelHue8 = inoise8 (x * Scale, y * Scale, millis() / 16);
+      leds[XY(x, y)] = ColorFromPalette(currentPalette, pixelHue8);
+    }
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 32 );
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DPoolnoise()
+
+
+/////////////////////////
+//     2D Sindots      //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko   https://editor.soulmatelights.com/gallery/597-sin-dots , modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  fadeToBlackBy(leds, SEGLEN, 15);
+  byte t1 = millis() / (257 - SEGMENT.speed); // 20;
+  byte t2 = sin8(t1) / 4 * 2;
+  for (uint16_t i = 0; i < 13; i++) {
+    byte x = sin8(t1 + i * SEGMENT.intensity/8)*(matrixWidth-1)/255;  //   max index now 255x15/255=15!
+    byte y = sin8(t2 + i * SEGMENT.intensity/8)*(matrixHeight-1)/255;  //  max index now 255x15/255=15!
+    leds[XY(x, y)] = ColorFromPalette(currentPalette, i * 255 / 13, 255, LINEARBLEND);  
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 16);
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DSindots()
+
 
 /////////////////////////
 //     2D Julia        //

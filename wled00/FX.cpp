@@ -6016,7 +6016,61 @@ uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https:/
 
   setPixels(leds);
   return FRAMETIME;
-} // mode_2DLissajous()
+} // mode_2DFrizzles()
+
+
+//////////////////////////////
+//     2D Sun Radiation     //
+//////////////////////////////
+
+uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko https://editor.soulmatelights.com/gallery/599-sun-radiation  , modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+
+  static CRGB chsvLut[256];
+  static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!
+  
+  static byte setup = 1;
+  if (setup) {
+    for (int j = 0; j < 256; j++)
+      chsvLut[j] = HeatColor(j / 1.4); //256 pallette color
+    setup = 0;
+  }
+
+  int t = millis() / 4;
+  int index = 0;
+  for (byte j = 0; j < (matrixHeight + 2); j++) {
+    for (byte i = 0; i < (matrixWidth + 2); i++) {
+      byte col = (inoise8_raw(i * 25, j * 25, t)) / 2;
+      bump[index++] = col;
+    }
+  } 
+
+  int yindex = matrixWidth + 3;
+  int8_t vly = -(matrixHeight / 2 + 1);
+  for (byte y = 0; y < matrixHeight; y++) {
+    ++vly;
+    int8_t vlx = -(matrixWidth / 2 + 1);
+    for (byte x = 0; x < matrixWidth; x++) {
+      ++vlx;
+      int8_t nx = bump[x + yindex + 1] - bump[x + yindex - 1];
+      int8_t ny = bump[x + yindex + (matrixWidth + 2)] - bump[x + yindex - (matrixWidth + 2)];
+      byte difx = abs8(vlx * 7 - nx);
+      byte dify = abs8(vly * 7 - ny);
+      int temp = difx * difx + dify * dify;
+      int col = 255 - temp / 8; //8 its a size of effect
+      if (col < 0) col = 0;
+      leds[XY(x, y)] = chsvLut[col]; //thx sutubarosu ))
+    }
+    yindex += (matrixWidth + 2);
+  }
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DSunradiation()
+
 
 
 //////////////////////////////

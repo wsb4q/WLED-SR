@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     171
+#define MODE_COUNT                     172
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -290,6 +290,7 @@
 #define FX_MODE_2DTWISTER              168
 #define FX_MODE_2DDRIFT                169
 #define FX_MODE_2DWAVERLY              170
+#define FX_MODE_2DSUNRADIATION         171
 
 
 class WS2812FX {
@@ -685,7 +686,7 @@ class WS2812FX {
      _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
      _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
      _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
-
+     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -975,7 +976,8 @@ class WS2812FX {
       mode_2DColoredBursts(void),
       mode_2DTwister(void),
       mode_2DDrift(void),
-      mode_2DWaverly(void);
+      mode_2DWaverly(void),
+      mode_2DSunradiation(void);
 
 
   private:
@@ -1081,7 +1083,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
 "2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister","2D Drift",
-"* 2D Waverly"
+"* 2D Waverly","2D Sun radiation"
 ])=====";
 
 

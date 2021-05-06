@@ -4280,9 +4280,8 @@ uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko 
 } // mode_2DSindots()
 
 
-
 /////////////////////////
-//     2D Pulser      //
+//     2D Pulser       //
 /////////////////////////
 
 uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https://editor.soulmatelights.com/gallery/878-pulse-test , modifed by: Andrew Tuline
@@ -4302,6 +4301,136 @@ uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
 } // mode_2DPulser()
+
+
+
+
+/////////////////////////
+//     2D Twister      //
+/////////////////////////
+
+
+
+void WS2812FX::twLine(byte x, byte x1, byte y, byte color, bool dot, bool grad, byte numline, byte side, long a, byte sinOff) { // my ugly hori line draw function )))
+
+  byte steps = abs8(x1 - x) + 1 ;
+
+  for (uint16_t i = 0; i <= steps; i++) {
+    byte dx = lerp8by8(x1, x, i * 255 / steps);
+    uint16_t index = XY(dx, y);
+    
+    setPixelColor(index, color_wheel(color));
+    
+    if (index > 256) Serial.println(index);
+
+
+    //  if (grad) leds[index] %= (sin8(numline * 8 + side * 64 + a + sinOff) + i * 255 / steps) / 2;
+    // THIS DOES **NOT** WORK!!!!
+    if (grad) {
+ //     uint32_t ctemp = getPixelColor(index);
+ //     ctemp %= (uint32_t)((sin8(numline * 8 + side * 64 + a + sinOff) + i * 255 / steps) / 2);
+//      setPixelColor(index,ctemp);
+//      setPixelColor(index,getPixelColor(index));
+    }
+  }
+
+  if (dot) { //add black point at the ends of line
+    setPixelColor(XY(x, y),CRGB::Black);
+    setPixelColor(XY(x1, y), CRGB::Black);
+  }
+} // twLine()
+
+
+uint16_t WS2812FX::mode_2DTwister() {
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  long a = millis() / (34 - SEGMENT.speed / 8);
+  byte sinOff;
+  
+  fill(SEGCOLOR(1));
+  // LEDS.clear();
+  
+  for (uint16_t i = 0; i < matrixHeight; i++) {
+    sinOff = sin8(i * (34- SEGMENT.intensity/8) / PI + cos8(a / 2 + i) / 4 + a / 3);
+
+    byte x1 = sin8(sinOff + a) * (matrixWidth) / 255;
+    byte x2 = sin8(sinOff + a + 64) * (matrixWidth) / 255;
+    byte x3 = sin8(sinOff + a + 128) * (matrixWidth) / 255;
+    byte x4 = sin8(sinOff + a + 192) * (matrixWidth) / 255;
+    x1 = x1 >= matrixWidth ? (matrixWidth -1) : x1;
+    x2 = x2 >= matrixWidth ? (matrixWidth -1) : x2;
+    x3 = x3 >= matrixWidth ? (matrixWidth -1) : x3;
+    x4 = x4 >= matrixWidth ? (matrixWidth -1) : x4;
+
+    byte hueColor = sin8(a / 20);
+    if (x1 < x2) twLine(x1, x2, i, hueColor,       1, 0, i, 0, a, sinOff);
+    if (x2 < x3) twLine(x2, x3, i, hueColor + 64,  1, 0, i, 1, a, sinOff);
+    if (x3 < x4) twLine(x3, x4, i, hueColor + 128, 1, 0, i, 2, a, sinOff);
+    if (x4 < x1) twLine(x4, x1, i, hueColor + 192, 1, 0, i, 3, a, sinOff);
+  }
+
+  return FRAMETIME;
+} // mode_2DTwister()
+
+
+
+
+////////////////////////////
+//     2D Colored Bursts  //
+////////////////////////////
+
+
+
+uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https://editor.soulmatelights.com/gallery/819-colored-bursts , modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  bool dot = false;
+  bool grad = true;
+
+  static byte hue = 0;
+  static byte numLines = 10;
+  
+  hue++;
+  numLines = SEGMENT.intensity/16;
+  fadeToBlackBy(leds, SEGLEN, 40);
+
+  for (byte i = 0; i < numLines; i++) {
+    byte x1 = beatsin8(2 + SEGMENT.speed/16, 0, (matrixWidth - 1));
+    byte x2 = beatsin8(1 + SEGMENT.speed/16, 0, (matrixWidth - 1));
+    byte y1 = beatsin8(5 + SEGMENT.speed/16, 0, (matrixHeight - 1), 0, i * 24);
+    byte y2 = beatsin8(3 + SEGMENT.speed/16, 0, (matrixHeight - 1), 0, i * 48 + 64);
+    CRGB color = ColorFromPalette(currentPalette, i * 255 / numLines + hue, 255, LINEARBLEND);
+
+    byte xsteps = abs8(x1 - y1) + 1;
+    byte ysteps = abs8(x2 - y2) + 1;
+    byte steps = xsteps >= ysteps ? xsteps : ysteps;
+  
+    for (byte i = 1; i <= steps; i++) {
+      byte dx = lerp8by8(x1, y1, i * 255 / steps);
+      byte dy = lerp8by8(x2, y2, i * 255 / steps);
+      int index = XY(dx, dy);
+      leds[index] += color;           // change to += for brightness look
+      if (grad) leds[index] %= (i * 255 / steps); //Draw gradient line
+    }
+  
+    if (dot) { //add white point at the ends of line
+      leds[XY(x1, x2)] += CRGB::White;
+      leds[XY(y1, y2)] += CRGB::White;
+    }
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 4);
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DColoredBursts()
+
+
+
+
 
 
 /////////////////////////

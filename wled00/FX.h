@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     167
+#define MODE_COUNT                     169
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -286,6 +286,8 @@
 #define FX_MODE_2DSINDOTS              164
 #define FX_MODE_2DDNASPIRAL            165
 #define FX_MODE_2DPULSER               166
+#define FX_MODE_2DCOLOREDBURSTS        167
+#define FX_MODE_2DTWISTER              168
 
 
 class WS2812FX {
@@ -677,6 +679,9 @@ class WS2812FX {
      _mode[FX_MODE_2DSINDOTS]                = &WS2812FX::mode_2DSindots;
      _mode[FX_MODE_2DDNASPIRAL]              = &WS2812FX::mode_2DDNASpiral;
      _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
+     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
+     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
+
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -962,7 +967,9 @@ class WS2812FX {
       mode_2DPoolnoise(void),
       mode_2DSindots(void),
       mode_2DDNASpiral(void),
-      mode_2DPulser(void);
+      mode_2DPulser(void),
+      mode_2DColoredBursts(void),
+      mode_2DTwister(void);
 
 
   private:
@@ -1012,13 +1019,17 @@ class WS2812FX {
       spots_base(uint16_t),
       phased_base(uint8_t);
 
+
     CRGB twinklefox_one_twinkle(uint32_t ms, uint8_t salt, bool cat);
     CRGB pacifica_one_layer(uint16_t i, CRGBPalette16& p, uint16_t cistart, uint16_t wavescale, uint8_t bri, uint16_t ioff);
 
     void
       blendPixelColor(uint16_t n, uint32_t color, uint8_t blend),
       startTransition(uint8_t oldBri, uint32_t oldCol, uint16_t dur, uint8_t segn, uint8_t slot),
+      twLine(byte, byte, byte, byte, bool, bool, byte, byte, long, byte),
       deserializeMap(void);
+
+
 
     uint16_t* customMappingTable = nullptr;
     uint16_t  customMappingSize  = 0;
@@ -1063,7 +1074,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister"
 ])=====";
 
 

@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     169
+#define MODE_COUNT                     171
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -288,6 +288,8 @@
 #define FX_MODE_2DPULSER               166
 #define FX_MODE_2DCOLOREDBURSTS        167
 #define FX_MODE_2DTWISTER              168
+#define FX_MODE_2DDRIFT                169
+#define FX_MODE_2DWAVERLY              170
 
 
 class WS2812FX {
@@ -681,6 +683,8 @@ class WS2812FX {
      _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
      _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
      _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
+     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
+     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
 
 
       _brightness = DEFAULT_BRIGHTNESS;
@@ -969,7 +973,9 @@ class WS2812FX {
       mode_2DDNASpiral(void),
       mode_2DPulser(void),
       mode_2DColoredBursts(void),
-      mode_2DTwister(void);
+      mode_2DTwister(void),
+      mode_2DDrift(void),
+      mode_2DWaverly(void);
 
 
   private:
@@ -1074,7 +1080,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister","2D Drift",
+"* 2D Waverly"
 ])=====";
 
 

@@ -4304,12 +4304,37 @@ uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https
 
 
 
+/////////////////////////
+//     2D Drift        //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.soulmatelights.com/gallery/884-drift , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  #define CenterX ((matrixWidth / 2) - 0.5)
+  #define CenterY ((matrixHeight / 2) - 0.5)
+  const byte maxDim = max(matrixWidth, matrixHeight);
+  fadeToBlackBy(leds, SEGLEN, 128);
+  unsigned long t = millis() / (SEGMENT.speed/8+1);
+  for (float i = 1; i < maxDim / 2; i += 0.25) {
+    double angle = radians(t * (maxDim / 2 - i));
+    int myX = (int)(CenterX + sin(angle) * i);
+    int myY = (int)(CenterY + cos(angle) * i);
+    leds[XY( myX, myY)] += ColorFromPalette(currentPalette, (i * 20) + (t / 20), 255, LINEARBLEND);
+  }
+  blur2d(leds, matrixWidth, matrixHeight, SEGMENT.intensity/8);
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DDrift()
+
 
 /////////////////////////
 //     2D Twister      //
 /////////////////////////
-
-
 
 void WS2812FX::twLine(byte x, byte x1, byte y, byte color, bool dot, bool grad, byte numline, byte side, long a, byte sinOff) { // my ugly hori line draw function )))
 
@@ -4341,7 +4366,7 @@ void WS2812FX::twLine(byte x, byte x1, byte y, byte color, bool dot, bool grad, 
 } // twLine()
 
 
-uint16_t WS2812FX::mode_2DTwister() {
+uint16_t WS2812FX::mode_2DTwister() {                        // By: ldirko https://editor.soulmatelights.com/gallery/921-twister-test , Modified by: Andrew Tuline
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
@@ -4376,11 +4401,10 @@ uint16_t WS2812FX::mode_2DTwister() {
 
 
 
+
 ////////////////////////////
 //     2D Colored Bursts  //
 ////////////////////////////
-
-
 
 uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https://editor.soulmatelights.com/gallery/819-colored-bursts , modified by: Andrew Tuline
 
@@ -6063,6 +6087,37 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
   return FRAMETIME;
 } // mode_2DSwirl()
 
+
+/////////////////////////
+//    * 2D Waverly     //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DWaverly(void) {                                       // By: Stepko, https://editor.soulmatelights.com/gallery/652-wave , modified by Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB *)ledData;
+
+  fadeToBlackBy(leds,SEGLEN,SEGMENT.speed);
+
+  long t = millis() / 2;
+  for (byte i = 0; i < matrixWidth; i++) {
+  //  byte thisVal = inoise8(i * 45 , t , t);
+  // byte thisMax = map(thisVal, 0, 255, 0, matrixHeight);
+ 
+   uint16_t thisVal = sample*SEGMENT.intensity/64 + inoise8(i * 45 , t , t)*5/3;
+   byte thisMax = map(thisVal, 0, 512, 0, matrixHeight);
+
+    for (byte j = 0; j < thisMax; j++) {
+      leds[XY(i, j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);
+      leds[XY((matrixWidth - 1) - i, (matrixHeight - 1) - j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);
+    }
+  }
+  blur2d(leds, matrixWidth, matrixHeight, 16);
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DWaverly()
 
 
 

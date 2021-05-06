@@ -5985,8 +5985,6 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
     uint8_t xlocn = sin8(millis()/2+i*SEGMENT.speed/64);
     uint8_t ylocn = cos8(millis()/2+i*128/64);
-
-    Serial.println(SEGMENT.speed);
     
     xlocn = map(xlocn,0,255,0,matrixWidth-1);
     ylocn = map(ylocn,0,255,0,matrixHeight-1);
@@ -6030,7 +6028,7 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
   CRGB *leds = (CRGB *)ledData;
 
   static CRGB chsvLut[256];
-  static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!
+  static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!  or (matrixWidth+2) * (mtrixHeight+2)
   
   static byte setup = 1;
   if (setup) {
@@ -6070,7 +6068,6 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
   setPixels(leds);
   return FRAMETIME;
 } // mode_2DSunradiation()
-
 
 
 //////////////////////////////

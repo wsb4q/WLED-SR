@@ -117,7 +117,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     165
+#define MODE_COUNT                     167
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -284,6 +284,8 @@
 #define FX_MODE_2DHIPHOTIC             162
 #define FX_MODE_2DPOOLNOISE            163
 #define FX_MODE_2DSINDOTS              164
+#define FX_MODE_2DDNASPIRAL            165
+#define FX_MODE_2DPULSER               166
 
 
 class WS2812FX {
@@ -673,7 +675,8 @@ class WS2812FX {
      _mode[FX_MODE_2DHIPHOTIC]               = &WS2812FX::mode_2DHiphotic;
      _mode[FX_MODE_2DPOOLNOISE]              = &WS2812FX::mode_2DPoolnoise;
      _mode[FX_MODE_2DSINDOTS]                = &WS2812FX::mode_2DSindots;
-
+     _mode[FX_MODE_2DDNASPIRAL]              = &WS2812FX::mode_2DDNASpiral;
+     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -957,7 +960,9 @@ class WS2812FX {
       mode_FlowStripe(void),
       mode_2DHiphotic(void),
       mode_2DPoolnoise(void),
-      mode_2DSindots(void);
+      mode_2DSindots(void),
+      mode_2DDNASpiral(void),
+      mode_2DPulser(void);
 
 
   private:
@@ -1058,7 +1063,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser"
 ])=====";
 
 

@@ -4280,6 +4280,77 @@ uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko 
 } // mode_2DSindots()
 
 
+
+/////////////////////////
+//     2D Pulser      //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https://editor.soulmatelights.com/gallery/878-pulse-test , modifed by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  static byte r = 16;
+  uint16_t a = millis() / (18 - SEGMENT.speed / 16);
+  byte x = (a / 14) % matrixWidth;
+  byte y = (sin8(a * 5) + sin8(a * 4) + sin8(a * 2)) / 3 * r / 255;
+  uint16_t index = XY (x, (matrixHeight / 2 - r / 2 + y) % matrixWidth);
+  leds[index] = ColorFromPalette(currentPalette, y * 16 - 100, 255, LINEARBLEND);
+  blur2d(leds, matrixWidth, matrixHeight, SEGMENT.intensity / 16);
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DPulser()
+
+
+/////////////////////////
+//     2D DNA Spiral   //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DDNASpiral() {               // By: ldirko  https://editor.soulmatelights.com/gallery/810 , modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+
+  uint8_t speeds = SEGMENT.speed/2;
+  uint8_t freq = SEGMENT.intensity/8;
+
+  static byte hue = 0;
+  int ms = millis() / 20;
+  nscale8(leds, SEGLEN, 120);
+
+  for (int i = 0; i < matrixHeight; i++) {
+    int x = beatsin8(speeds, 0, matrixWidth - 1, 0, i * freq) + beatsin8(speeds - 7, 0, matrixWidth - 1, 0, i * freq + 128);
+    int x1 = beatsin8(speeds, 0, matrixWidth - 1, 0, 128 + i * freq) + beatsin8(speeds - 7, 0, matrixWidth - 1, 0, 128 + 64 + i * freq);
+    hue = i * 128 / (matrixWidth - 1) + ms;
+    if ((i + ms / 8) & 3) {
+      x = x / 2; x1 = x1 / 2;
+      byte steps = abs8(x - x1) + 1;
+      for (byte k = 1; k <= steps; k++) {
+        byte dx = lerp8by8(x, x1, k * 255 / steps);
+        int index = XY(dx, i);
+        leds[index] += ColorFromPalette(currentPalette, hue, 255, LINEARBLEND);
+        leds[index] %= (k * 255 / steps); //for draw gradient line
+      }
+      leds[XY(x, i)] += CRGB::DarkSlateGray;
+      leds[XY(x1, i)] += CRGB::White;
+    }
+  }
+
+
+  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
+  return FRAMETIME;
+} // mode_2DDNASpiral()
+
+
+
+
+
+
+
 /////////////////////////
 //     2D Julia        //
 /////////////////////////

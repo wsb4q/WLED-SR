@@ -4144,8 +4144,8 @@ uint16_t WS2812FX::mode_FlowStripe(void) {                        // By: ldirko 
   CRGB *leds = (CRGB *)ledData;
 
   const float hl = SEGLEN / 1.3;
-  uint8_t hue = millis() / SEGMENT.speed;
-  int t = millis() / (SEGMENT.intensity/8);
+  uint8_t hue = millis() / (SEGMENT.speed+1);
+  int t = millis() / (SEGMENT.intensity/8+1);
 
   for (int i = 0; i < SEGLEN; i++) {
     int c = (abs(i - hl) / hl) * 127;
@@ -4318,7 +4318,7 @@ uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.
   #define CenterY ((matrixHeight / 2) - 0.5)
   const byte maxDim = max(matrixWidth, matrixHeight);
   fadeToBlackBy(leds, SEGLEN, 128);
-  unsigned long t = millis() / (SEGMENT.speed/8+1);
+  unsigned long t = millis() / (32 - SEGMENT.speed/8);
   for (float i = 1; i < maxDim / 2; i += 0.25) {
     double angle = radians(t * (maxDim / 2 - i));
     int myX = (int)(CenterX + sin(angle) * i);

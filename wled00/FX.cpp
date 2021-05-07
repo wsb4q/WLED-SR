@@ -6311,14 +6311,14 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
 
     // spawn new falling code
     if (SEGMENT.fft3 < 128) {
-    	if (random8(3) == 0 || emptyScreen) {               // lower number == more frequent spawns
-    	  uint8_t spawnX = random8(matrixWidth);
+        if (random8() < SEGMENT.intensity || emptyScreen) {
+    	    uint8_t spawnX = random8(matrixWidth);
       	  leds[XY(spawnX, 0)] = CRGB(175,255,175 );
     	}
     } else if (SEGMENT.fft3 >= 128) {
-    	if (random8(3) == 0 || emptyScreen) {               // lower number == more frequent spawns
-    	  uint8_t spawnX = random8(matrixHeight);
-    	  leds[XY(0, spawnX)] = CRGB(175,255,175 );
+        if (random8() < SEGMENT.intensity || emptyScreen) {
+          uint8_t spawnX = random8(matrixHeight);
+    	    leds[XY(0, spawnX)] = CRGB(175,255,175 );
     	  }
     }
 

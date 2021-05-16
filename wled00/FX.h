@@ -117,7 +117,8 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT                     172
+//#define MODE_COUNT                     172
+#define MODE_COUNT                      167
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -136,7 +137,9 @@
 #define FX_MODE_THEATER_CHASE_RAINBOW   14
 #define FX_MODE_RUNNING_LIGHTS          15
 #define FX_MODE_SAW                     16
-#define FX_MODE_TWINKLE                 17
+// #define FX_MODE_TWINKLE                 17
+#define FX_MODE_2DSUNRADIATION         17
+
 #define FX_MODE_DISSOLVE                18
 #define FX_MODE_DISSOLVE_RANDOM         19
 #define FX_MODE_SPARKLE                 20
@@ -193,14 +196,20 @@
 #define FX_MODE_NOISE16_2               71
 #define FX_MODE_NOISE16_3               72
 #define FX_MODE_NOISE16_4               73
-#define FX_MODE_COLORTWINKLE            74
+// #define FX_MODE_COLORTWINKLE            74
+#define FX_MODE_2DWAVERLY              74
+
 #define FX_MODE_LAKE                    75
 #define FX_MODE_METEOR                  76
 #define FX_MODE_METEOR_SMOOTH           77
 #define FX_MODE_RAILWAY                 78
 #define FX_MODE_RIPPLE                  79
-#define FX_MODE_TWINKLEFOX              80
-#define FX_MODE_TWINKLECAT              81
+// #define FX_MODE_TWINKLEFOX              80
+#define FX_MODE_2DDRIFT                80
+
+// #define FX_MODE_TWINKLECAT              81
+#define FX_MODE_2DCOLOREDBURSTS        81
+
 #define FX_MODE_HALLOWEEN_EYES          82
 #define FX_MODE_STATIC_PATTERN          83
 #define FX_MODE_TRI_STATIC_PATTERN      84
@@ -271,7 +280,9 @@
 #define FX_MODE_DJLIGHT                149
 #define FX_MODE_2DFUNKYPLANK           150
 #define FX_MODE_2DCENTERBARS           151
-#define FX_MODE_2DJULIA                152
+// #define FX_MODE_2DJULIA                152
+#define FX_MODE_2DPULSER               152
+
 #define FX_MODE_BLURZ                  153
 #define FX_MODE_2DCAELEMENTARY         154
 #define FX_MODE_2DTARTAN               155
@@ -285,12 +296,13 @@
 #define FX_MODE_2DPOOLNOISE            163
 #define FX_MODE_2DSINDOTS              164
 #define FX_MODE_2DDNASPIRAL            165
-#define FX_MODE_2DPULSER               166
-#define FX_MODE_2DCOLOREDBURSTS        167
-#define FX_MODE_2DTWISTER              168
-#define FX_MODE_2DDRIFT                169
-#define FX_MODE_2DWAVERLY              170
-#define FX_MODE_2DSUNRADIATION         171
+
+//#define FX_MODE_2DPULSER               166
+//#define FX_MODE_2DCOLOREDBURSTS        167
+// #define FX_MODE_2DTWISTER              168
+// #define FX_MODE_2DDRIFT                169
+//#define FX_MODE_2DWAVERLY              170
+//#define FX_MODE_2DSUNRADIATION         171
 
 
 class WS2812FX {
@@ -530,7 +542,9 @@ class WS2812FX {
       _mode[FX_MODE_THEATER_CHASE]           = &WS2812FX::mode_theater_chase;
       _mode[FX_MODE_THEATER_CHASE_RAINBOW]   = &WS2812FX::mode_theater_chase_rainbow;
       _mode[FX_MODE_SAW]                     = &WS2812FX::mode_saw;
-      _mode[FX_MODE_TWINKLE]                 = &WS2812FX::mode_twinkle;
+//      _mode[FX_MODE_TWINKLE]                 = &WS2812FX::mode_twinkle;
+     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
+
       _mode[FX_MODE_DISSOLVE]                = &WS2812FX::mode_dissolve;
       _mode[FX_MODE_DISSOLVE_RANDOM]         = &WS2812FX::mode_dissolve_random;
       _mode[FX_MODE_SPARKLE]                 = &WS2812FX::mode_sparkle;
@@ -589,14 +603,20 @@ class WS2812FX {
       _mode[FX_MODE_NOISE16_2]               = &WS2812FX::mode_noise16_2;
       _mode[FX_MODE_NOISE16_3]               = &WS2812FX::mode_noise16_3;
       _mode[FX_MODE_NOISE16_4]               = &WS2812FX::mode_noise16_4;
-      _mode[FX_MODE_COLORTWINKLE]            = &WS2812FX::mode_colortwinkle;
+//      _mode[FX_MODE_COLORTWINKLE]            = &WS2812FX::mode_colortwinkle;
+     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
+
       _mode[FX_MODE_LAKE]                    = &WS2812FX::mode_lake;
       _mode[FX_MODE_METEOR]                  = &WS2812FX::mode_meteor;
       _mode[FX_MODE_METEOR_SMOOTH]           = &WS2812FX::mode_meteor_smooth;
       _mode[FX_MODE_RAILWAY]                 = &WS2812FX::mode_railway;
       _mode[FX_MODE_RIPPLE]                  = &WS2812FX::mode_ripple;
-      _mode[FX_MODE_TWINKLEFOX]              = &WS2812FX::mode_twinklefox;
-      _mode[FX_MODE_TWINKLECAT]              = &WS2812FX::mode_twinklecat;
+//      _mode[FX_MODE_TWINKLEFOX]              = &WS2812FX::mode_twinklefox;
+     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
+
+//      _mode[FX_MODE_TWINKLECAT]              = &WS2812FX::mode_twinklecat;
+      _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
+
       _mode[FX_MODE_HALLOWEEN_EYES]          = &WS2812FX::mode_halloween_eyes;
       _mode[FX_MODE_STATIC_PATTERN]          = &WS2812FX::mode_static_pattern;
       _mode[FX_MODE_TRI_STATIC_PATTERN]      = &WS2812FX::mode_tri_static_pattern;
@@ -667,7 +687,9 @@ class WS2812FX {
       _mode[FX_MODE_DJLIGHT]                 = &WS2812FX::mode_DJLight;
       _mode[FX_MODE_2DFUNKYPLANK]            = &WS2812FX::mode_2DFunkyPlank;
       _mode[FX_MODE_2DCENTERBARS]            = &WS2812FX::mode_2DCenterBars;
-      _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
+//      _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
+     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
+
       _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
      _mode[FX_MODE_2DCAELEMENTARY]           = &WS2812FX::mode_2Dcaelementary;
      _mode[FX_MODE_2DTARTAN]                 = &WS2812FX::mode_2Dtartan;
@@ -681,12 +703,13 @@ class WS2812FX {
      _mode[FX_MODE_2DPOOLNOISE]              = &WS2812FX::mode_2DPoolnoise;
      _mode[FX_MODE_2DSINDOTS]                = &WS2812FX::mode_2DSindots;
      _mode[FX_MODE_2DDNASPIRAL]              = &WS2812FX::mode_2DDNASpiral;
-     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
-     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
-     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
-     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
-     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
-     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
+//     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
+//     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
+//     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
+
+//     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
+//     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
+//     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
 
       _brightness = DEFAULT_BRIGHTNESS;
       currentPalette = CRGBPalette16(CRGB::Black);
@@ -826,7 +849,9 @@ class WS2812FX {
       mode_rainbow_cycle(void),
       mode_running_lights(void),
       mode_saw(void),
-      mode_twinkle(void),
+//      mode_twinkle(void),
+      mode_2DSunradiation(void),
+
       mode_dissolve(void),
       mode_dissolve_random(void),
       mode_sparkle(void),
@@ -880,14 +905,20 @@ class WS2812FX {
       mode_noise16_2(void),
       mode_noise16_3(void),
       mode_noise16_4(void),
-      mode_colortwinkle(void),
+//      mode_colortwinkle(void),
+      mode_2DWaverly(void),
+
       mode_lake(void),
       mode_meteor(void),
       mode_meteor_smooth(void),
       mode_railway(void),
       mode_ripple(void),
-      mode_twinklefox(void),
-      mode_twinklecat(void),
+//      mode_twinklefox(void),
+      mode_2DDrift(void),
+
+//      mode_twinklecat(void),
+      mode_2DColoredBursts(void),
+
       mode_halloween_eyes(void),
       mode_static_pattern(void),
       mode_tri_static_pattern(void),
@@ -958,7 +989,8 @@ class WS2812FX {
       mode_DJLight(void),
       mode_2DFunkyPlank(void),
       mode_2DCenterBars(void),
-      mode_2DJulia(void),
+//      mode_2DJulia(void),
+      mode_2DPulser(void),
       mode_blurz(void),
       mode_2Dcaelementary(void),
       mode_2Dtartan(void),
@@ -971,13 +1003,14 @@ class WS2812FX {
       mode_2DHiphotic(void),
       mode_2DPoolnoise(void),
       mode_2DSindots(void),
-      mode_2DDNASpiral(void),
-      mode_2DPulser(void),
-      mode_2DColoredBursts(void),
-      mode_2DTwister(void),
-      mode_2DDrift(void),
-      mode_2DWaverly(void),
-      mode_2DSunradiation(void);
+      mode_2DDNASpiral(void);
+//      mode_2DPulser(void),
+//      mode_2DColoredBursts(void),
+//      mode_2DTwister(void),
+
+//      mode_2DDrift(void),
+//     mode_2DWaverly(void),
+//      mode_2DSunradiation(void);
 
 
   private:
@@ -1065,7 +1098,7 @@ class WS2812FX {
 };
 
 //10 names per line
-const char JSON_mode_names[] PROGMEM = R"=====([
+/* const char JSON_mode_names[] PROGMEM = R"=====([
 "Solid","Blink","Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
 "Scan","Scan Dual","Fade","Theater","Theater Rainbow","Running","Saw","Twinkle","Dissolve","Dissolve Rnd",
 "Sparkle","Sparkle Dark","Sparkle+","Strobe","Strobe Rainbow","Strobe Mega","Blink Rainbow","Android","Chase","Chase Random",
@@ -1085,6 +1118,29 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister","2D Drift",
 "* 2D Waverly","2D Sun radiation"
 ])=====";
+*/
+
+const char JSON_mode_names[] PROGMEM = R"=====([
+"Solid","Blink","Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
+"Scan","Scan Dual","Fade","Theater","Theater Rainbow","Running","Saw","2D Sun radiation","Dissolve","Dissolve Rnd",
+"Sparkle","Sparkle Dark","Sparkle+","Strobe","Strobe Rainbow","Strobe Mega","Blink Rainbow","Android","Chase","Chase Random",
+"Chase Rainbow","Chase Flash","Chase Flash Rnd","Rainbow Runner","Colorful","Traffic Light","Sweep Random","Running 2","Aurora","Stream",
+"Scanner","Lighthouse","Fireworks","Rain","Tetrix","Fire Flicker","Gradient","Loading","Police","Police All",
+"Two Dots","Two Areas","Circus","Halloween","Tri Chase","Tri Wipe","Tri Fade","Lightning","ICU","Multi Comet",
+"Scanner Dual","Stream 2","Oscillate","Pride 2015","Juggle","Palette","Fire 2012","Colorwaves","Bpm","Fill Noise",
+"Noise 1","Noise 2","Noise 3","Noise 4","* 2D Waverly","Lake","Meteor","Meteor Smooth","Railway","Ripple",
+"2D Drift","2D Colored Bursts","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
+"Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
+"Heartbeat","Pacifica","Candle Multi","Solid Glitter","Sunrise","Phased","Phased Noise","TwinkleUp","Noise Pal","Sine",
+"Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth","* Pixels","* Pixelwave",
+"* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
+"** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
+"2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
+"** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral"
+
+])=====";
+
 
 
 const char JSON_palette_names[] PROGMEM = R"=====([

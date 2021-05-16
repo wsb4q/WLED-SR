@@ -483,10 +483,12 @@ uint16_t WS2812FX::mode_saw(void) {
 }
 
 
+
 /*
  * Blink several LEDs in random colors on, reset, repeat.
  * Inspired by www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/
  */
+/*
 uint16_t WS2812FX::mode_twinkle(void) {
   fill(SEGCOLOR(1));
 
@@ -516,6 +518,7 @@ uint16_t WS2812FX::mode_twinkle(void) {
 
   return FRAMETIME;
 }
+*/
 
 
 /*
@@ -1976,7 +1979,7 @@ uint16_t WS2812FX::mode_noise16_4()
 
 
 //based on https://gist.github.com/kriegsman/5408ecd397744ba0393e
-uint16_t WS2812FX::mode_colortwinkle()
+/*uint16_t WS2812FX::mode_colortwinkle()
 {
   uint16_t dataSize = (SEGLEN+7) >> 3; //1 bit per LED
   if (!SEGENV.allocateData(dataSize)) return mode_static(); //allocation failed
@@ -2030,6 +2033,7 @@ uint16_t WS2812FX::mode_colortwinkle()
   }
   return FRAMETIME;
 }
+*/
 
 
 //Calm effect, like a lake at night
@@ -2249,7 +2253,7 @@ uint16_t WS2812FX::mode_ripple_rainbow(void) {
 }
 
 
-
+/*
 //  TwinkleFOX by Mark Kriegsman: https://gist.github.com/kriegsman/756ea6dcae8e30845b5a
 //
 //  TwinkleFOX: Twinkling 'holiday' lights that fade in and out.
@@ -2389,7 +2393,7 @@ uint16_t WS2812FX::mode_twinklecat()
 {
   return twinklefox_base(true);
 }
-
+*/
 
 //inspired by https://www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/#LEDStripEffectBlinkingHalloweenEyes
 #define HALLOWEEN_EYE_SPACE 3
@@ -4336,6 +4340,7 @@ uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.
 //     2D Twister      //
 /////////////////////////
 
+/*
 void WS2812FX::twLine(byte x, byte x1, byte y, byte color, bool dot, bool grad, byte numline, byte side, long a, byte sinOff) { // my ugly hori line draw function )))
 
   byte steps = abs8(x1 - x) + 1 ;
@@ -4397,9 +4402,7 @@ uint16_t WS2812FX::mode_2DTwister() {                        // By: ldirko https
 
   return FRAMETIME;
 } // mode_2DTwister()
-
-
-
+*/
 
 
 ////////////////////////////
@@ -4454,9 +4457,6 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
 
 
 
-
-
-
 /////////////////////////
 //     2D DNA Spiral   //
 /////////////////////////
@@ -4500,10 +4500,6 @@ uint16_t WS2812FX::mode_2DDNASpiral() {               // By: ldirko  https://edi
 
 
 
-
-
-
-
 /////////////////////////
 //     2D Julia        //
 /////////////////////////
@@ -4515,6 +4511,7 @@ uint16_t WS2812FX::mode_2DDNASpiral() {               // By: ldirko  https://edi
 // FFT2 = Location of Y centerpoint
 // FFT3 = Size of the area (small value = smaller area)
 
+/*
 typedef struct Julia {              // We can't use the 'static' keyword for persistent variables, so we have to go the LONG route to support them.
   float xcen;
   float ycen;
@@ -4629,6 +4626,7 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
   return FRAMETIME;
 
 } // mode_2DJulia()
+*/
 
 
 
@@ -6546,82 +6544,3 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
   setPixels(leds);
   return FRAMETIME;
 } // mode_2DPolarLights()
-
-
-
-////////////////////////////////
-//  **FFT_test                //
-////////////////////////////////
-
-// This is our internal testing routine, which has been exposed for use with debugging.
-
-// Some variables
-// SEGENV.aux0  - A uint16_t persistent value
-// SEGMENT.fft2 - A unit_t slider
-// SEGMENT.fft3 - A uint8_t slider
-// FFT_MajorPeak
-// FFT_Magnitude
-
-
-// uint16_t WS2812FX::fft_test() {
-
-// Configure decay for volume based variable sample
-/*  if (!SEGENV.allocateData(sizeof(float))) return mode_static();
-  float* expAdjF = reinterpret_cast<float*>(SEGENV.data);
-
-  float weightingF = (float)(SEGMENT.fft3+40)/1000.0;            // Take 0 to 255 from slider and recalculate to be << 1.0, and with a reasonable range of decay throughout.
-
-  if ((float)sample > *expAdjF) {
-    *expAdjF = (float)sample;
-  } else {
-    *expAdjF = (weightingF * (float)sample + (1.0-weightingF) * *expAdjF);
-  }
-
-//  Serial.print("Sample:\t"); Serial.print(sample);
-  Serial.print(",expAdjF:\t"); Serial.print(*expAdjF,3);
-  Serial.println(" ");
-*/
-
-
-
-// Configure decay for FFT based variable fftResult[16]
-/*  if (!SEGENV.allocateData(sizeof(float) * 16)) return mode_static();
-  float* expAdjF = reinterpret_cast<float*>(SEGENV.data);
-  float weightingF = (float)(SEGMENT.fft3+40)/1000.0;            // Take 0 to 255 and recalculate to be << 1.0
-
-  for (int i = 0; i < 16; i++) {
-
-   if ((float)sample > *expAdjF[i]) {
-    *expAdjF[i] = (float)sample;
-  } else {
-    expAdjF[i] = (weightingF * (float)sample + (1.0-weightingF) * expAdjF[i]);
-  }
-
-    Serial.print(fftResult[i]);
-    Serial.print("\t"); Serial.print(expAdjF[i],3);Serial.print("\t");
-  }
-  Serial.println(" "); Serial.println(" ");
-*/
-
-// Testing fftResult values to see if/how we can normalize results.
-/*
-// Select a bin to display
-uint8_t binVal = map(SEGMENT.fft3,0,255,0,15);
-
-// Display smoothed results of selected bin.
-SEGENV.aux0 = ((SEGENV.aux0 * 15) + fftResult[binVal]) / 16;
-
-
-Serial.print("binVal:\t"); Serial.print(binVal);
-//Serial.print(",fftResult:\t"); Serial.print(fftResult[binVal]);
-Serial.print(",Avg:\t"); Serial.print(SEGENV.aux0);
-Serial.println(" ");
-*/
-
-//    for (int i=0; i < 16; i++) {
-//        fftResult[i] = fftResult[i]-(float)soundSquelch*(float)linearNoise[i]/4.0 <= 0? 0 : fftResult[i]-(float)soundSquelch*(float)linearNoise[i]/4.0;
-//    }
-
-//  return FRAMETIME;
-//} //
-

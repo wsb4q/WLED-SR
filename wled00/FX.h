@@ -284,7 +284,7 @@
 #define FX_MODE_2DPULSER               152
 
 #define FX_MODE_BLURZ                  153
-#define FX_MODE_2DCAELEMENTARY         154
+#define FX_MODE_2DCAGAMEOFLIFE         154
 #define FX_MODE_2DTARTAN               155
 #define FX_MODE_2DPOLARLIGHTS          156
 #define FX_MODE_2DSWIRL                157
@@ -690,8 +690,8 @@ class WS2812FX {
 //      _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
      _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
 
-      _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
-     _mode[FX_MODE_2DCAELEMENTARY]           = &WS2812FX::mode_2Dcaelementary;
+     _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
+     _mode[FX_MODE_2DCAGAMEOFLIFE]           = &WS2812FX::mode_2Dcagameoflife;
      _mode[FX_MODE_2DTARTAN]                 = &WS2812FX::mode_2Dtartan;
      _mode[FX_MODE_2DPOLARLIGHTS]            = &WS2812FX::mode_2DPolarLights;
      _mode[FX_MODE_2DSWIRL]                  = &WS2812FX::mode_2DSwirl;
@@ -992,7 +992,7 @@ class WS2812FX {
 //      mode_2DJulia(void),
       mode_2DPulser(void),
       mode_blurz(void),
-      mode_2Dcaelementary(void),
+      mode_2Dcagameoflife(void),
       mode_2Dtartan(void),
       mode_2DPolarLights(void),
       mode_2DSwirl(void),
@@ -1114,7 +1114,7 @@ class WS2812FX {
 "* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
+"** 2D Funky Plank","** 2D CenterBars","2D Julia","** Blurz","2D CA GameOfLife","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
 "2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral","2D Pulser","2D Colored Bursts","2D Twister","2D Drift",
 "* 2D Waverly","2D Sun radiation"
 ])=====";
@@ -1136,7 +1136,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Plasma","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D CA Elementary","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
+"** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D CA GameOfLife","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
 "2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Poolnoise","2D Sindots","2D DNASpiral"
 
 ])=====";

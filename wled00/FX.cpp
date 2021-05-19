@@ -5742,28 +5742,46 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //                        |
 //    19 < 18 < 17 < 16 < 15
 //
-// Bonus vocabulary word: anything that goes one way
-// in one row, and then backwards in the next row, and so on
-// is call "boustrophedon", meaning "as the ox plows."
+//
+//  We have 5 orientation bits. The values are:
+//
+//  XY_LAYOUT = SERPENTINE = 16, ROWMAJOR = 8, TRANSPOSE = 4, FLIPMAJOR = 2, FLIPMINOR = 1
+//
+//  ROWMAJOR   - The x (or Major) value goes horizontal (otherwise vertical).
+//  SERPENTINE - A serpentine layout (otherwise non-serpentine layout).
+//  FLIPMAJOR  - Flip the major axis, ie top to bottom (otherwise not).
+// FLIPMINOR  - Flip the minor axis, ie left to right (otherwise not).
+//  TRANSPOSE  - Swap the major and the minor axes (otherwise no swap). Don't use on non-square.
 
 
-// This function will return the right 'led index number' for
-// a given set of X and Y coordinates on your matrix.
-// IT DOES NOT CHECK THE COORDINATE BOUNDARIES.
-// That's up to you.  Don't pass it bogus values.
-//
-// Use the "XY" function like this:
-//
-//    for( uint8_t x = 0; x < matrixWidth; x++) {
-//      for( uint8_t y = 0; y < matrixHeight; y++) {
-//
-//        // Here's the x, y to 'led index' in action:
-//        leds[ XY( x, y) ] = CHSV( random8(), 255, 255);
-//
-//      }
-//    }
-//
-//
+
+enum XY_Layout {
+   SERPENTINE = 16, ROWMAJOR = 8, TRANSPOSE = 4, FLIPMAJOR = 2, FLIPMINOR = 1
+};
+
+#define XY_LAYOUT (ROWMAJOR | SERPENTINE | FLIPMAJOR)   // Current configuration for Andrew's aliexpress 16x16 layout. Change to suit your own.
+
+uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who make this VERY COOL and VERY short and MUCH better XY() routine.
+  uint8_t major, minor, sz_major, sz_minor;
+  if (x >= matrixWidth || y >= matrixHeight)
+    return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
+  if (XY_LAYOUT & ROWMAJOR)
+    major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
+  else
+    major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
+  if (((XY_LAYOUT & FLIPMAJOR) != 0) ^ (((minor & 1) != 0) && ((XY_LAYOUT & SERPENTINE) != 0)))    // A line of magic.
+    major = sz_major - 1 - major;
+  if (XY_LAYOUT & FLIPMINOR)
+    minor = sz_minor - 1 - minor;
+  if (XY_LAYOUT & TRANSPOSE)
+    return major * (uint16_t) sz_major + minor;
+  else
+    return minor * (uint16_t) sz_major + major;
+}
+
+
+/*
+// This is the OLD ROUTINE ------------------------
 uint16_t WS2812FX::XY( int x, int y) {
 
 uint16_t i = 0;
@@ -5785,6 +5803,7 @@ if( matrixSerpentine == true) {
 
 return i;
 } // XY()
+*/
 
 
 //////////////////////

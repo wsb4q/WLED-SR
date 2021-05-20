@@ -360,6 +360,10 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('v',SET_F("MXW"),strip.matrixWidth);
     sappend('v',SET_F("MXH"),strip.matrixHeight);
     sappend('c',SET_F("MXWHS"),strip.matrixSerpentine);
+    sappend('c',SET_F("MXWHR"),strip.matrixRowmajor);
+    sappend('c',SET_F("MXWHA"),strip.matrixFlipmajor);
+    sappend('c',SET_F("MXWHI"),strip.matrixFlipminor);
+    sappend('c',SET_F("MXWHT"),strip.matrixTranspose);
   }
 
   if (subPage == 3)

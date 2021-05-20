@@ -85,8 +85,14 @@ Recommended power supply for brightest white:</i><br><b><span id="psu">?</span>
 type="number" min="1" max="1500" oninput="UI()"> x <input name="MXH" 
 type="number" min="1" max="1500" oninput="UI()"><br><div id="2dwarning" 
 style="color:orange;display:inline">
-&#9888; width x height should match LED count!<br></div>Serpentine: <input 
-type="checkbox" name="MXWHS" checked="checked"> (how leds are layed out)<br><br>
+&#9888; width x height should match LED count!<br></div><a 
+href="https://github.com/atuline/WLED/wiki/2D-Functionality">
+See SR GITHUB Wiki for layout options.</a><br>Serpentine: <input 
+type="checkbox" name="MXWHS" checked="checked"><br>Rowmajor: <input 
+type="checkbox" name="MXWHR" checked="checked"><br>Flipmajor: <input 
+type="checkbox" name="MXWHA" checked="checked"><br>Flipminor: <input 
+type="checkbox" name="MXWHI" checked="checked"><br>Transpose: <input 
+type="checkbox" name="MXWHT" checked="checked"><br><br>
 Enable automatic brightness limiter: <input type="checkbox" name="ABen" 
 onchange="enABL()" id="able"><br><div id="abl">Maximum Current: <input 
 name="MA" type="number" min="250" max="65000" oninput="UI()" required> mA<br>

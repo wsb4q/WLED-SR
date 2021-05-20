@@ -105,6 +105,11 @@ void deserializeConfig() {
   CJSON(strip.matrixWidth, hw_led[F("mxw")]);
   CJSON(strip.matrixHeight, hw_led[F("mxh")]);
   CJSON(strip.matrixSerpentine, hw_led[F("mxs")]);
+  CJSON(strip.matrixRowmajor, hw_led[F("mxr")]);
+  CJSON(strip.matrixFlipmajor, hw_led[F("mxa")]);
+  CJSON(strip.matrixFlipminor, hw_led[F("mxi")]);
+  CJSON(strip.matrixTranspose, hw_led[F("mxt")]);
+    
 
   JsonArray ins = hw_led["ins"];
   uint8_t s = 0; //bus iterator
@@ -520,8 +525,13 @@ void serializeConfig() {
 
   // 2D Matrix Settings - BROKEN WITH MULTIPIN CHANGES
   hw_led[F("mxw")] = strip.matrixWidth;
-  hw_led[F("mxs")] = strip.matrixSerpentine;
   hw_led[F("mxh")] = strip.matrixHeight;
+  hw_led[F("mxs")] = strip.matrixSerpentine;
+  hw_led[F("mxr")] = strip.matrixRowmajor;
+  hw_led[F("mxa")] = strip.matrixFlipmajor;
+  hw_led[F("mxi")] = strip.matrixFlipminor;
+  hw_led[F("mxt")] = strip.matrixTranspose;
+
 
   JsonArray hw_led_ins = hw_led.createNestedArray("ins");
 

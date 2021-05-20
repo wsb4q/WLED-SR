@@ -814,7 +814,11 @@ class WS2812FX {
     uint16_t
       matrixWidth,
       matrixHeight,
-      matrixSerpentine;
+      matrixSerpentine,
+      matrixRowmajor,
+      matrixFlipmajor,
+      matrixFlipminor,
+      matrixTranspose;
     #endif // ESP8266
 
     WS2812FX::Segment&

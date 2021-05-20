@@ -188,6 +188,10 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     strip.matrixWidth = request->arg(F("MXW")).toInt();
     strip.matrixHeight = request->arg(F("MXH")).toInt();
     strip.matrixSerpentine = request->hasArg(F("MXWHS"));
+    strip.matrixRowmajor = request->hasArg(F("MXWHR"));
+    strip.matrixFlipmajor = request->hasArg(F("MXWHA"));
+    strip.matrixFlipminor = request->hasArg(F("MXWHI"));
+    strip.matrixTranspose = request->hasArg(F("MXWHT"));
   }
 
   //UI

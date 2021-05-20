@@ -5750,11 +5750,32 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //  ROWMAJOR   - The x (or Major) value goes horizontal (otherwise vertical).
 //  SERPENTINE - A serpentine layout (otherwise non-serpentine layout).
 //  FLIPMAJOR  - Flip the major axis, ie top to bottom (otherwise not).
-// FLIPMINOR  - Flip the minor axis, ie left to right (otherwise not).
+//  FLIPMINOR  - Flip the minor axis, ie left to right (otherwise not).
 //  TRANSPOSE  - Swap the major and the minor axes (otherwise no swap). Don't use on non-square.
 
 
 
+uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+  uint8_t major, minor, sz_major, sz_minor;
+  if (x >= matrixWidth || y >= matrixHeight)
+    return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
+  if (matrixRowmajor)
+    major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
+  else
+    major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
+  if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
+    major = sz_major - 1 - major;
+  if (matrixFlipminor)
+    minor = sz_minor - 1 - minor;
+  if (matrixTranspose)
+    return major * (uint16_t) sz_major + minor;
+  else
+    return minor * (uint16_t) sz_major + major;
+}
+
+
+// Hard coded version of the advanced layout.
+/*
 enum XY_Layout {
    SERPENTINE = 16, ROWMAJOR = 8, TRANSPOSE = 4, FLIPMAJOR = 2, FLIPMINOR = 1
 };
@@ -5778,6 +5799,8 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
   else
     return minor * (uint16_t) sz_major + major;
 }
+*/
+
 
 
 /*

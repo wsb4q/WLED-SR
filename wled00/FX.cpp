@@ -4073,7 +4073,7 @@ uint16_t WS2812FX::mode_aurora(void) {
 /////////////////////////////////////////
 
 // FastLED array, so we can refer to leds[i] instead of the lossy getPixel() and setPixel()
-uint32_t ledData[MAX_LEDS];                     // See const.h for a value of 1500.
+uint32_t ledData[MAX_LEDS+1];                   // See const.h for a value of 1500. The plus 1 is just in case we go over witwh XY().
 uint32_t dataStore[4096];                       // we are declaring a storage area or 64 x 64 (4096) words.
 
 
@@ -5761,7 +5761,7 @@ enum XY_Layout {
 
 #define XY_LAYOUT (ROWMAJOR | SERPENTINE | FLIPMAJOR)   // Current configuration for Andrew's aliexpress 16x16 layout. Change to suit your own.
 
-uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who make this VERY COOL and VERY short and MUCH better XY() routine.
+uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
   uint8_t major, minor, sz_major, sz_minor;
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!

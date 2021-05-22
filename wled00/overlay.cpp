@@ -32,6 +32,22 @@ void handleOverlays()
   }
 }
 
+uint16_t circlePixel(double angle) {
+  uint16_t circleLength = min(strip.matrixWidth, strip.matrixHeight);
+  uint16_t deltaWidth=0, deltaHeight=0;
+
+  if (circleLength < strip.matrixHeight) //portrait
+    deltaHeight = (strip.matrixHeight - circleLength) / 2;
+  if (circleLength < strip.matrixWidth) //portrait
+    deltaWidth = (strip.matrixWidth - circleLength) / 2; 
+
+  double halfLength = (circleLength-1)/2.0;
+  
+  //calculate circle positions, round to 5 digits and then round again to cater for radians inprecision (e.g. 3.49->3.5->4)
+  int x = round(round((sin(radians(angle)) * halfLength + halfLength) * 10)/10) + deltaWidth;
+  int y = round(round((halfLength - cos(radians(angle)) * halfLength) * 10)/10) + deltaHeight;
+  return strip.XY(x,y);
+}
 
 void _overlayAnalogClock()
 {
@@ -68,12 +84,12 @@ void _overlayAnalogClock()
     {
       pix = analogClock12pixel + round((overlaySize / 12.0) *i);
       if (pix > overlayMax) pix -= overlaySize;
-      strip.setPixelColor(pix, 0x00FFAA);
+      strip.setPixelColor(strip.matrixWidth > 0?circlePixel(i*30):pix, 0x00FFAA);
     }
   }
-  if (!analogClockSecondsTrail) strip.setPixelColor(secondPixel, 0xFF0000);
-  strip.setPixelColor(minutePixel, 0x00FF00);
-  strip.setPixelColor(hourPixel, 0x0000FF);
+  if (!analogClockSecondsTrail) strip.setPixelColor(strip.matrixWidth > 0?circlePixel(secondP * 360):secondPixel, 0xFF0000);
+  strip.setPixelColor(strip.matrixWidth > 0?circlePixel(minuteP * 360):minutePixel, 0x00FF00);
+  strip.setPixelColor(strip.matrixWidth > 0?circlePixel(hourP * 360):hourPixel, 0x0000FF);
   overlayRefreshMs = 998;
 }
 

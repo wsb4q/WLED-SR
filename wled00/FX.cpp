@@ -5765,10 +5765,20 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
     major = sz_major - 1 - major;
   if (matrixFlipminor)
     minor = sz_minor - 1 - minor;
+
+  uint16_t i;
   if (matrixTranspose)
-    return major * (uint16_t) sz_major + minor;
+    i = major * (uint16_t) sz_major + minor;
   else
-    return minor * (uint16_t) sz_major + major;
+    i = minor * (uint16_t) sz_major + major;
+  
+  int nrOfPanels = matrixWidth * matrixHeight / 256; //better to be an extra parameter in led config screen, for now assuming each panel is 256
+  int panelWidth = matrixWidth / nrOfPanels; //8 for multiple 8*32 panels, 16 for 16*16 panel 
+  int panelSize = panelWidth * matrixHeight; //256 normally
+  int panelNr = x / panelWidth; //0 if only one panel
+  int panelFirstLed = panelSize * panelNr; //0 if only one panel, more panels: multitudes of 256 normally
+  i = i%panelWidth + (matrixHeight - y - 1) * panelWidth + panelFirstLed;
+  return i;
 }
 
 
@@ -6484,7 +6494,7 @@ uint16_t WS2812FX::mode_2Dcagameoflife(void) { // Written by Ewoud Wijma, inspir
 
       //create new pattern
       String pattern = "";
-      for (int x = 0; x < matrixWidth; x++) for (int y = 0; y < matrixHeight; y++)
+      for (int x = 0; x < matrixWidth; x+= matrixWidth/8) for (int y = 0; y < matrixHeight; y+=matrixHeight/8)
         pattern += leds[XY(x,y)] == backgroundColor?" ":"o"; //string representation if on/off
 
       //check if repetition of patterns occurs

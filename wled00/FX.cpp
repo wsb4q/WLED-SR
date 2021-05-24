@@ -4199,7 +4199,7 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
 
 uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  https://editor.soulmatelights.com/gallery/810 , Modified by: Andrew Tuline
 
-//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB*) ledData;
 
@@ -4219,44 +4219,6 @@ uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  ht
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
 } // mode_2DHiphotic()
-
-
-/////////////////////////
-//     2D Poolnoise    //
-/////////////////////////
-
-uint16_t WS2812FX::mode_2DPoolnoise() {                // By: Stepko   https://editor.soulmatelights.com/gallery/517-poolnoise , modifed by Andrew Tuline
-
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
-
-  CRGB *leds = (CRGB*) ledData;
-
-  #define Sat 255
-  #define Hue 150
-  #define Scale 40
-//  #define Bri 0
-
-  uint8_t hue = Hue;
-
-  fill_solid(currentPalette, 16, CHSV(hue, Sat, 128));
-  currentPalette[9] = CHSV(hue, Sat - 60, 255);
-  currentPalette[8] = CHSV(hue, 255 - Sat, 210);
-  currentPalette[7] = CHSV(hue, 255 - Sat, 210);
-  currentPalette[6] = CHSV(hue, Sat - 60, 255);
-
-  blur2d(leds, matrixWidth, matrixHeight, 16);
-
-  for (byte y = 0; y < matrixHeight; y++) {
-    for (byte x = 0; x < matrixWidth; x++) {
-      uint8_t pixelHue8 = inoise8 (x * Scale, y * Scale, millis() / 16);
-      leds[XY(x, y)] = ColorFromPalette(currentPalette, pixelHue8);
-    }
-  }
-  blur2d(leds, matrixWidth, matrixHeight, 32 );
-
-  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
-  return FRAMETIME;
-} // mode_2DPoolnoise()
 
 
 /////////////////////////
@@ -4335,74 +4297,6 @@ uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.
   return FRAMETIME;
 } // mode_2DDrift()
 
-
-/////////////////////////
-//     2D Twister      //
-/////////////////////////
-
-/*
-void WS2812FX::twLine(byte x, byte x1, byte y, byte color, bool dot, bool grad, byte numline, byte side, long a, byte sinOff) { // my ugly hori line draw function )))
-
-  byte steps = abs8(x1 - x) + 1 ;
-
-  for (uint16_t i = 0; i <= steps; i++) {
-    byte dx = lerp8by8(x1, x, i * 255 / steps);
-    uint16_t index = XY(dx, y);
-    
-    setPixelColor(index, color_wheel(color));
-    
-    if (index > 256) Serial.println(index);
-
-
-    //  if (grad) leds[index] %= (sin8(numline * 8 + side * 64 + a + sinOff) + i * 255 / steps) / 2;
-    // THIS DOES **NOT** WORK!!!!
-    if (grad) {
- //     uint32_t ctemp = getPixelColor(index);
- //     ctemp %= (uint32_t)((sin8(numline * 8 + side * 64 + a + sinOff) + i * 255 / steps) / 2);
-//      setPixelColor(index,ctemp);
-//      setPixelColor(index,getPixelColor(index));
-    }
-  }
-
-  if (dot) { //add black point at the ends of line
-    setPixelColor(XY(x, y),CRGB::Black);
-    setPixelColor(XY(x1, y), CRGB::Black);
-  }
-} // twLine()
-
-
-uint16_t WS2812FX::mode_2DTwister() {                        // By: ldirko https://editor.soulmatelights.com/gallery/921-twister-test , Modified by: Andrew Tuline
-
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
-
-  long a = millis() / (34 - SEGMENT.speed / 8);
-  byte sinOff;
-  
-  fill(SEGCOLOR(1));
-  // LEDS.clear();
-  
-  for (uint16_t i = 0; i < matrixHeight; i++) {
-    sinOff = sin8(i * (34- SEGMENT.intensity/8) / PI + cos8(a / 2 + i) / 4 + a / 3);
-
-    byte x1 = sin8(sinOff + a) * (matrixWidth) / 255;
-    byte x2 = sin8(sinOff + a + 64) * (matrixWidth) / 255;
-    byte x3 = sin8(sinOff + a + 128) * (matrixWidth) / 255;
-    byte x4 = sin8(sinOff + a + 192) * (matrixWidth) / 255;
-    x1 = x1 >= matrixWidth ? (matrixWidth -1) : x1;
-    x2 = x2 >= matrixWidth ? (matrixWidth -1) : x2;
-    x3 = x3 >= matrixWidth ? (matrixWidth -1) : x3;
-    x4 = x4 >= matrixWidth ? (matrixWidth -1) : x4;
-
-    byte hueColor = sin8(a / 20);
-    if (x1 < x2) twLine(x1, x2, i, hueColor,       1, 0, i, 0, a, sinOff);
-    if (x2 < x3) twLine(x2, x3, i, hueColor + 64,  1, 0, i, 1, a, sinOff);
-    if (x3 < x4) twLine(x3, x4, i, hueColor + 128, 1, 0, i, 2, a, sinOff);
-    if (x4 < x1) twLine(x4, x1, i, hueColor + 192, 1, 0, i, 3, a, sinOff);
-  }
-
-  return FRAMETIME;
-} // mode_2DTwister()
-*/
 
 
 ////////////////////////////
@@ -5500,6 +5394,9 @@ uint16_t WS2812FX::mode_DJLight(void) {                   // Written by ??? Adap
 /////////////////////////
 
 uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma.
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
   CRGB *leds = (CRGB*) ledData;
   fadeToBlackBy(leds, SEGLEN, SEGMENT.speed);
 
@@ -5618,10 +5515,10 @@ uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adap
 //     START of 2D NON-REACTIVE ROUTINES    //
 //////////////////////////////////////////////
 
-static uint16_t x = 0;
-static uint16_t y = 0;
-static uint16_t z = 0;
-static int speed2D = 20;
+// static uint16_t x = 0;
+// static uint16_t y = 0;
+// static uint16_t z = 0;
+//static int speed2D = 20;
 
 // uint8_t colorLoop = 1;
 
@@ -5629,7 +5526,7 @@ static int speed2D = 20;
 // changing these values around to see how it affects the motion of the display.  The
 // higher the value of scale, the more "zoomed out" the noise iwll be.  A value
 // of 1 will be so zoomed in, you'll mostly see solid colors.
-static int scale_2d = 30; // scale is set dynamically once we've started up
+// static int scale_2d = 30; // scale is set dynamically once we've started up
 
 // blur1d: one-dimensional blur filter. Spreads light to 2 line neighbors.
 // blur2d: two-dimensional blur filter. Spreads light to 8 XY neighbors.
@@ -5759,7 +5656,6 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
 }
 
 
-
 // Panel version of XY() routine
 /*uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
 
@@ -5793,102 +5689,27 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
 
 
 //////////////////////
-//    2D Plasma     //
+//    2D Noise      //
 //////////////////////
 
-// Effect speed slider determines the speed the 'plasma' wafts
-// fft1 slider above 1/2 will shift the colors
-// fft2 slider == scale (how far away are we from the plasma)
-
-uint16_t WS2812FX::mode_2Dplasma(void) {                  // By Andreas Pleschutznig. A work in progress.
+uint16_t WS2812FX::mode_2Dnoise(void) {                  // By Andrew Tuline
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  static uint8_t ihue=0;
-  // uint8_t index;   // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  // uint8_t bri;     // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  static unsigned long prevMillis;
-  unsigned long curMillis = millis();
+  CRGB *leds = (CRGB *)ledData;
 
-  if ((curMillis - prevMillis) >= ((256-SEGMENT.speed) >>2)) {
-    prevMillis = curMillis;
-    speed2D = SEGMENT.speed;
-    scale_2d = SEGMENT.fft2;
+uint8_t scale = SEGMENT.intensity+2;
 
-    uint32_t *noise = ledData;                            // we use the set aside storage array for FFT routines to store temporary 2D data
-    uint8_t MAX_DIMENSION = ((matrixWidth>matrixHeight) ? matrixWidth : matrixHeight);
-
-    // If we're runing at a low "speed", some 8-bit artifacts become visible
-    // from frame-to-frame.  In order to reduce this, we can do some fast data-smoothing.
-    // The amount of data smoothing we're doing depends on "speed".
-
-    uint8_t dataSmoothing = 0;
-    if( speed2D < 50) {
-      dataSmoothing = 200 - (speed2D * 4);
-      }
-
-    for(int i = 0; i < MAX_DIMENSION; i++) {
-      int ioffset = scale_2d * i;
-      for(int j = 0; j < MAX_DIMENSION; j++) {
-        int joffset = scale_2d * j;
-
-        uint8_t data = inoise8(x + ioffset,y + joffset,z);
-
-          // The range of the inoise8 function is roughly 16-238.
-          // These two operations expand those values out to roughly 0..255
-          // You can comment them out if you want the raw noise data.
-        data = qsub8(data,16);
-        data = qadd8(data,scale8(data,39));
-
-        if( dataSmoothing ) {
-          uint8_t olddata = noise[i * matrixWidth + j];
-          uint8_t newdata = scale8( olddata, dataSmoothing) + scale8( data, 256 - dataSmoothing);
-          data = newdata;
-        }
-
-        noise[i * matrixWidth + j] = data;
-      }
+  for (byte y = 0; y < matrixHeight; y++) {
+    for (byte x = 0; x < matrixWidth; x++) {
+      uint8_t pixelHue8 = inoise8(x * scale, y * scale, millis() / (16 - SEGMENT.speed/16));
+      leds[XY(x, y)] = ColorFromPalette(currentPalette, pixelHue8);
     }
-
-    z += speed2D;
-
-    // apply slow drift to X and Y, just for visual variation.
-    x += speed2D / 8;
-    y -= speed2D / 16;
-
- // ---
-
-  for(int i = 0; i < matrixWidth; i++) {
-    for(int j = 0; j < matrixHeight; j++) {
-      // We use the value at the (i,j) coordinate in the noise
-      // array for our brightness, and the flipped value from (j,i)
-      // for our pixel's index into the color palette.
-
-      uint8_t index = noise[j * matrixWidth + i];
-      uint8_t bri =   noise[i * matrixWidth + j];
-
-      // if this palette is a 'loop', add a slowly-changing base value
-      if (SEGMENT.fft1 > 128) {
-        index += ihue;
-      }
-
-      // brighten up, as the color palette itself often contains the
-      // light/dark dynamic range desired
-      if( bri > 127 ) {
-        bri = 255;
-      } else {
-        bri = dim8_raw( bri * 2);
-      }
-
-      CRGB color = ColorFromPalette( currentPalette, index, bri);
-      setPixelColor(XY(i, j), color.red, color.green, color.blue);
-      }
-    }
-  ihue+=1;
   }
 
+  setPixels(leds);
   return FRAMETIME;
-} // mode_2Dplasma()
+} // mode_2Dnoise()
 
 
 //////////////////////////
@@ -5971,34 +5792,17 @@ uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman.
 } // mode_2Dsquaredswirl()
 
 
-
 //////////////////////////////
 //     2D Lissajous         //
 //////////////////////////////
 
 uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
-
-//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
  
    fadeToBlackBy(leds, SEGLEN, SEGMENT.intensity);
-
-// Starts in the top right on my aliexpress layout
-/*   leds[0] = CRGB::Red;
-    leds[1] = CRGB::Green;
-    leds[2] = CRGB::Blue;
-    leds[31] = CRGB::Orange;
-*/
-// Layout based led's.
-/*
-  leds[XY(0, 0)] = CRGB::Red;
-  leds[XY(1, 0)] = CRGB::Green;
-  leds[XY(2, 0)] = CRGB::Blue;
-  leds[XY(0, 1)] = CRGB::Orange;
-*/
-
 
   for (int i=0; i < 256; i ++) {
 
@@ -6009,7 +5813,6 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
     ylocn = map(ylocn,0,255,0,matrixHeight-1);
     leds[XY(xlocn,ylocn)] = ColorFromPalette(currentPalette, millis()/100+i, 255, LINEARBLEND);
   }
-
 
   setPixels(leds);
   return FRAMETIME;
@@ -6022,7 +5825,7 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
 uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https://editor.soulmatelights.com/gallery/640-color-frizzles , Modified by: Andrew Tuline
 
-//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
 
@@ -6257,7 +6060,7 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
 
 uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED version by Andrew Tuline.
 
-//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
 
@@ -6642,9 +6445,6 @@ uint16_t WS2812FX::mode_2Dcagameoflife(void) { // Written by Ewoud Wijma, inspir
   return FRAMETIME;
 } // mode_2Dcaelementary()
 */
-
-
-
 
 
 ////////////////////////////////

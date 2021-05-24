@@ -4199,7 +4199,7 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
 
 uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  https://editor.soulmatelights.com/gallery/810 , Modified by: Andrew Tuline
 
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB*) ledData;
 
@@ -5499,7 +5499,7 @@ uint16_t WS2812FX::mode_DJLight(void) {                   // Written by ??? Adap
 //     **2D GEQ        //
 /////////////////////////
 
-uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma
+uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma.
   CRGB *leds = (CRGB*) ledData;
   fadeToBlackBy(leds, SEGLEN, SEGMENT.speed);
 
@@ -5547,7 +5547,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
   return FRAMETIME;
 } //GEQ_base
 
-uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam.
+uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam. Code reduction by Ewoud Wijma.
   return GEQ_base(false);
 } // mode_2DGEQ()
 
@@ -5740,6 +5740,29 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 
 uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
 
+ // Serial.print(matrixSerpentine); Serial.print("\t"); Serial.print(matrixRowmajor); Serial.print("\t"); Serial.print(matrixFlipmajor); Serial.print("\t"); Serial.print(matrixFlipminor); Serial.print("\t"); Serial.println(matrixTranspose);
+  uint8_t major, minor, sz_major, sz_minor;
+  if (x >= matrixWidth || y >= matrixHeight)
+    return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
+  if (matrixRowmajor)
+    major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
+  else
+    major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
+  if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
+    major = sz_major - 1 - major;
+  if (matrixFlipminor)
+    minor = sz_minor - 1 - minor;
+  if (matrixTranspose)
+    return major * (uint16_t) sz_major + minor;
+  else
+    return minor * (uint16_t) sz_major + major;
+}
+
+
+
+// Panel version of XY() routine
+/*uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+
   uint8_t major, minor, sz_major, sz_minor;
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
@@ -5766,6 +5789,7 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
   i = i%panelWidth + (matrixHeight - y - 1) * panelWidth + panelFirstLed;
   return i;
 }
+*/
 
 
 //////////////////////
@@ -5954,11 +5978,27 @@ uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman.
 
 uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
  
    fadeToBlackBy(leds, SEGLEN, SEGMENT.intensity);
+
+// Starts in the top right on my aliexpress layout
+/*   leds[0] = CRGB::Red;
+    leds[1] = CRGB::Green;
+    leds[2] = CRGB::Blue;
+    leds[31] = CRGB::Orange;
+*/
+// Layout based led's.
+/*
+  leds[XY(0, 0)] = CRGB::Red;
+  leds[XY(1, 0)] = CRGB::Green;
+  leds[XY(2, 0)] = CRGB::Blue;
+  leds[XY(0, 1)] = CRGB::Orange;
+*/
+
 
   for (int i=0; i < 256; i ++) {
 
@@ -5969,6 +6009,7 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
     ylocn = map(ylocn,0,255,0,matrixHeight-1);
     leds[XY(xlocn,ylocn)] = ColorFromPalette(currentPalette, millis()/100+i, 255, LINEARBLEND);
   }
+
 
   setPixels(leds);
   return FRAMETIME;
@@ -5981,7 +6022,7 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
 uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https://editor.soulmatelights.com/gallery/640-color-frizzles , Modified by: Andrew Tuline
 
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
 
@@ -6195,7 +6236,8 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
       // Step 4.  Map from heat cells to LED colors
       for (int mh = 0; mh < matrixHeight; mh++) {
         byte colorindex = scale8( heat[mw*matrixWidth+mh], 240);
-        leds[XY(mw,mh)] = ColorFromPalette(currentPalette, colorindex, 255);
+        uint16_t pixelnumber = (matrixHeight-1) - mh;                                  // Flip it upside down.
+        leds[XY(mw,pixelnumber)] = ColorFromPalette(currentPalette, colorindex, 255);  // Otherwise, it was leds[XY(mw,mh)] = . . .
       } // for mh
     } // for mw
 
@@ -6215,7 +6257,7 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
 
 uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED version by Andrew Tuline.
 
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+//  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGB *leds = (CRGB *)ledData;
 
@@ -6254,7 +6296,9 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
   if ((curMillis - prevMillis) >= ((256-SEGMENT.speed) >>2)) {
     prevMillis = curMillis;
 
-    if (SEGMENT.fft3 < 128) {									            // check for orientation, slider in first quarter, default orientation
+
+
+//    if (SEGMENT.fft3 < 128) {									            // check for orientation, slider in first quarter, default orientation
     	for (int16_t row=matrixHeight-1; row>=0; row--) {
     		for (int16_t col=0; col<matrixWidth; col++) {
     			if (leds[XY(col, row)] == CRGB(175,255,175)) {
@@ -6263,7 +6307,8 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     			}
     		}
     	}
-    } else if (SEGMENT.fft3 >= 128)   {	                  // second quadrant
+
+/*    } else if (SEGMENT.fft3 >= 128)   {	                  // second quadrant
     	for (int16_t row=matrixHeight-1; row>=0; row--) {
     	    		for (int16_t col=matrixWidth-1; col >= 0; col--) {
     	    			if (leds[XY(col, row)] == CRGB(175,255,175)) {
@@ -6273,6 +6318,8 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     	    		}
     	    	}
       }
+*/
+
     // fade all leds
     for(int i = 0; i < SEGLEN; i++) {
       if (leds[i].g != 255) leds[i].nscale8(192);         // only fade trail
@@ -6289,17 +6336,18 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     }
 
     // spawn new falling code
-    if (SEGMENT.fft3 < 128) {
+//    if (SEGMENT.fft3 <=255) {
         if (random8() < SEGMENT.intensity || emptyScreen) {
     	    uint8_t spawnX = random8(matrixWidth);
       	  leds[XY(spawnX, 0)] = CRGB(175,255,175 );
     	}
-    } else if (SEGMENT.fft3 >= 128) {
+/*    } else if (SEGMENT.fft3 >= 128) {
         if (random8() < SEGMENT.intensity || emptyScreen) {
           uint8_t spawnX = random8(matrixHeight);
     	    leds[XY(0, spawnX)] = CRGB(175,255,175 );
     	  }
     }
+*/
 
    for (int i=0; i<SEGLEN; i++) {
       setPixelColor(i, leds[i].red, leds[i].green, leds[i].blue);

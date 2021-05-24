@@ -5499,12 +5499,7 @@ uint16_t WS2812FX::mode_DJLight(void) {                   // Written by ??? Adap
 //     **2D GEQ        //
 /////////////////////////
 
-uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam.
-
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
-
-  fade_out(224);                                          // Just in case something doesn't get faded.
-
+uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma
   CRGB *leds = (CRGB*) ledData;
   fadeToBlackBy(leds, SEGLEN, SEGMENT.speed);
 
@@ -5517,23 +5512,53 @@ uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam.
     bandInc = (NUMB_BANDS / matrixWidth);
   }
 
+  static int previousBarHeight[16]; //array of previous bar heights per frequency band
+
   int b = 0;
   for (int band = 0; band < NUMB_BANDS; band += bandInc) {
-    int count = map(fftResult[band], 0, 255, 0, matrixHeight);
+    int barHeight = map(fftResult[band], 0, 255, 0, matrixHeight);
+    if (barHeight % 2 == 0) barHeight--;//get an odd barHeight
+    int yStartBar = centered?(matrixHeight - barHeight) / 2:0; //lift up the bar if centered
+    int yStartPeak = centered?(matrixHeight - previousBarHeight[band]) / 2:0; //lift up the peaks if centered
     for (int w = 0; w < barWidth; w++) {
-      int xpos = (barWidth * b) + w;
-      for (int i = 0; i <=  matrixHeight; i++) {
-        if (i < count) {
-        leds[XY(xpos, i)] = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
-        }
+      int x = (barWidth * b) + w;
+      for (int y=0; y<matrixHeight; y++)
+      {
+        CRGB color = CRGB::Black; //if not part of bars or peak, make black (not fade to black)
+
+        //bar
+        if (y>=yStartBar && y<yStartBar + barHeight)
+          color = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
+
+        //low and high peak (must exist && on peak position && only below if centered effect)
+        if ((previousBarHeight[band] >= 0) && (y==yStartPeak || y==yStartPeak + previousBarHeight[band]) && (centered || y!=yStartPeak))
+          color = color_blend(SEGCOLOR(1), SEGCOLOR(2)==CRGB::Black?color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0):SEGCOLOR(2), 255); //low peak
+
+        leds[XY(x, matrixHeight - 1 - y)] = color;
       }
-    }
+    } //barWidth
     b++;
+
+    previousBarHeight[band]--; //delay/ripple effect
+    if (barHeight > previousBarHeight[band]) previousBarHeight[band] = barHeight; //drive the peak up
   }
 
   setPixels(leds);
   return FRAMETIME;
+} //GEQ_base
+
+uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam.
+  return GEQ_base(false);
 } // mode_2DGEQ()
+
+
+/////////////////////////
+//   **2D CenterBars   //
+/////////////////////////
+
+uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Marley Adapted by  Spiro-C..
+  return GEQ_base(true);
+} // mode_2DCenterBars()
 
 
 /////////////////////////
@@ -5587,45 +5612,6 @@ uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adap
   setPixels(leds);
   return FRAMETIME;
 } // mode_2DFunkyPlank
-
-
-/////////////////////////
-//   **2D CenterBars   //
-/////////////////////////
-
-uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Marley Adapted by  Spiro-C..
-
-  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
-
-  CRGB *leds = (CRGB*) ledData;
-  fadeToBlackBy(leds, SEGLEN, SEGMENT.speed);
-
-  int NUMB_BANDS = map(SEGMENT.fft3, 0, 255, 1, 16);
-  int barWidth = (matrixWidth / NUMB_BANDS);
-  int bandInc = 1;
-  if(barWidth == 0) {
-    // Matrix narrower than fft bands
-    barWidth = 1;
-    bandInc = (NUMB_BANDS / matrixWidth);
-  }
-
-  int b = 0;
-  for (int band = 0; band < NUMB_BANDS; band += bandInc) {
-    int hight = map(fftResult[band], 0, 255, 0, matrixHeight);
-    if (hight % 2 == 0) hight--;
-    int yStart = ((matrixHeight - hight) / 2 );
-    for (int w = 0; w < barWidth; w++) {
-      int x = (barWidth * b) + w;
-      for (int y = yStart; y <= (yStart + hight); y++) {
-//        leds[XY(x, y)] = CHSV((band * 35), 255, 255);
-         leds[XY(x, y)] = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
-      }
-    }
-    b++;
-  }
-  setPixels(leds);
-  return FRAMETIME;
-} // mode_2DCenterBars()
 
 
 //////////////////////////////////////////////

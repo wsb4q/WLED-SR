@@ -1062,7 +1062,8 @@ class WS2812FX {
       tricolor_chase(uint32_t, uint32_t),
       twinklefox_base(bool),
       spots_base(uint16_t),
-      phased_base(uint8_t);
+      phased_base(uint8_t),
+      GEQ_base(bool);
 
 
     CRGB twinklefox_one_twinkle(uint32_t ms, uint8_t salt, bool cat);

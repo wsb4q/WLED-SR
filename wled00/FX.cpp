@@ -4256,6 +4256,8 @@ uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https
 
   CRGB *leds = (CRGB*) ledData;
 
+  if (SEGENV.call == 0) FastLED.clear();
+
   static byte r = 16;
   uint16_t a = millis() / (18 - SEGMENT.speed / 16);
   byte x = (a / 14) % matrixWidth;
@@ -5594,6 +5596,7 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
     }
 }
 
+
 // Set 'matrixSerpentine' to false if your pixels are
 // laid out all running the same way, like this:
 //
@@ -5722,23 +5725,26 @@ uint16_t WS2812FX::mode_2Dfirenoise(void) {               // firenoise2d. By And
 
   CRGB *leds = (CRGB *)ledData;
 
-  uint32_t xscale = 600;                                  // How far apart they are
-  uint32_t yscale = 1000;                                 // How fast they move
+  uint16_t xscale = SEGMENT.intensity*4;
+//  uint32_t xscale = 600;                                  // How far apart they are
+//  uint32_t yscale = 1000;                                 // How fast they move
+  uint32_t yscale = SEGMENT.speed*8;
   uint8_t indexx = 0;
 
-  currentPalette = CRGBPalette16(  CHSV(0,255,2), CHSV(0,255,4), CHSV(0,255,8), CHSV(0, 255, 8),
-                                   CHSV(0, 255, 16), CRGB::Red, CRGB::Red, CRGB::Red,
+  currentPalette = CRGBPalette16(  CRGB(0,0,0), CRGB(0,0,0), CRGB(0,0,0), CRGB(0,0,0),
+                                   CRGB::Red, CRGB::Red, CRGB::Red, CRGB::DarkOrange,
                                    CRGB::DarkOrange,CRGB::DarkOrange, CRGB::Orange, CRGB::Orange,
                                    CRGB::Yellow, CRGB::Orange, CRGB::Yellow, CRGB::Yellow);
-  //int a = millis();   // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  for (int j=0; j < matrixWidth; j++) {
-    for (int i=0; i < matrixHeight; i++) {
+
+  for (int j=0; j < matrixHeight; j++) {
+    for (int i=0; i < matrixWidth; i++) {
 
       // This perlin fire is by Andrew Tuline
       indexx = inoise8(i*xscale+millis()/4,j*yscale*matrixWidth/255);                                             // We're moving along our Perlin map.
-      leds[XY(i,j)] = ColorFromPalette(currentPalette, min(i*(indexx)>>4, 255), i*255/matrixWidth, LINEARBLEND);  // With that value, look up the 8 bit colour palette value and assign it to the current LED.
+      leds[XY(j,i)] = ColorFromPalette(currentPalette, min(i*(indexx)>>4, 255), i*255/matrixWidth, LINEARBLEND);  // With that value, look up the 8 bit colour palette value and assign it to the current LED.
 
-// This perlin fire is my /u/ldirko
+// This perlin fire is by /u/ldirko
+//      int a = millis();
 //      leds[XY(i,j)] = ColorFromPalette (currentPalette, qsub8(inoise8 (i * 60 , j * 60+ a , a /3), abs8(j - (matrixHeight-1)) * 255 / (matrixHeight-1)), 255);
 
     } // for i
@@ -5845,6 +5851,7 @@ uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https:/
 //////////////////////////////
 
 uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko https://editor.soulmatelights.com/gallery/599-sun-radiation  , modified by: Andrew Tuline
+                                                                 // Does not yet support segments.
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
@@ -5853,18 +5860,19 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
   static CRGB chsvLut[256];
   static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!  or (matrixWidth+2) * (mtrixHeight+2)
   
-  static byte setup = 1;
-  if (setup) {
-    for (int j = 0; j < 256; j++)
-      chsvLut[j] = HeatColor(j / 1.4); //256 pallette color
-    setup = 0;
+  if (SEGMENT.intensity != SEGENV.aux0) {
+    SEGENV.aux0 = SEGMENT.intensity;
+    for (int j = 0; j < 256; j++) {
+      chsvLut[j] = HeatColor(j /( 3.0-(float)(SEGMENT.intensity)/128.)); //256 pallette color
+    }
   }
 
   int t = millis() / 4;
   int index = 0;
+  uint8_t someVal = SEGMENT.speed/4;             // Was 25.
   for (byte j = 0; j < (matrixHeight + 2); j++) {
     for (byte i = 0; i < (matrixWidth + 2); i++) {
-      byte col = (inoise8_raw(i * 25, j * 25, t)) / 2;
+      byte col = (inoise8_raw(i * someVal, j * someVal, t)) / 2;
       bump[index++] = col;
     }
   } 

@@ -4415,7 +4415,7 @@ typedef struct Julia {              // We can't use the 'static' keyword for per
 } julia;
 
 
-uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated Julia set by Andrew Tuline
+uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated Julia set by Andrew Tuline.
 
   if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
@@ -6507,6 +6507,28 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
                        fabs((float)matrixHeight / 2 - (float)y) * adjustHeight));
     }
   }
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_2DPolarLights()
+
+
+uint16_t WS2812FX::mode_2DBlackHole() {            // By: Stepko https://editor.soulmatelights.com/gallery/1012 , Modified by: Andrew Tuline
+
+  if (matrixWidth * matrixHeight > SEGLEN || matrixWidth < 4 || matrixHeight < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+
+  CRGB *leds = (CRGB*) ledData;
+
+  fadeToBlackBy(leds, SEGLEN, 32);
+  double t = (float)(millis())/128;
+  for (byte i = 0; i < 8; i++) {
+    leds[XY(beatsin8(SEGMENT.fft1/8, 0, matrixWidth - 1, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(10, 0, matrixHeight - 1, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
+  }
+  for (byte i = 0; i < 8; i++) {
+    leds[XY(beatsin8(SEGMENT.fft2/8, matrixWidth/4, matrixWidth - 1-matrixWidth/4, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(SEGMENT.fft3/8, matrixHeight/4, matrixHeight - 1 - matrixHeight/4, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
+  }
+  leds[XY(matrixWidth/2,matrixHeight/2)]=CHSV(0,0,255);
+  blur2d(leds, matrixWidth, matrixHeight, 16);
 
   setPixels(leds);
   return FRAMETIME;

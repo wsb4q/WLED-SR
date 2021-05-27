@@ -5636,59 +5636,75 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //  Flipmajor  - Flip the major axis, ie top to bottom (otherwise not).
 //  Flipminor  - Flip the minor axis, ie left to right (otherwise not).
 //  Transpose  - Swap the major and the minor axes (otherwise no swap). Don't use on non-square.
-
+//  Multiple panels - Check if using more then 1 led panel to construct the matrix
+//    If Yes:
+//        Horizontal panels - Number of horizontal panels
+//        Vertical panels - Number of vertical panels
+//        (Panels are assumed to be layed out as follows 0 1 2
+//                                                       3 4 5   so first panel top left and last panel bottom right)
 
 uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+  //temporary code for dev/testing purposes: FirstLed and LastLed in Time & Macros settings are used. These 3 values should be added in Led Preferences settings screen 
+  uint8_t nrOfHorizontalPanels = overlayMin;
+  uint8_t nrOfVerticalPanels = overlayMax;
+  bool multiplePanels = nrOfVerticalPanels > 0 && nrOfVerticalPanels <= matrixHeight/2 && nrOfHorizontalPanels > 0 && nrOfHorizontalPanels <= matrixWidth/2;
+  //end of temporary code
 
- // Serial.print(matrixSerpentine); Serial.print("\t"); Serial.print(matrixRowmajor); Serial.print("\t"); Serial.print(matrixFlipmajor); Serial.print("\t"); Serial.print(matrixFlipminor); Serial.print("\t"); Serial.println(matrixTranspose);
-  uint8_t major, minor, sz_major, sz_minor;
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
-  if (matrixRowmajor)
-    major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
-  else
-    major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
+  uint8_t major, minor, sz_major, sz_minor;
+
+  //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel 
+  uint16_t panelWidth = multiplePanels?matrixWidth / nrOfHorizontalPanels:matrixWidth;
+  uint16_t panelHeight = multiplePanels?matrixHeight / nrOfVerticalPanels:matrixHeight;
+  uint16_t panelSize = panelWidth * panelHeight;
+
+  //Horizontal and vertical panel number. 0 if only one panel
+  uint8_t panelHorizontalNr = x / panelWidth;
+  uint8_t panelVerticalNr = y / panelHeight;
+
+  uint16_t panelFirstLed = 0; //0 if only one panel
+  if (matrixRowmajor) {
+    if (multiplePanels) panelFirstLed = panelSize * (panelHorizontalNr + nrOfHorizontalPanels * panelVerticalNr);
+    major = x%panelWidth, minor = y%panelHeight, sz_major = panelWidth,  sz_minor = panelHeight;
+  }
+  else {
+    if (multiplePanels) panelFirstLed = panelSize * (panelVerticalNr + nrOfVerticalPanels * panelHorizontalNr);
+    major = y%panelHeight, minor = x%panelWidth, sz_major = panelHeight, sz_minor = panelWidth;
+  }
+
   if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
     major = sz_major - 1 - major;
   if (matrixFlipminor)
     minor = sz_minor - 1 - minor;
+
   if (matrixTranspose)
-    return major * (uint16_t) sz_major + minor;
+    return major * (uint16_t) sz_major + minor + panelFirstLed;
   else
-    return minor * (uint16_t) sz_major + major;
+    return minor * (uint16_t) sz_major + major + panelFirstLed;
 }
 
 
-// Panel version of XY() routine
-/*uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+//non panel version (keep code here until multiple panels work rock solid)
+// uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
 
-  uint8_t major, minor, sz_major, sz_minor;
-  if (x >= matrixWidth || y >= matrixHeight)
-    return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
-  if (matrixRowmajor)
-    major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
-  else
-    major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
-  if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
-    major = sz_major - 1 - major;
-  if (matrixFlipminor)
-    minor = sz_minor - 1 - minor;
-
-  uint16_t i;
-  if (matrixTranspose)
-    i = major * (uint16_t) sz_major + minor;
-  else
-    i = minor * (uint16_t) sz_major + major;
-  
-  int nrOfPanels = matrixWidth * matrixHeight / 256; //better to be an extra parameter in led config screen, for now assuming each panel is 256
-  int panelWidth = matrixWidth / nrOfPanels; //8 for multiple 8*32 panels, 16 for 16*16 panel 
-  int panelSize = panelWidth * matrixHeight; //256 normally
-  int panelNr = x / panelWidth; //0 if only one panel
-  int panelFirstLed = panelSize * panelNr; //0 if only one panel, more panels: multitudes of 256 normally
-  i = i%panelWidth + (matrixHeight - y - 1) * panelWidth + panelFirstLed;
-  return i;
-}
-*/
+//  // Serial.print(matrixSerpentine); Serial.print("\t"); Serial.print(matrixRowmajor); Serial.print("\t"); Serial.print(matrixFlipmajor); Serial.print("\t"); Serial.print(matrixFlipminor); Serial.print("\t"); Serial.println(matrixTranspose);
+//   uint8_t major, minor, sz_major, sz_minor;
+//   if (x >= matrixWidth || y >= matrixHeight)
+//     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
+//   if (matrixRowmajor)
+//     major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
+//   else
+//     major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
+//   if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
+//     major = sz_major - 1 - major;
+//   if (matrixFlipminor)
+//     minor = sz_minor - 1 - minor;
+//   if (matrixTranspose)
+//     return major * (uint16_t) sz_major + minor;
+//   else
+//     return minor * (uint16_t) sz_major + major;
+// }
 
 
 //////////////////////

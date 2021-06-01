@@ -269,6 +269,7 @@ WLED_GLOBAL byte briS     _INIT(128);                     // default brightness
 
 WLED_GLOBAL byte soundSquelch   _INIT(10);          // default squelch value for volume reactive routines
 WLED_GLOBAL byte sampleGain     _INIT(1);           // default sample gain
+WLED_GLOBAL byte soundAgc       _INIT(0);           // default Automagic gain control
 WLED_GLOBAL uint16_t noiseFloor _INIT(100);         // default squelch value for FFT reactive routines
 WLED_GLOBAL bool digitalMic     _INIT(false);       // do we have a digital microphone or not
 

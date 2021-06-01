@@ -192,6 +192,10 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     strip.matrixFlipmajor = request->hasArg(F("MXWHA"));
     strip.matrixFlipminor = request->hasArg(F("MXWHI"));
     strip.matrixTranspose = request->hasArg(F("MXWHT"));
+
+    strip.matrixHorizontal = request->arg(F("MXWHH")).toInt();
+    strip.matrixVertical = request->arg(F("MXWHV")).toInt();
+    strip.matrixPanels = request->hasArg(F("MXWHP"));
   }
 
   //UI
@@ -452,6 +456,9 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
 
     t = request->arg(F("GN")).toInt();
     if (t >= 0) sampleGain = t;
+
+    t = request->hasArg(F("AGC"));
+    if (t >=0) soundAgc = t;
 
     // Analog mic pin
     int hw_amic_pin = request->arg(F("SI")).toInt();

@@ -4085,6 +4085,7 @@ extern uint8_t myVals[32];
 extern int sampleAgc;
 extern uint8_t squelch;
 extern byte soundSquelch;
+extern byte soundAgc;
 extern uint8_t maxVol;
 extern uint8_t binNum;
 
@@ -5636,7 +5637,8 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //  Flipmajor  - Flip the major axis, ie top to bottom (otherwise not).
 //  Flipminor  - Flip the minor axis, ie left to right (otherwise not).
 //  Transpose  - Swap the major and the minor axes (otherwise no swap). Don't use on non-square.
-//  Multiple panels - Check if using more then 1 led panel to construct the matrix
+//
+//  Multiple panels - Check if using more then 1 led panel to construct the matrix.
 //    If Yes:
 //        Horizontal panels - Number of horizontal panels
 //        Vertical panels - Number of vertical panels
@@ -5644,11 +5646,16 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //                                                       3 4 5   so first panel top left and last panel bottom right)
 
 uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+
   //temporary code for dev/testing purposes: FirstLed and LastLed in Time & Macros settings are used. These 3 values should be added in Led Preferences settings screen 
-  uint8_t nrOfHorizontalPanels = overlayMin;
-  uint8_t nrOfVerticalPanels = overlayMax;
-  bool multiplePanels = nrOfVerticalPanels > 0 && nrOfVerticalPanels <= matrixHeight/2 && nrOfHorizontalPanels > 0 && nrOfHorizontalPanels <= matrixWidth/2;
+ // uint8_t nrOfHorizontalPanels = overlayMin;
+ // uint8_t nrOfVerticalPanels = overlayMax;
+ // bool multiplePanels = nrOfVerticalPanels > 0 && nrOfVerticalPanels <= matrixHeight/2 && nrOfHorizontalPanels > 0 && nrOfHorizontalPanels <= matrixWidth/2;
   //end of temporary code
+  uint8_t nrOfHorizontalPanels = matrixHorizontal;
+  uint8_t nrOfVerticalPanels = matrixVertical;
+  bool multiplePanels = matrixPanels;
+
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
@@ -5685,7 +5692,7 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
 }
 
 
-//non panel version (keep code here until multiple panels work rock solid)
+// Non-panel version (keep code here until multiple panels work rock solid).
 // uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
 
 //  // Serial.print(matrixSerpentine); Serial.print("\t"); Serial.print(matrixRowmajor); Serial.print("\t"); Serial.print(matrixFlipmajor); Serial.print("\t"); Serial.print(matrixFlipminor); Serial.print("\t"); Serial.println(matrixTranspose);

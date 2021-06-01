@@ -280,7 +280,7 @@
   <b><span id="psu">?</span></b><br>
   <span id="psu2"><br></span>
   <!-- 2D Matrix Settings - BROKEN BY MULTI-PIN -->
-  <h3>2D Matrix</h3>
+  <h3>2D Matrix and Panels</h3>
     <input name="MXW" type="number" min="1" max="1500" oninput="UI()"> x
     <input name="MXH" type="number" min="1" max="1500" oninput="UI()"><br>
     <div id="2dwarning" style="color: orange; display: inline;">
@@ -292,6 +292,10 @@
     Flipmajor: <input type="checkbox" name="MXWHA" checked><br>
     Flipminor: <input type="checkbox" name="MXWHI" checked><br>    
     Transpose: <input type="checkbox" name="MXWHT" checked><br>
+    <br>
+    Multiple panels: <input type="checkbox" name="MXWHP"><br>
+    Horizontal panels: <input name="MXWHH" type="number" min="1" max="8" oninput="UI()">
+    Vertical panels: <input name="MXWHV" type="number" min="1" max="8" oninput="UI()"><br>
   <br>
   Enable automatic brightness limiter: <input type="checkbox" name="ABen" onchange="enABL()" id="able"><br>
   <div id="abl">

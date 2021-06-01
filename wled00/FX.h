@@ -768,6 +768,7 @@ class WS2812FX {
       paletteFade = 0,
       paletteBlend = 0,
       milliampsPerLed = 55,
+
 //      getStripType(uint8_t strip=0),
 //      setStripType(uint8_t type, uint8_t strip=0),
       getBrightness(void),
@@ -811,16 +812,23 @@ class WS2812FX {
       getPixelColor(uint16_t),
       getColor(void);
 
-    #ifndef ESP8266
+
     uint16_t
       matrixWidth,
-      matrixHeight,
+      matrixHeight;
+
+      uint8_t
+      matrixHorizontal,
+      matrixVertical;
+
+      bool 
       matrixSerpentine,
       matrixRowmajor,
       matrixFlipmajor,
       matrixFlipminor,
-      matrixTranspose;
-    #endif // ESP8266
+      matrixTranspose,
+      matrixPanels;
+
 
     WS2812FX::Segment&
       getSegment(uint8_t n);

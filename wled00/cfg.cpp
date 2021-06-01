@@ -109,6 +109,11 @@ void deserializeConfig() {
   CJSON(strip.matrixFlipmajor, hw_led[F("mxa")]);
   CJSON(strip.matrixFlipminor, hw_led[F("mxi")]);
   CJSON(strip.matrixTranspose, hw_led[F("mxt")]);
+
+  CJSON(strip.matrixHorizontal, hw_led[F("mxhh")]);
+  CJSON(strip.matrixVertical, hw_led[F("mxv")]);
+  CJSON(strip.matrixPanels, hw_led[F("mxp")]);
+  
     
 
   JsonArray ins = hw_led["ins"];
@@ -443,6 +448,8 @@ void deserializeConfig() {
   JsonObject snd_cfg = sound[F("cfg")]; // Sound Reactive Configuration
   CJSON(soundSquelch, snd_cfg[F("sq")]);
   CJSON(sampleGain, snd_cfg[F("gn")]);
+  CJSON(soundAgc, snd_cfg[F("agc")]);
+  
 
   JsonObject snd_fft = sound[F("fft")]; // FFT Settings
   CJSON(effectFFT1, snd_fft[F("f1")]);
@@ -531,6 +538,11 @@ void serializeConfig() {
   hw_led[F("mxa")] = strip.matrixFlipmajor;
   hw_led[F("mxi")] = strip.matrixFlipminor;
   hw_led[F("mxt")] = strip.matrixTranspose;
+  // 2D Matrix Panels
+  hw_led[F("mxhh")] = strip.matrixHorizontal;
+  hw_led[F("mxv")] = strip.matrixVertical;
+  hw_led[F("mxp")] = strip.matrixPanels;
+  
 
 
   JsonArray hw_led_ins = hw_led.createNestedArray("ins");
@@ -767,6 +779,7 @@ void serializeConfig() {
   JsonObject snd_cfg = sound.createNestedObject("cfg"); // Sound Reactive Configuration
   snd_cfg[F("sq")] = soundSquelch;
   snd_cfg[F("gn")] = sampleGain;
+  snd_cfg[F("agc")] = soundAgc;
 
   JsonObject snd_fft = sound.createNestedObject("fft"); // FFT Settings
   snd_fft[F("f1")] = effectFFT1;

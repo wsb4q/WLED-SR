@@ -364,6 +364,10 @@ void getSettingsJS(byte subPage, char* dest)
     sappend('c',SET_F("MXWHA"),strip.matrixFlipmajor);
     sappend('c',SET_F("MXWHI"),strip.matrixFlipminor);
     sappend('c',SET_F("MXWHT"),strip.matrixTranspose);
+    // 2D Panel Settings
+    sappend('v',SET_F("MXWHH"),strip.matrixHorizontal);
+    sappend('v',SET_F("MXWHV"),strip.matrixVertical);
+    sappend('c',SET_F("MXWHR"),strip.matrixPanels);
   }
 
   if (subPage == 3)
@@ -563,6 +567,7 @@ void getSettingsJS(byte subPage, char* dest)
   {
     sappend('v',SET_F("SQ"),soundSquelch);
     sappend('v',SET_F("GN"),sampleGain);
+    sappend('c',SET_F("AGC"),soundAgc);
     sappend('v',SET_F("SI"),audioPin);
     sappend('c',SET_F("DMM"),dmEnabled);
     sappend('v',SET_F("DI"),i2ssdPin);

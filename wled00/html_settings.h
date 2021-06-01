@@ -81,8 +81,8 @@ type="button" onclick="B()">Back</button><button type="submit">Save</button><hr>
 <h2>LED &amp; Hardware setup</h2>Total LED count: <input name="LC" 
 type="number" min="1" max="8192" oninput="UI()" required><br><i>
 Recommended power supply for brightest white:</i><br><b><span id="psu">?</span>
-</b><br><span id="psu2"><br></span><h3>2D Matrix</h3><input name="MXW" 
-type="number" min="1" max="1500" oninput="UI()"> x <input name="MXH" 
+</b><br><span id="psu2"><br></span><h3>2D Matrix and Panels</h3><input 
+name="MXW" type="number" min="1" max="1500" oninput="UI()"> x <input name="MXH" 
 type="number" min="1" max="1500" oninput="UI()"><br><div id="2dwarning" 
 style="color:orange;display:inline">
 &#9888; width x height should match LED count!<br></div><a 
@@ -92,7 +92,10 @@ type="checkbox" name="MXWHS" checked="checked"><br>Rowmajor: <input
 type="checkbox" name="MXWHR" checked="checked"><br>Flipmajor: <input 
 type="checkbox" name="MXWHA" checked="checked"><br>Flipminor: <input 
 type="checkbox" name="MXWHI" checked="checked"><br>Transpose: <input 
-type="checkbox" name="MXWHT" checked="checked"><br><br>
+type="checkbox" name="MXWHT" checked="checked"><br><br>Multiple panels: <input 
+type="checkbox" name="MXWHP"><br>Horizontal panels: <input name="MXWHH" 
+type="number" min="1" max="8" oninput="UI()"> Vertical panels: <input 
+name="MXWHV" type="number" min="1" max="8" oninput="UI()"><br><br>
 Enable automatic brightness limiter: <input type="checkbox" name="ABen" 
 onchange="enABL()" id="able"><br><div id="abl">Maximum Current: <input 
 name="MA" type="number" min="250" max="65000" oninput="UI()" required> mA<br>
@@ -166,14 +169,15 @@ var d=document;function H(){window.open("https://github.com/atuline/WLED/wiki/Sq
 onclick="H()">?</button></div><button type="button" onclick="B()">Back</button>
 <button type="submit">Save</button><hr><h2>Sound Input Settings</h2>Squelch: 
 <input name="SQ" type="number" min="0" max="255" required><br>Gain: <input 
-name="GN" type="number" min="0" max="255" required><br><h2>
-Sound Input Pin Manager</h2>Analog Input pin: <input type="number" min="-1" 
-max="40" name="SI"><br>Enable Digital Mic: <input type="checkbox" name="DMM" 
-onchange="enDM()" id="dme"><br><div id="dm">I2S SD pin: <input type="number" 
-min="-1" max="40" name="DI"><br>I2S WS pin: <input type="number" min="-1" 
-max="40" name="LR"><br>I2S SCK pin: <input type="number" min="-1" max="40" 
-name="CK"><br></div><button type="button" onclick="B()">Back</button><button 
-type="submit">Save</button></form></body></html>)=====";
+name="GN" type="number" min="0" max="255" required><br>AGC: <input 
+type="checkbox" name="AGC"><br><h2>Sound Input Pin Manager</h2>
+Analog Input pin: <input type="number" min="-1" max="40" name="SI"><br>
+Enable Digital Mic: <input type="checkbox" name="DMM" onchange="enDM()" 
+id="dme"><br><div id="dm">I2S SD pin: <input type="number" min="-1" max="40" 
+name="DI"><br>I2S WS pin: <input type="number" min="-1" max="40" name="LR"><br>
+I2S SCK pin: <input type="number" min="-1" max="40" name="CK"><br></div><button 
+type="button" onclick="B()">Back</button><button type="submit">Save</button>
+</form></body></html>)=====";
 
 
 #ifdef WLED_ENABLE_DMX

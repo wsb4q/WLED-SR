@@ -367,7 +367,7 @@ void getSettingsJS(byte subPage, char* dest)
     // 2D Panel Settings
     sappend('v',SET_F("MXWHH"),strip.matrixHorizontal);
     sappend('v',SET_F("MXWHV"),strip.matrixVertical);
-    sappend('c',SET_F("MXWHR"),strip.matrixPanels);
+    sappend('c',SET_F("MXWHP"),strip.matrixPanels);
   }
 
   if (subPage == 3)

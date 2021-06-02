@@ -821,7 +821,7 @@ class WS2812FX {
       matrixHorizontal,
       matrixVertical;
 
-      bool 
+      uint8_t 
       matrixSerpentine,
       matrixRowmajor,
       matrixFlipmajor,

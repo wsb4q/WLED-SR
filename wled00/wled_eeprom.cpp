@@ -378,15 +378,16 @@ void loadSettingsFromEEPROM()
 
     strip.matrixWidth = EEPROM.read(EEP_AUDIO+7) + ((EEPROM.read(EEP_AUDIO+8) << 8) & 0xFF00); if (strip.matrixWidth == 0) strip.matrixWidth = 1;
     strip.matrixHeight = EEPROM.read(EEP_AUDIO+9) + ((EEPROM.read(EEP_AUDIO+10) << 10) & 0xFF00); if (strip.matrixHeight == 0) strip.matrixHeight = ledCount;
-    strip.matrixSerpentine = EEPROM.read(EEP_AUDIO+11); // > 0;
-    strip.matrixRowmajor = EEPROM.read(EEP_AUDIO+12); // > 0;
-    strip.matrixFlipmajor = EEPROM.read(EEP_AUDIO+13); // > 0;
-    strip.matrixFlipminor = EEPROM.read(EEP_AUDIO+14); // > 0;
-    strip.matrixTranspose = EEPROM.read(EEP_AUDIO+15); // > 0;
 
-    strip.matrixHorizontal = EEPROM.read(EEP_AUDIO+16);
-    strip.matrixVertical = EEPROM.read(EEP_AUDIO+17);
-    strip.matrixPanels = EEPROM.read(EEP_AUDIO+18);
+    strip.matrixPanels = EEPROM.read(EEP_AUDIO+11);
+    strip.matrixHorizontalPanels = EEPROM.read(EEP_AUDIO+12);
+    strip.matrixVerticalPanels = EEPROM.read(EEP_AUDIO+13);
+
+    strip.panelFirstLedTopBottom = EEPROM.read(EEP_AUDIO+14); // > 0;
+    strip.panelFirstLedLeftRight = EEPROM.read(EEP_AUDIO+15); // > 0;
+    strip.panelOrientationHorVert = EEPROM.read(EEP_AUDIO+16); // > 0;
+    strip.panelSerpentine = EEPROM.read(EEP_AUDIO+17); // > 0;
+    strip.panelTranspose = EEPROM.read(EEP_AUDIO+18); // > 0;
 
     sampleGain = EEPROM.read(EEP_AUDIO+19);
     soundAgc = EEPROM.read(EEP_AUDIO+20); 

@@ -818,16 +818,16 @@ class WS2812FX {
       matrixHeight;
 
       uint8_t
-      matrixHorizontal,
-      matrixVertical;
+      matrixPanels,
+      matrixHorizontalPanels,
+      matrixVerticalPanels;
 
       uint8_t 
-      matrixSerpentine,
-      matrixRowmajor,
-      matrixFlipmajor,
-      matrixFlipminor,
-      matrixTranspose,
-      matrixPanels;
+      panelFirstLedTopBottom,
+      panelFirstLedLeftRight,
+      panelOrientationHorVert,
+      panelSerpentine,
+      panelTranspose;
 
 
     WS2812FX::Segment&

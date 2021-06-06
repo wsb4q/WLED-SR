@@ -5611,25 +5611,18 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
 //        (Panels are assumed to be layed out as follows 0 1 2
 //                                                       3 4 5   so first panel top left and last panel bottom right)
 
-uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
-
-  //temporary code for dev/testing purposes: FirstLed and LastLed in Time & Macros settings are used. These 3 values should be added in Led Preferences settings screen 
- // uint8_t nrOfHorizontalPanels = overlayMin;
- // uint8_t nrOfVerticalPanels = overlayMax;
- // bool multiplePanels = nrOfVerticalPanels > 0 && nrOfVerticalPanels <= matrixHeight/2 && nrOfHorizontalPanels > 0 && nrOfHorizontalPanels <= matrixWidth/2;
-  //end of temporary code
-  uint8_t nrOfHorizontalPanels = matrixHorizontal;
-  uint8_t nrOfVerticalPanels = matrixVertical;
-  bool multiplePanels = matrixPanels;
-
+#define RIGHT 1
+#define BOTTOM 1
+#define HORIZONTAL 0
+uint16_t WS2812FX::XY( int x, int y) {                // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
   uint8_t major, minor, sz_major, sz_minor;
 
   //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel 
-  uint16_t panelWidth = multiplePanels?matrixWidth / nrOfHorizontalPanels:matrixWidth;
-  uint16_t panelHeight = multiplePanels?matrixHeight / nrOfVerticalPanels:matrixHeight;
+  uint16_t panelWidth = matrixPanels?matrixWidth / matrixHorizontalPanels:matrixWidth;
+  uint16_t panelHeight = matrixPanels?matrixHeight / matrixVerticalPanels:matrixHeight;
   uint16_t panelSize = panelWidth * panelHeight;
 
   //Horizontal and vertical panel number. 0 if only one panel
@@ -5637,47 +5630,28 @@ uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who w
   uint8_t panelVerticalNr = y / panelHeight;
 
   uint16_t panelFirstLed = 0; //0 if only one panel
-  if (matrixRowmajor) {
-    if (multiplePanels) panelFirstLed = panelSize * (panelHorizontalNr + nrOfHorizontalPanels * panelVerticalNr);
+  if (panelOrientationHorVert == HORIZONTAL) {
+    if (matrixPanels) panelFirstLed = panelSize * (panelHorizontalNr + matrixHorizontalPanels * panelVerticalNr);
     major = x%panelWidth, minor = y%panelHeight, sz_major = panelWidth,  sz_minor = panelHeight;
   }
-  else {
-    if (multiplePanels) panelFirstLed = panelSize * (panelVerticalNr + nrOfVerticalPanels * panelHorizontalNr);
+  else { //vertical
+    if (matrixPanels) panelFirstLed = panelSize * (panelVerticalNr + matrixVerticalPanels * panelHorizontalNr);
     major = y%panelHeight, minor = x%panelWidth, sz_major = panelHeight, sz_minor = panelWidth;
   }
 
-  if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
-    major = sz_major - 1 - major;
-  if (matrixFlipminor)
-    minor = sz_minor - 1 - minor;
+  bool flipmajor = (panelOrientationHorVert == HORIZONTAL)?panelFirstLedLeftRight == RIGHT:panelFirstLedTopBottom == BOTTOM;
+  bool flipminor = (panelOrientationHorVert == HORIZONTAL)?panelFirstLedTopBottom == BOTTOM:panelFirstLedLeftRight == RIGHT;
+  //By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
+  //flip minor if needed, this needs to be done before flipmajor because minor value needed to identify serpentine row
+  if (flipminor) minor = sz_minor - 1 - minor;
+  if (flipmajor ^ ((minor & 1) && panelSerpentine)) major = sz_major - 1 - major; //A line of magic. 
+  // &=Binary AND, minor&1 is odd rows, ^=Binary XOR => flapmajor or serpentine (odd) row, but not both (XOR)
 
-  if (matrixTranspose)
-    return major * (uint16_t) sz_major + minor + panelFirstLed;
+  if (panelTranspose)
+    return major * (uint16_t) sz_minor + minor + panelFirstLed;
   else
     return minor * (uint16_t) sz_major + major + panelFirstLed;
 }
-
-
-// Non-panel version (keep code here until multiple panels work rock solid).
-// uint16_t WS2812FX::XY( int x, int y) {                // By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
-
-//  // Serial.print(matrixSerpentine); Serial.print("\t"); Serial.print(matrixRowmajor); Serial.print("\t"); Serial.print(matrixFlipmajor); Serial.print("\t"); Serial.print(matrixFlipminor); Serial.print("\t"); Serial.println(matrixTranspose);
-//   uint8_t major, minor, sz_major, sz_minor;
-//   if (x >= matrixWidth || y >= matrixHeight)
-//     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
-//   if (matrixRowmajor)
-//     major = x, minor = y, sz_major = matrixWidth,  sz_minor = matrixHeight;
-//   else
-//     major = y, minor = x, sz_major = matrixHeight, sz_minor = matrixWidth;
-//   if (((matrixFlipmajor) != 0) ^ (((minor & 1) != 0) && ((matrixSerpentine) != 0)))    // A line of magic.
-//     major = sz_major - 1 - major;
-//   if (matrixFlipminor)
-//     minor = sz_minor - 1 - minor;
-//   if (matrixTranspose)
-//     return major * (uint16_t) sz_major + minor;
-//   else
-//     return minor * (uint16_t) sz_major + major;
-// }
 
 
 //////////////////////

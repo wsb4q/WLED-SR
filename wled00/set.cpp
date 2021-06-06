@@ -187,15 +187,16 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     // 2D Matrix Settings - BROKEN BY MULTI-PIN
     strip.matrixWidth = request->arg(F("MXW")).toInt();
     strip.matrixHeight = request->arg(F("MXH")).toInt();
-    strip.matrixSerpentine = request->hasArg(F("MXWHS"));
-    strip.matrixRowmajor = request->hasArg(F("MXWHR"));
-    strip.matrixFlipmajor = request->hasArg(F("MXWHA"));
-    strip.matrixFlipminor = request->hasArg(F("MXWHI"));
-    strip.matrixTranspose = request->hasArg(F("MXWHT"));
 
-    strip.matrixHorizontal = request->arg(F("MXWHH")).toInt();
-    strip.matrixVertical = request->arg(F("MXWHV")).toInt();
-    strip.matrixPanels = request->hasArg(F("MXWHP"));
+    strip.matrixPanels = request->hasArg(F("MXP"));
+    strip.matrixHorizontalPanels = request->arg(F("MXPH")).toInt();
+    strip.matrixVerticalPanels = request->arg(F("MXPV")).toInt();
+
+    strip.panelFirstLedTopBottom = request->arg(F("PFLTB")).toInt();
+    strip.panelFirstLedLeftRight = request->arg(F("PFLLR")).toInt();
+    strip.panelOrientationHorVert = request->arg(F("POHV")).toInt();
+    strip.panelSerpentine = request->hasArg(F("PNLS"));
+    strip.panelTranspose = request->hasArg(F("PNLT"));
   }
 
   //UI

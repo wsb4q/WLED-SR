@@ -4541,7 +4541,9 @@ uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andre
 
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
-    int pixBri = sample * SEGMENT.intensity / 64;
+
+    uint8_t tmpSound = (soundAgc) ? sampleAgc : sample;
+    int pixBri = tmpSound * SEGMENT.intensity / 64;
     leds[SEGLEN/2] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
 
     for (int i=SEGLEN-1; i>SEGLEN/2; i--) {               // Move to the right.
@@ -4582,7 +4584,8 @@ uint16_t WS2812FX::mode_matripix(void) {                  // Matripix. By Andrew
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500 % 16;
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
-    int pixBri = sample * SEGMENT.intensity / 64;
+    uint8_t tmpSound = (soundAgc) ? sampleAgc : sample;
+    int pixBri = tmpSound * SEGMENT.intensity / 64;
     leds[SEGLEN-1] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
     for (int i=0; i<SEGLEN-1; i++) leds[i] = leds[i+1];
   }
@@ -5895,7 +5898,6 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
 
   const uint8_t borderWidth = 2;
 
-  // uint8_t blurAmount = beatsin8(2, 0, 256-SEGMENT.fft1);
   blur2d( leds, matrixWidth, matrixHeight, SEGMENT.fft1);
 
   uint8_t  i = beatsin8( 27*SEGMENT.speed/255, borderWidth, matrixHeight - borderWidth);
@@ -5903,12 +5905,15 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
   uint8_t ni = (matrixWidth - 1) - i;
   uint8_t nj = (matrixWidth - 1) - j;
   uint16_t ms = millis();
-  leds[XY( i, j)]  += ColorFromPalette(currentPalette, (ms / 11 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 11, 200, 255);
-  leds[XY( j, i)]  += ColorFromPalette(currentPalette, (ms / 13 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 13, 200, 255);
-  leds[XY(ni, nj)] += ColorFromPalette(currentPalette, (ms / 17 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 17, 200, 255);
-  leds[XY(nj, ni)] += ColorFromPalette(currentPalette, (ms / 29 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 29, 200, 255);
-  leds[XY( i, nj)] += ColorFromPalette(currentPalette, (ms / 37 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 37, 200, 255);
-  leds[XY(ni, j)]  += ColorFromPalette(currentPalette, (ms / 41 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 41, 200, 255);
+
+  uint8_t tmpSound = (soundAgc) ? sampleAgc : sample;
+
+  leds[XY( i, j)]  += ColorFromPalette(currentPalette, (ms / 11 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 11, 200, 255);
+  leds[XY( j, i)]  += ColorFromPalette(currentPalette, (ms / 13 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 13, 200, 255);
+  leds[XY(ni, nj)] += ColorFromPalette(currentPalette, (ms / 17 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 17, 200, 255);
+  leds[XY(nj, ni)] += ColorFromPalette(currentPalette, (ms / 29 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 29, 200, 255);
+  leds[XY( i, nj)] += ColorFromPalette(currentPalette, (ms / 37 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 37, 200, 255);
+  leds[XY(ni, j)]  += ColorFromPalette(currentPalette, (ms / 41 + sampleAvg*4), tmpSound * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 41, 200, 255);
 
   setPixels(leds);
   return FRAMETIME;
@@ -5930,8 +5935,10 @@ uint16_t WS2812FX::mode_2DWaverly(void) {                                       
   //  byte thisVal = inoise8(i * 45 , t , t);
   // byte thisMax = map(thisVal, 0, 255, 0, matrixHeight);
  
-   uint16_t thisVal = sample*SEGMENT.intensity/64 + inoise8(i * 45 , t , t)*5/3;
-   byte thisMax = map(thisVal, 0, 512, 0, matrixHeight);
+    uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
+
+    uint16_t thisVal = tmpSound*SEGMENT.intensity/64 * inoise8(i * 45 , t , t)/64;
+    byte thisMax = map(thisVal, 0, 512, 0, matrixHeight);
 
     for (byte j = 0; j < thisMax; j++) {
       leds[XY(i, j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);

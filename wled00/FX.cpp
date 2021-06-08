@@ -5895,20 +5895,20 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
 
   const uint8_t borderWidth = 2;
 
-  uint8_t blurAmount = beatsin8(2, 0, SEGMENT.intensity);
-  blur2d( leds, matrixWidth, matrixHeight, blurAmount);
+  // uint8_t blurAmount = beatsin8(2, 0, 256-SEGMENT.fft1);
+  blur2d( leds, matrixWidth, matrixHeight, SEGMENT.fft1);
 
   uint8_t  i = beatsin8( 27*SEGMENT.speed/255, borderWidth, matrixHeight - borderWidth);
   uint8_t  j = beatsin8( 41*SEGMENT.speed/255, borderWidth, matrixWidth - borderWidth);
   uint8_t ni = (matrixWidth - 1) - i;
   uint8_t nj = (matrixWidth - 1) - j;
   uint16_t ms = millis();
-  leds[XY( i, j)]  += ColorFromPalette(currentPalette, ms / 11, sample*8, LINEARBLEND); //CHSV( ms / 11, 200, 255);
-  leds[XY( j, i)]  += ColorFromPalette(currentPalette, ms / 13, sample*8, LINEARBLEND); //CHSV( ms / 13, 200, 255);
-  leds[XY(ni, nj)] += ColorFromPalette(currentPalette, ms / 17, sample*8, LINEARBLEND); //CHSV( ms / 17, 200, 255);
-  leds[XY(nj, ni)] += ColorFromPalette(currentPalette, ms / 29, sample*8, LINEARBLEND); //CHSV( ms / 29, 200, 255);
-  leds[XY( i, nj)] += ColorFromPalette(currentPalette, ms / 37, sample*8, LINEARBLEND); //CHSV( ms / 37, 200, 255);
-  leds[XY(ni, j)]  += ColorFromPalette(currentPalette, ms / 41, sample*8, LINEARBLEND); //CHSV( ms / 41, 200, 255);
+  leds[XY( i, j)]  += ColorFromPalette(currentPalette, (ms / 11 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 11, 200, 255);
+  leds[XY( j, i)]  += ColorFromPalette(currentPalette, (ms / 13 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 13, 200, 255);
+  leds[XY(ni, nj)] += ColorFromPalette(currentPalette, (ms / 17 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 17, 200, 255);
+  leds[XY(nj, ni)] += ColorFromPalette(currentPalette, (ms / 29 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 29, 200, 255);
+  leds[XY( i, nj)] += ColorFromPalette(currentPalette, (ms / 37 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 37, 200, 255);
+  leds[XY(ni, j)]  += ColorFromPalette(currentPalette, (ms / 41 + (int)sampleAvg*4), sample * SEGMENT.intensity / 64, LINEARBLEND); //CHSV( ms / 41, 200, 255);
 
   setPixels(leds);
   return FRAMETIME;

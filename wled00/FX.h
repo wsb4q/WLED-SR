@@ -282,7 +282,7 @@
 // #define FX_MODE_2DJULIA                152
 #define FX_MODE_2DPULSER               152
 #define FX_MODE_BLURZ                  153
-#define FX_MODE_2DCAGAMEOFLIFE         154
+#define FX_MODE_2DGAMEOFLIFE           154
 #define FX_MODE_2DTARTAN               155
 #define FX_MODE_2DPOLARLIGHTS          156
 #define FX_MODE_2DSWIRL                157
@@ -329,6 +329,8 @@ class WS2812FX {
       uint8_t grouping, spacing;
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
+      uint8_t width;
+      uint8_t height;
       bool setColor(uint8_t slot, uint32_t c, uint8_t segn) { //returns true if changed
         if (slot >= NUM_COLORS || segn >= MAX_NUM_SEGMENTS) return false;
         if (c == colors[slot]) return false;
@@ -691,7 +693,7 @@ class WS2812FX {
      _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
 
      _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
-     _mode[FX_MODE_2DCAGAMEOFLIFE]           = &WS2812FX::mode_2Dcagameoflife;
+     _mode[FX_MODE_2DGAMEOFLIFE]             = &WS2812FX::mode_2Dgameoflife;
      _mode[FX_MODE_2DTARTAN]                 = &WS2812FX::mode_2Dtartan;
      _mode[FX_MODE_2DPOLARLIGHTS]            = &WS2812FX::mode_2DPolarLights;
      _mode[FX_MODE_2DSWIRL]                  = &WS2812FX::mode_2DSwirl;
@@ -1005,7 +1007,7 @@ class WS2812FX {
 //      mode_2DJulia(void),
       mode_2DPulser(void),
       mode_blurz(void),
-      mode_2Dcagameoflife(void),
+      mode_2Dgameoflife(void),
       mode_2Dtartan(void),
       mode_2DPolarLights(void),
       mode_2DSwirl(void),

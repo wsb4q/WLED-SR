@@ -4680,16 +4680,14 @@ uint16_t WS2812FX::mode_gravcenter(void) {                // Gravcenter. By Andr
 //   * GRAVCENTRIC   //
 ///////////////////////
 
-uint16_t WS2812FX::mode_gravcentric(void) {               // Gravcenter. By Andrew Tuline.
+uint16_t WS2812FX::mode_gravcentric(void) {                     // Gravcentric. By Andrew Tuline.
 
   uint16_t dataSize = sizeof(gravity);
-  if (!SEGENV.allocateData(dataSize)) return mode_static(); //allocation failed
+  if (!SEGENV.allocateData(dataSize)) return mode_static();     //allocation failed
   Gravity* gravcen = reinterpret_cast<Gravity*>(SEGENV.data);
 
   fade_out(240);
   fade_out(240);
-
-// uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
 
   float segmentSampleAvg = sampleAvg * SEGMENT.intensity / 255;
 
@@ -4729,13 +4727,14 @@ uint16_t WS2812FX::mode_midnoise(void) {                  // Midnoise. By Andrew
   fade_out(SEGMENT.speed);
   fade_out(SEGMENT.speed);
 
-  uint16_t maxLen = sampleAvg * SEGMENT.intensity / 256;  // Too sensitive.
-  maxLen = maxLen * SEGMENT.intensity / 128;              // Reduce sensitity/length.
+  uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
 
+  uint16_t maxLen = tmpSound * SEGMENT.intensity / 256;   // Too sensitive.
+  maxLen = maxLen * SEGMENT.intensity / 128;              // Reduce sensitity/length.
   if (maxLen >SEGLEN/2) maxLen = SEGLEN/2;
 
   for (int i=(SEGLEN/2-maxLen); i<(SEGLEN/2+maxLen); i++) {
-    uint8_t index = inoise8(i*sampleAvg+SEGENV.aux0, SEGENV.aux1+i*sampleAvg);  // Get a value from the noise function. I'm using both x and y axis.
+    uint8_t index = inoise8(i*tmpSound+SEGENV.aux0, SEGENV.aux1+i*tmpSound);  // Get a value from the noise function. I'm using both x and y axis.
     setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
   }
 
@@ -4762,7 +4761,10 @@ uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andre
     uint16_t index = inoise8(i*SEGMENT.speed/64,millis()*SEGMENT.speed/64*SEGLEN/255);  // X location is constant, but we move along the Y at the rate of millis(). By Andrew Tuline.
     index = (255 - i*256/SEGLEN) * index/(256-SEGMENT.intensity);                       // Now we need to scale index so that it gets blacker as we get close to one of the ends.
                                                                                         // This is a simple y=mx+b equation that's been scaled. index/128 is another scaling.
-    CRGB color = ColorFromPalette(currentPalette, index, sampleAvg*2, LINEARBLEND);     // Use the my own palette.
+
+    uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
+
+    CRGB color = ColorFromPalette(currentPalette, index, tmpSound*2, LINEARBLEND);     // Use the my own palette.
     leds[i] = color;
   }
 
@@ -5135,11 +5137,11 @@ uint16_t WS2812FX::mode_freqpixels(void) {                // Freqpixel. By Andre
   uint16_t fadeRate = 2*SEGMENT.speed - SEGMENT.speed*SEGMENT.speed/255;    // Get to 255 as quick as you can.
   fade_out(fadeRate);
 
-  uint16_t locn = random16(0,SEGLEN);
-  uint8_t pixCol = (log10((int)FFT_MajorPeak) - 1.78) * 255.0/(3.71-1.78);  // Scale log10 of frequency values to the 255 colour index.
-
-  setPixelColor(locn, color_blend(SEGCOLOR(1), color_from_palette(SEGMENT.intensity+pixCol, false, PALETTE_SOLID_WRAP, 0), (int)FFT_Magnitude>>8));
-
+  for (int i=0; i < SEGMENT.intensity/32+1; i++) {
+    uint16_t locn = random16(0,SEGLEN);
+    uint8_t pixCol = (log10((int)FFT_MajorPeak) - 1.78) * 255.0/(3.71-1.78);  // Scale log10 of frequency values to the 255 colour index.
+    setPixelColor(locn, color_blend(SEGCOLOR(1), color_from_palette(SEGMENT.intensity+pixCol, false, PALETTE_SOLID_WRAP, 0), (int)FFT_Magnitude>>8));
+  }
   return FRAMETIME;
 } // mode_freqpixels()
 

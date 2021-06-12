@@ -4139,6 +4139,26 @@ uint16_t WS2812FX::mode_perlinmove(void) {
 } // mode_perlinmove()
 
 
+/////////////////////////
+//     Perlin Move     //
+/////////////////////////
+
+uint16_t WS2812FX::mode_wavesins(void) {                          // Uses beatsin8() + phase shifting. By: Andrew Tuline
+
+  for (int i = 0; i < SEGLEN; i++) {
+    uint8_t iMult = 20;
+    uint8_t bri = sin8(millis()/4+i* (int)SEGMENT.intensity);
+    leds[i] = CHSV(beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), 255, bri);
+  }
+  
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_perlinmove()
+
+
+
+
+
 //////////////////////////////
 //     Flow Stripe          //
 //////////////////////////////

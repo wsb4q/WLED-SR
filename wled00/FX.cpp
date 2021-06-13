@@ -4396,15 +4396,17 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
 //      2D DNA     //
 /////////////////////
 
-uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED version by Andrew Tuline.
+uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED conversion by Andrew Tuline.
 
   if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   fadeToBlackBy(leds, SEGLEN, 64);
 
-  for(int i = 0; i < SEGMENT.height; i++) {
-      leds[XY(beatsin8(SEGMENT.speed/8, 0, SEGMENT.width-1, 0, i*4), i)] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
-      leds[XY(beatsin8(SEGMENT.speed/8, 0, SEGMENT.width-1, 0, i*4+128), i)] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
+  for(int i = 0; i < SEGMENT.width; i++) {               // change to height if you want to re-orient, and swap the 4 lines below.
+ //     leds[XY(beatsin8(SEGMENT.speed/8, 0, SEGMENT.width-1, 0, i*4), i)] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
+ //     leds[XY(beatsin8(SEGMENT.speed/8, 0, SEGMENT.width-1, 0, i*4+128), i)] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
+     leds[XY(i, beatsin8(SEGMENT.speed/8, 0, SEGMENT.height-1, 0, i*4))] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
+      leds[XY(i, beatsin8(SEGMENT.speed/8, 0, SEGMENT.height-1, 0, i*4+128))] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
   }
 
   blur2d(leds, SEGMENT.width, SEGMENT.height, SEGMENT.intensity/8);

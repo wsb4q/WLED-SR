@@ -4490,8 +4490,6 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
 
   if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  //static byte *heat = (byte *)dataStore;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-
   const uint8_t COOLING = 50;
   const uint8_t SPARKING = 50;
 
@@ -4554,11 +4552,10 @@ uint16_t WS2812FX::mode_2Dfirenoise(void) {               // firenoise2d. By And
                                    CRGB::DarkOrange,CRGB::DarkOrange, CRGB::Orange, CRGB::Orange,
                                    CRGB::Yellow, CRGB::Orange, CRGB::Yellow, CRGB::Yellow);
 
-  for (int j=0; j < SEGMENT.height; j++) {
-    for (int i=0; i < SEGMENT.width; i++) {
+for (int j=0; j < SEGMENT.width; j++) {
+    for (int i=0; i < SEGMENT.height; i++) {
 
-      // This perlin fire is by Andrew Tuline
-      indexx = inoise8(i*xscale+millis()/4,j*yscale*SEGMENT.width/255);                                             // We're moving along our Perlin map.
+      indexx = inoise8(j*yscale*SEGMENT.height/255, i*xscale+millis()/4);                                             // We're moving along our Perlin map.
       leds[XY(j,i)] = ColorFromPalette(currentPalette, min(i*(indexx)>>4, 255), i*255/SEGMENT.width, LINEARBLEND);  // With that value, look up the 8 bit colour palette value and assign it to the current LED.
 
 // This perlin fire is by /u/ldirko

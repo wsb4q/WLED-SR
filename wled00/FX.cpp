@@ -6151,6 +6151,40 @@ uint16_t WS2812FX::mode_noisemove(void) {                 // Noisemove.    By: A
 } // mode_noisemove()
 
 
+//////////////////////
+//   ** Rocktaves   //
+//////////////////////
+
+uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same note from each octave is same colour.    By: Andrew Tuline
+
+  fadeToBlackBy(leds,SEGLEN,64);                          // Just in case something doesn't get faded.
+
+  double frTemp = FFT_MajorPeak;
+  uint8_t octCount = 0;                                   // Octave counter.
+  uint8_t volTemp = 0;
+  if (FFT_Magnitude > 500) volTemp = 255;                 // We need to squelch out the background noise.
+  
+  while ( frTemp > 249 ) {
+    octCount++;                                           // This should go up to 5.
+    frTemp = frTemp/2;
+  }
+
+  frTemp -=132;                                           // This should give us a base musical note of C3
+  frTemp = abs(frTemp * 2.1);                             // Fudge factors to compress octave range starting at 0 and going to 255;
+
+  Serial.print(frTemp); Serial.print("\t"); Serial.print(volTemp); Serial.print("\t");Serial.print(octCount); Serial.print("\t"); Serial.println(FFT_Magnitude);
+
+//    leds[beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8)] += CHSV((uint8_t)frTemp,255,volTemp);                 // Back and forth with different frequencies and phase shift depending on current octave.
+  
+  leds[beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8)] += color_blend(SEGCOLOR(1), color_from_palette((uint8_t)frTemp, false, PALETTE_SOLID_WRAP, 0), volTemp);
+
+
+  setPixels(leds);
+  return FRAMETIME;
+} // mode_rockdaves()
+
+
+
 ///////////////////////
 //   ** Waterfall    //
 ///////////////////////

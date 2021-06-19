@@ -118,7 +118,7 @@
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
 //#define MODE_COUNT                     172
-#define MODE_COUNT                      167
+#define MODE_COUNT                      168
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -296,6 +296,7 @@
 #define FX_MODE_2DDNASPIRAL            164
 #define FX_MODE_2DBLACKHOLE            165
 #define FX_MODE_WAVESINS               166
+#define FX_MODE_ROCKTAVES              167
 
 
 //#define FX_MODE_2DPULSER               166
@@ -708,6 +709,7 @@ class WS2812FX {
      _mode[FX_MODE_2DDNASPIRAL]              = &WS2812FX::mode_2DDNASpiral;
      _mode[FX_MODE_2DBLACKHOLE]              = &WS2812FX::mode_2DBlackHole;
      _mode[FX_MODE_WAVESINS]                 = &WS2812FX::mode_wavesins;
+     _mode[FX_MODE_ROCKTAVES]                = &WS2812FX::mode_rocktaves;
 //     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
 //     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
 //     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
@@ -1022,7 +1024,8 @@ class WS2812FX {
       mode_2DSindots(void),
       mode_2DDNASpiral(void),
       mode_2DBlackHole(void),
-      mode_wavesins(void);
+      mode_wavesins(void),
+      mode_rocktaves(void);
 //      mode_2DPulser(void),
 //      mode_2DColoredBursts(void),
 //      mode_2DTwister(void),
@@ -1157,7 +1160,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Noise","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D Game Of Life","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Sindots","2D DNA Spiral","2D Black Hole","Wavesins"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Sindots","2D DNA Spiral","2D Black Hole","Wavesins","** Rocktaves"
 
 ])=====";
 

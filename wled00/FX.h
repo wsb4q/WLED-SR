@@ -80,7 +80,7 @@
 #define SEGCOLOR(x)      _colors_t[x]
 #define SEGENV           _segment_runtimes[_segment_index]
 #define SEGLEN           _virtualSegmentLength
-#define SEGACT           SEGMENT.stop
+// #define SEGACT           SEGMENT.stopX
 #define SPEED_FORMULA_L  5 + (50*(255 - SEGMENT.speed))/SEGLEN
 #define RESET_RUNTIME    memset(_segment_runtimes, 0, sizeof(_segment_runtimes))
 
@@ -316,8 +316,10 @@ class WS2812FX {
   // segment parameters
   public:
     typedef struct Segment { // 24 bytes
-      uint16_t start;
-      uint16_t stop; //segment invalid if stop == 0
+      uint8_t startX;
+      uint8_t startY;
+      uint8_t stopX; //segment invalid if stop == 0
+      uint8_t stopY; //segment invalid if stop == 0
       uint8_t speed;
       uint8_t intensity;
       uint8_t fft1;
@@ -376,11 +378,11 @@ class WS2812FX {
       }
       bool isActive()
       {
-        return stop > start;
+        return length() > 0;
       }
       uint16_t length()
       {
-        return stop - start;
+        return (stopX - startX) * (stopY - startY);
       }
       uint16_t groupLength()
       {
@@ -724,7 +726,7 @@ class WS2812FX {
     }
 
     void
-      finalizeInit(uint16_t countPixels, bool skipFirst),
+      finalizeInit(uint8_t countPixelsX, uint8_t countPixelsY, bool skipFirst),
       service(void),
       blur(uint8_t),
       fill(uint32_t),
@@ -734,13 +736,13 @@ class WS2812FX {
       setColor(uint8_t slot, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       setColor(uint8_t slot, uint32_t c),
       setBrightness(uint8_t b),
-      setRange(uint16_t i, uint16_t i2, uint32_t col),
+      setRange(uint8_t startX, uint8_t startY, uint8_t stopX, uint8_t stopY, uint32_t col),
       setShowCallback(show_callback cb),
       setTransition(uint16_t t),
       setTransitionMode(bool t),
       calcGammaTable(float),
       trigger(void),
-      setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
+      setSegment(uint8_t n, uint8_t startX, uint8_t startY, uint8_t stopX, uint8_t stopY, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       setPixelColor(uint16_t n, uint32_t c),
       setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
@@ -753,7 +755,11 @@ class WS2812FX {
       blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
       blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
       blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      setPixels(CRGB* leds);
+      setPixels(CRGB* leds),
+      fadeToBlackBySEG( CRGB* leds, uint8_t fadeBy),
+      nscale8SEG( CRGB* leds, uint8_t scale),
+      fill_solidSEG( struct CRGB * leds, const struct CRGB& color),
+      blur1dSEG( CRGB* leds, fract8 blur_amount);
 
     bool
       isRgbw = false,
@@ -800,7 +806,8 @@ class WS2812FX {
 //      getStripLen(uint8_t strip=0),
       triwave16(uint16_t),
       getFps(),
-      XY(int,int);
+      XY(int,int),
+      XYPhysical(int);
 
     uint32_t
       now,
@@ -1035,7 +1042,8 @@ class WS2812FX {
     CRGBPalette16 currentPalette;
     CRGBPalette16 targetPalette;
 
-    uint16_t _length, _lengthRaw, _virtualSegmentLength;
+    uint8_t _lengthX, _lengthY;
+    uint16_t _lengthRaw, _virtualSegmentLength;
     uint16_t _rand16seed;
     uint8_t _brightness;
     uint16_t _usedSegmentData = 0;
@@ -1100,8 +1108,8 @@ class WS2812FX {
     uint8_t _segment_index = 0;
     uint8_t _segment_index_palette_last = 99;
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 27 bytes per element
-      // start, stop, speed, intensity, fft1, fft2, fft3, palette, mode, options, grouping, spacing, opacity (unused), color[]
-      { 0, 7, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_FFT1, DEFAULT_FFT2, DEFAULT_FFT3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
+      // startX, startY, stopX, stopY, speed, intensity, fft1, fft2, fft3, palette, mode, options, grouping, spacing, opacity (unused), color[]
+      { 0, 0, 7, 7, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_FFT1, DEFAULT_FFT2, DEFAULT_FFT3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 28 bytes per element
     friend class Segment_runtime;

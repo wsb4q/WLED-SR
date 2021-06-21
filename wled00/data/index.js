@@ -12,7 +12,7 @@ var selectedFx = 0;
 var csel = 0;
 var currentPreset = -1;
 var lastUpdate = 0;
-var segCount = 0, ledCount = 0, lowestUnused = 0, maxSeg = 0, lSeg = 0;
+var segCount = 0, matrixWidth=0, matrixHeight=0, lowestUnused = 0, maxSeg = 0, lSeg = 0;
 var pcMode = false, pcModeA = false, lastw = 0;
 var d = document;
 const ranges = RangeTouch.setup('input[type="range"]', {});
@@ -516,8 +516,8 @@ function populateSegments(s)
 					<td class="segtd">Stop LED</td>
 				</tr>
 				<tr>
-					<td class="segtd"><input class="noslide segn" id="seg${i}s" type="number" min="0" max="${ledCount-1}" value="${inst.start}" oninput="updateLen(${i})"></td>
-					<td class="segtd"><input class="noslide segn" id="seg${i}e" type="number" min="0" max="${ledCount}" value="${inst.stop}" oninput="updateLen(${i})"></td>
+					<td class="segtd"><input class="noslide segn" style="width:30px" id="seg${i}startX" type="number" min="0" max="${matrixWidth-1}" value="${inst.startX}" oninput="updateLen(${i})">,<input class="noslide segn" style="width:30px" id="seg${i}startY" type="number" min="0" max="${matrixHeight-1}" value="${inst.startY}" oninput="updateLen(${i})"></td>
+					<td class="segtd"><input class="noslide segn" style="width:30px" id="seg${i}stopX" type="number" min="0" max="${matrixWidth-1}" value="${inst.stopX}" oninput="updateLen(${i})">,<input class="noslide segn" style="width:30px" id="seg${i}stopY" type="number" min="0" max="${matrixHeight-1}" value="${inst.stopY}" oninput="updateLen(${i})"></td>
 				</tr>
 			</table>
 			<table class="segt">
@@ -810,9 +810,11 @@ function toggleBubble(e)
 function updateLen(s)
 {
 	if (!d.getElementById(`seg${s}s`)) return;
-	var start = parseInt(d.getElementById(`seg${s}s`).value);
-	var stop	= parseInt(d.getElementById(`seg${s}e`).value);
-	var len = stop - start;
+	var startX = parseInt(d.getElementById(`seg${s}startX`).value);
+	var startY = parseInt(d.getElementById(`seg${s}startY`).value);
+	var stopX  = parseInt(d.getElementById(`seg${s}stopX`).value);
+	var stopY  = parseInt(d.getElementById(`seg${s}stopY`).value);
+	var len = (stopX - startX) * (stopY - startY);
 	var out = "(delete)";
 	if (len > 1) {
 		out = `${len} LEDs`;
@@ -966,9 +968,10 @@ function requestJson(command, rinfo = true, verbose = true) {
 			}
 			d.title = name;
 			isRgbw = info.leds.wv;
-			ledCount = info.leds.count;
+			matrixWidth = info.leds.mxw;
+			matrixHeight = info.leds.mxh;
 			syncTglRecv = info.str;
-      maxSeg = info.leds.maxseg;
+      		maxSeg = info.leds.maxseg;
 			pmt = info.fs.pmt;
 
 			if (!command && pmt != pmtLast) {
@@ -1138,10 +1141,13 @@ function toggleNodes() {
 }
 
 function makeSeg() {
-	var ns = 0;
+	var nsX = 0;
+	var nsY = 0;
 	if (lowestUnused > 0) {
-		var pend = d.getElementById(`seg${lowestUnused -1}e`).value;
-		if (pend < ledCount) ns = pend;
+		var pendX = d.getElementById(`seg${lowestUnused -1}stopX`).value;
+		var pendY = d.getElementById(`seg${lowestUnused -1}stopY`).value;
+		if (pendX < matrixWidth) nsX = parseInt(pendX) + 1;
+		if (pendY < matrixHeight) nsY = parseInt(pendY) + 1;
 	}
 	var cn = `<div class="seg">
 			<div class="segname newseg">
@@ -1155,11 +1161,11 @@ function makeSeg() {
 						<td class="segtd">Stop LED</td>
 					</tr>
 					<tr>
-						<td class="segtd"><input class="noslide segn" id="seg${lowestUnused}s" type="number" min="0" max="${ledCount-1}" value="${ns}" oninput="updateLen(${lowestUnused})"></td>
-						<td class="segtd"><input class="noslide segn" id="seg${lowestUnused}e" type="number" min="0" max="${ledCount}" value="${ledCount}" oninput="updateLen(${lowestUnused})"></td>
+						<td class="segtd"><input class="noslide segn" style="width:30px" id="seg${lowestUnused}startX" type="number" min="0" max="${matrixWidth-1}" value="${nsX}" oninput="updateLen(${lowestUnused})">,<input class="noslide segn" style="width:30px" id="seg${lowestUnused}startY" type="number" min="0" max="${matrixHeight-1}" value="${nsY}" oninput="updateLen(${lowestUnused})"></td>
+						<td class="segtd"><input class="noslide segn" style="width:30px" id="seg${lowestUnused}stopX" type="number" min="0" max="${matrixWidth-1}" value="${matrixWidth-1}" oninput="updateLen(${lowestUnused})">,<input class="noslide segn" style="width:30px" id="seg${lowestUnused}stopY" type="number" min="0" max="${matrixHeight-1}" value="${matrixHeight-1}" oninput="updateLen(${lowestUnused})"></td>
 					</tr>
 				</table>
-				<div class="h" id="seg${lowestUnused}len">${ledCount - ns} LEDs</div>
+				<div class="h" id="seg${lowestUnused}len">${(matrixWidth - nsX) * (matrixHeight - nsY)} LEDs</div>
 				<i class="icons e-icon cnf cnf-s half" id="segc${lowestUnused}" onclick="setSeg(${lowestUnused}); resetUtil();">&#xe390;</i>
 			</div>
 		</div>`;
@@ -1245,10 +1251,12 @@ function selSeg(s){
 }
 
 function setSeg(s){
-	var start = parseInt(d.getElementById(`seg${s}s`).value);
-	var stop	= parseInt(d.getElementById(`seg${s}e`).value);
-	if (stop <= start) {delSeg(s); return;}
-	var obj = {"seg": {"id": s, "start": start, "stop": stop}};
+	var startX = parseInt(d.getElementById(`seg${s}startX`).value);
+	var startY = parseInt(d.getElementById(`seg${s}startY`).value);
+	var stopX	= parseInt(d.getElementById(`seg${s}stopX`).value);
+	var stopY	= parseInt(d.getElementById(`seg${s}stopY`).value);
+	if (stopX <= startX && stopY <= startY) {delSeg(s); return;}
+	var obj = {"seg": {"id": s, "startX": startX, "startY": startY, "stopX": stopX, "stopY": stopY}};
 	if (d.getElementById(`seg${s}grp`))
 	{
 		var grp = parseInt(d.getElementById(`seg${s}grp`).value);
@@ -1266,7 +1274,7 @@ function delSeg(s){
 	}
 	expanded[s] = false;
 	segCount--;
-	var obj = {"seg": {"id": s, "stop": 0}};
+	var obj = {"seg": {"id": s, "stopX": 0, "stopY": 0}};
 	requestJson(obj, false);
 }
 
@@ -1571,9 +1579,9 @@ function rSegs()
 	cnfrS = false;
 	bt.style.color = "#fff";
 	bt.innerHTML = "Reset segments";
-	var obj = {"seg":[{"start":0,"stop":ledCount,"sel":true}]};
+	var obj = {"seg":[{"startX":0,"startY":0,"stopX":matrixWidth-1,"stopY":matrixHeight-1,"sel":true}]}; //ewowi
 	for (let i=1; i<=lSeg; i++){
-		obj.seg.push({"stop":0});
+		obj.seg.push({"stopX":0, "stopY":0});
 	}
 	requestJson(obj);
 }

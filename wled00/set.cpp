@@ -585,17 +585,22 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
     mainseg.setOption(SEG_OPTION_SELECTED, t);
   }
 
-  uint16_t startI = mainseg.start;
-  uint16_t stopI = mainseg.stop;
+  uint8_t startXI = mainseg.startX;
+  uint8_t startYI = mainseg.startY;
+  uint8_t stopXI = mainseg.stopX;
+  uint8_t stopYI = mainseg.stopY;
   uint8_t grpI = mainseg.grouping;
   uint16_t spcI = mainseg.spacing;
-  pos = req.indexOf(F("&S=")); //segment start
+
+  Serial.print(req);
+
+  pos = req.indexOf(F("&S=")); //segment start ewowi!!!
   if (pos > 0) {
-    startI = getNumVal(&req, pos);
+    startXI = getNumVal(&req, pos);
   }
   pos = req.indexOf(F("S2=")); //segment stop
   if (pos > 0) {
-    stopI = getNumVal(&req, pos);
+    stopXI = getNumVal(&req, pos);
   }
   pos = req.indexOf(F("GP=")); //segment grouping
   if (pos > 0) {
@@ -606,7 +611,7 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   if (pos > 0) {
     spcI = getNumVal(&req, pos);
   }
-  strip.setSegment(selectedSeg, startI, stopI, grpI, spcI);
+  strip.setSegment(selectedSeg, startXI, startYI, stopXI, stopYI, grpI, spcI);
 
    //set presets
   pos = req.indexOf(F("P1=")); //sets first preset for cycle

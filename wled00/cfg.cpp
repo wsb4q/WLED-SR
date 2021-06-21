@@ -152,7 +152,7 @@ void deserializeConfig() {
     mem += busses.memUsage(bc);
     if (mem <= MAX_LED_MEMORY) busses.add(bc);
   }
-  strip.finalizeInit(ledCount, skipFirstLed);
+  strip.finalizeInit(strip.matrixWidth, strip.matrixHeight, skipFirstLed);
   if (hw_led["rev"]) busses.getBus(0)->reversed = true; //set 0.11 global reversed setting for first bus
 
   JsonObject hw_btn_ins_0 = hw[F("btn")][F("ins")][0];

@@ -46,7 +46,7 @@ uint16_t circlePixel(double angle) {
   //calculate circle positions, round to 5 digits and then round again to cater for radians inprecision (e.g. 3.49->3.5->4)
   int x = round(round((sin(radians(angle)) * halfLength + halfLength) * 10)/10) + deltaWidth;
   int y = round(round((halfLength - cos(radians(angle)) * halfLength) * 10)/10) + deltaHeight;
-  return strip.XY(x,y);
+  return x + y * strip.matrixWidth;
 }
 
 void _overlayAnalogClock()
@@ -70,11 +70,11 @@ void _overlayAnalogClock()
   {
     if (secondPixel < analogClock12pixel)
     {
-      strip.setRange(analogClock12pixel, overlayMax, 0xFF0000);
-      strip.setRange(overlayMin, secondPixel, 0xFF0000);
+      strip.setRange(analogClock12pixel, 0, overlayMax, 0, 0xFF0000);
+      strip.setRange(overlayMin, 0, secondPixel, 0, 0xFF0000);
     } else
     {
-      strip.setRange(analogClock12pixel, secondPixel, 0xFF0000);
+      strip.setRange(analogClock12pixel, 0, secondPixel, 0, 0xFF0000);
     }
   }
   if (analogClock5MinuteMarks)
@@ -125,11 +125,11 @@ void _overlayAnalogCountdown()
     byte pixelCnt = perc*overlaySize;
     if (analogClock12pixel + pixelCnt > overlayMax)
     {
-      strip.setRange(analogClock12pixel, overlayMax, ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
-      strip.setRange(overlayMin, overlayMin +pixelCnt -(1+ overlayMax -analogClock12pixel), ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
+      strip.setRange(analogClock12pixel, 0, overlayMax, 0, ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
+      strip.setRange(overlayMin, 0, overlayMin +pixelCnt -(1+ overlayMax -analogClock12pixel), 0, ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
     } else
     {
-      strip.setRange(analogClock12pixel, analogClock12pixel + pixelCnt, ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
+      strip.setRange(analogClock12pixel, 0, analogClock12pixel + pixelCnt, 0, ((uint32_t)colSec[3] << 24)| ((uint32_t)colSec[0] << 16) | ((uint32_t)colSec[1] << 8) | colSec[2]);
     }
   }
   overlayRefreshMs = 998;

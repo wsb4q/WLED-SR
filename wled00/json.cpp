@@ -12,16 +12,20 @@ void deserializeSegment(JsonObject elem, byte it)
   if (id < strip.getMaxSegments())
   {
     WS2812FX::Segment& seg = strip.getSegment(id);
-    uint16_t start = elem[F("start")] | seg.start;
-    int stop = elem["stop"] | -1;
+    uint8_t startX = elem[F("startX")] | seg.startX;
+    uint8_t startY = elem[F("startY")] | seg.startY;
+    int stopX = elem["stopX"] | seg.stopX;
+    int stopY = elem["stopY"] | seg.stopY;
 
-    if (stop < 0) {
-      uint16_t len = elem[F("len")];
-      stop = (len > 0) ? start + len : seg.stop;
-    }
+    // if (stopX < 0 || stopY < 0) {
+    //   uint16_t len = elem[F("len")];
+    //   uint16_t i = startX + startY * seg.width + len;
+    //   stopX = (len > 0) ? i%seg.width : seg.stopX;
+    //   stopY = (len > 0) ? i/seg.width : seg.stopY;
+    // }
     uint16_t grp = elem[F("grp")] | seg.grouping;
     uint16_t spc = elem[F("spc")] | seg.spacing;
-    strip.setSegment(id, start, stop, grp, spc);
+    strip.setSegment(id, startX, startY, stopX, stopY, grp, spc);
 
     int segbri = elem["bri"] | -1;
     if (segbri == 0) {
@@ -301,10 +305,12 @@ void serializeSegment(JsonObject& root, WS2812FX::Segment& seg, byte id, bool fo
 {
 	root["id"] = id;
   if (segmentBounds) {
-    root[F("start")] = seg.start;
-    root["stop"] = seg.stop;
+    root[F("startX")] = seg.startX;
+    root[F("startY")] = seg.startY;
+    root["stopX"] = seg.stopX;
+    root["stopY"] = seg.stopY;
   }
-	if (!forPreset)  root[F("len")] = seg.stop - seg.start;
+	if (!forPreset)  root[F("len")] = (seg.stopX - seg.startX) * (seg.stopY - seg.startY);
   root[F("grp")] = seg.grouping;
   root[F("spc")] = seg.spacing;
   root["on"] = seg.getOption(SEG_OPTION_ON);
@@ -430,6 +436,8 @@ void serializeInfo(JsonObject root)
 
   JsonObject leds = root.createNestedObject("leds");
   leds[F("count")] = ledCount;
+  leds[F("mxw")] = strip.matrixWidth;
+  leds[F("mxh")] = strip.matrixHeight;
   leds[F("rgbw")] = strip.isRgbw;
   leds[F("wv")] = strip.isRgbw && (strip.rgbwMode == RGBW_MODE_MANUAL_ONLY || strip.rgbwMode == RGBW_MODE_DUAL); //should a white channel slider be displayed?
   JsonArray leds_pin = leds.createNestedArray("pin");

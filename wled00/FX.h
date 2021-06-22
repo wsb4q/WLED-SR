@@ -724,6 +724,10 @@ class WS2812FX {
       ablMilliampsMax = 850;
       currentMilliamps = 0;
       timebase = 0;
+      matrixWidth = 30;
+      matrixHeight = 1;
+      matrixVerticalPanels = 1;
+      matrixHorizontalPanels = 1;
       resetSegments();
     }
 

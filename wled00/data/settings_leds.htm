@@ -262,7 +262,7 @@
     }
 		function Ps()
 		{
-			d.getElementById("mxphv").style.display=(d.getElementById("mxp").checked)?"block":"none";
+			d.getElementById("mphv").style.display=(d.getElementById("mxp").checked)?"block":"none";
 		}
 		function GetV()
 		{
@@ -293,8 +293,8 @@
     <h3>2D Panels</h3>
     <i>A matrix is made of 1 or more identical physical led panels</i><br>
     Multiple panels: <input type="checkbox" id="mxp" name="MXP" onclick="Ps()"><br>
-    <div id="mxphv">Horizontal panels: <input name="MXPH" type="number" min="1" max="8" oninput="UI()">
-    Vertical panels: <input name="MXPV" type="number" min="1" max="8" oninput="UI()"><br></div>
+    <div id="mphv">Horizontal panels: <input name="MPH" type="number" min="1" max="8" oninput="UI()">
+    Vertical panels: <input name="MPV" type="number" min="1" max="8" oninput="UI()"><br></div>
     <h3>2D Panel layout</h3>
     <!-- <a href="https://github.com/atuline/WLED/wiki/2D-Functionality">See SR GITHUB Wiki for layout options.</a><br> -->
     First led position: <select name="PFLTB">

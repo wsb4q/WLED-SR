@@ -189,8 +189,8 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     strip.matrixHeight = request->arg(F("MXH")).toInt();
 
     strip.matrixPanels = request->hasArg(F("MXP"));
-    strip.matrixHorizontalPanels = request->arg(F("MXPH")).toInt();
-    strip.matrixVerticalPanels = request->arg(F("MXPV")).toInt();
+    strip.matrixHorizontalPanels = request->arg(F("MPH")).toInt();
+    strip.matrixVerticalPanels = request->arg(F("MPV")).toInt();
 
     strip.panelFirstLedTopBottom = request->arg(F("PFLTB")).toInt();
     strip.panelFirstLedLeftRight = request->arg(F("PFLLR")).toInt();

@@ -106,8 +106,8 @@ void deserializeConfig() {
   CJSON(strip.matrixHeight, hw_led[F("mxh")]);
 
   CJSON(strip.matrixPanels, hw_led[F("mxp")]);
-  CJSON(strip.matrixHorizontalPanels, hw_led[F("mxhh")]);
-  CJSON(strip.matrixVerticalPanels, hw_led[F("mxv")]);
+  CJSON(strip.matrixHorizontalPanels, hw_led[F("mph")]);
+  CJSON(strip.matrixVerticalPanels, hw_led[F("mpv")]);
 
   CJSON(strip.panelFirstLedTopBottom, hw_led[F("pfltb")]);
   CJSON(strip.panelFirstLedLeftRight, hw_led[F("pfllr")]);
@@ -536,8 +536,8 @@ void serializeConfig() {
 
   // 2D Matrix Panels
   hw_led[F("mxp")] = strip.matrixPanels;
-  hw_led[F("mxhh")] = strip.matrixHorizontalPanels;
-  hw_led[F("mxv")] = strip.matrixVerticalPanels;
+  hw_led[F("mph")] = strip.matrixHorizontalPanels;
+  hw_led[F("mpv")] = strip.matrixVerticalPanels;
 
   hw_led[F("pfltb")] = strip.panelFirstLedTopBottom;
   hw_led[F("pfllr")] = strip.panelFirstLedLeftRight;

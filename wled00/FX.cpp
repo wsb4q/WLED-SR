@@ -4690,7 +4690,7 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
 
       //create new pattern
       String pattern = "";
-      for (int x = 0; x < SEGMENT.width; x+= SEGMENT.width/8) for (int y = 0; y < SEGMENT.height; y+=SEGMENT.height/8)
+      for (int x = 0; x < SEGMENT.width; x+=MAX(SEGMENT.width/8,1)) for (int y = 0; y < SEGMENT.height; y+=MAX(SEGMENT.height/8,1))
         pattern += leds[XY(x,y)] == backgroundColor?" ":"o"; //string representation if on/off
 
       //check if repetition of patterns occurs

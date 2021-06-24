@@ -331,8 +331,12 @@ class WS2812FX {
       uint8_t grouping, spacing;
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
-      uint8_t width;
+      uint8_t width; //ewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
       uint8_t height;
+      uint16_t startX;
+      uint16_t startY;
+      uint16_t stopX;
+      uint16_t stopY;
       bool setColor(uint8_t slot, uint32_t c, uint8_t segn) { //returns true if changed
         if (slot >= NUM_COLORS || segn >= MAX_NUM_SEGMENTS) return false;
         if (c == colors[slot]) return false;
@@ -382,7 +386,7 @@ class WS2812FX {
       }
       uint16_t length()
       {
-        return stop - start;
+        return (stopX - startX + 1) * (stopY - startY + 1); //ewowi20210624: calculate length using SEGMENT x/y. Used by SEGLEN
       }
       uint16_t groupLength()
       {
@@ -808,7 +812,8 @@ class WS2812FX {
 //      getStripLen(uint8_t strip=0),
       triwave16(uint16_t),
       getFps(),
-      XY(int,int);
+      XY(int,int),            // ewowi20210624: new XY: segmentToLogical: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
+      logicalToPhysical(int); // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
 
     uint32_t
       now,

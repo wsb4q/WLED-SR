@@ -4121,8 +4121,9 @@ extern float fftAvg[];
 ////////////////////////////
 
 void WS2812FX::setPixels(CRGB* leds) {
-   for (int i=0; i<SEGLEN; i++) {
-      setPixelColor(i, leds[i].red, leds[i].green, leds[i].blue);
+   for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { //ewowi20210624: go through each row of the SEGMENT to find the right led (using XY)
+      int i = XY(x,y);
+      setPixelColor(x + y * SEGMENT.width, leds[i].red, leds[i].green, leds[i].blue);
    }
 }
 
@@ -4279,11 +4280,19 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
     }
 }
 
+uint16_t WS2812FX::XY( int x, int y) {                              // ewowi20210624: new XY: segmentToMatrix: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
+  return x + SEGMENT.startX + (y + SEGMENT.startY) * matrixWidth;
+}
+
 //Use https://wokwi.com/arduino/projects/300565972972995085 to create layout examples 
 #define RIGHT 1
 #define BOTTOM 1
 #define HORIZONTAL 0
-uint16_t WS2812FX::XY( int x, int y) {                // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
+uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
+                                                                    // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
+
+  int x = i % matrixWidth;
+  int y = i / matrixWidth;
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!

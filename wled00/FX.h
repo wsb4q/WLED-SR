@@ -752,6 +752,7 @@ class WS2812FX {
       setTransitionMode(bool t),
       calcGammaTable(float),
       trigger(void),
+      set2DSegment(uint8_t n),
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       setPixelColor(uint16_t n, uint32_t c),
@@ -761,10 +762,13 @@ class WS2812FX {
       setPixelSegment(uint8_t n),
       noise8_help(uint8_t),
       mapNoiseToLEDsUsingPalette(),
-      blur1d( CRGB* leds, uint16_t numLeds, fract8 blur_amount),
-      blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
+      blur1d( CRGB* leds, fract8 blur_amount),
+      blur2d( CRGB* leds, fract8 blur_amount),
+      blurRows( CRGB* leds, fract8 blur_amount),
+      blurColumns(CRGB* leds, fract8 blur_amount),
+      fill_solid( struct CRGB * leds, const struct CRGB& color),
+      fadeToBlackBy( CRGB* leds, uint8_t fadeBy),
+      nscale8(       CRGB* leds, uint8_t scale),
       setPixels(CRGB* leds);
 
     bool

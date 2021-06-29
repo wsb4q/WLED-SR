@@ -68,6 +68,8 @@ void WS2812FX::finalizeInit(uint16_t countPixels, bool skipFirst)
   _segments[0].start = 0;
   _segments[0].stop = _length;
 
+  set2DSegment(0); // ewowi20210629: initialize 2D segment variables
+
   setBrightness(_brightness);
 
   #ifdef ESP8266
@@ -154,19 +156,20 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map t
     }
   }
 
+  uint16_t x = realIndex;
+  uint16_t y = 0;
   if (SEGMENT.width) { // ewowi20210624: in case of 2D: index needs to be mapped from segment index to matrix index. Also works for 1D strips
                         // need to check SEGMENT.width as it looks like Peek is using segment 15 with Width=0
-
     //change the segment XY
-    uint16_t x = realIndex % SEGMENT.width;
-    uint16_t y = realIndex / SEGMENT.width;
-
-    //change to matrix XY
-    x+= SEGMENT.startX;
-    y+= SEGMENT.startY;
-
-    realIndex = x + y * matrixWidth;
+    x = realIndex % SEGMENT.width;
+    y = realIndex / SEGMENT.width;
   }
+
+  //change to matrix XY
+  x+= SEGMENT.startX;
+  y+= SEGMENT.startY;
+
+  realIndex = x + y * matrixWidth;
 
   return realIndex;
 }
@@ -206,7 +209,7 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
-      if (indexSet%matrixWidth - SEGMENT.startX <= SEGMENT.stopX - SEGMENT.startX && indexSet/matrixWidth - SEGMENT.startY <= SEGMENT.stopY - SEGMENT.startY) { // ewowi20210624: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up)
+      if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210624: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up)
         busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
@@ -537,6 +540,22 @@ void WS2812FX::setColorOrder(uint8_t co) {
   //bus->SetColorOrder(co);
 }
 
+// ewowi20210624: calculate 2D segment variables using start/stop of segment using the x/y coordinnates of start and stop to determine topleft (startX/Y) and bottomright (stopXY) of the segment
+void WS2812FX::set2DSegment(uint8_t n) {
+  Segment& seg = _segments[n];
+
+  uint16_t startX = seg.start%matrixWidth;
+  uint16_t startY= seg.start/matrixWidth;
+  uint16_t stopX = (seg.stop-1)%matrixWidth;
+  uint16_t stopY= (seg.stop-1)/matrixWidth;
+  seg.startX = MIN(startX, stopX);
+  seg.startY= MIN(startY, stopY);
+  seg.stopX = MAX(startX, stopX);
+  seg.stopY= MAX(startY, stopY);
+  seg.width = seg.stopX - seg.startX + 1;
+  seg.height = seg.stopY - seg.startY + 1;
+}
+
 void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping, uint8_t spacing) {
   if (n >= MAX_NUM_SEGMENTS) return;
   Segment& seg = _segments[n];
@@ -565,17 +584,7 @@ void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping,
   seg.stop = i2;
   if (i2 > _length) seg.stop = _length;
 
-  // ewowi20210624: calculate 2D segment variables using start/stop of segment using the x/y coordinnates of start and stop to determine topleft (startX/Y) and bottomright (stopXY) of the segment
-  uint16_t startX = seg.start%matrixWidth;
-  uint16_t startY= seg.start/matrixWidth;
-  uint16_t stopX = (seg.stop-1)%matrixWidth;
-  uint16_t stopY= (seg.stop-1)/matrixWidth;
-  seg.startX = MIN(startX, stopX);
-  seg.startY= MIN(startY, stopY);
-  seg.stopX = MAX(startX, stopX);
-  seg.stopY= MAX(startY, stopY);
-  seg.width = seg.stopX - seg.startX + 1;
-  seg.height = seg.stopY - seg.startY + 1;
+  set2DSegment(n); // ewowi20210629: initialize 2D segment variables
 
   if (grouping) {
     seg.grouping = grouping;

@@ -68,6 +68,8 @@ void WS2812FX::finalizeInit(uint16_t countPixels, bool skipFirst)
   _segments[0].start = 0;
   _segments[0].stop = _length;
 
+  set2DSegment(0); // ewowi20210629: initialize 2D segment variables
+
   setBrightness(_brightness);
 
   #ifdef ESP8266
@@ -116,8 +118,6 @@ void WS2812FX::service() {
         }
         for (uint8_t c = 0; c < 3; c++) _colors_t[c] = gamma32(_colors_t[c]);
         handle_palette();
-        SEGMENT.width = matrixWidth * SEGLEN / ledCount;
-        SEGMENT.height = matrixHeight;
         delay = (this->*_mode[SEGMENT.mode])(); //effect function
         if (SEGMENT.mode != FX_MODE_HALLOWEEN_EYES) SEGENV.call++;
       }
@@ -141,8 +141,9 @@ void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
   setPixelColor(n, r, g, b, w);
 }
 
-//used to map from segment index to physical pixel, taking into account grouping, offsets, reverse and mirroring
-uint16_t WS2812FX::realPixelIndex(uint16_t i) {
+//used to map from segment index to logical pixel, taking into account grouping, offsets, reverse and mirroring
+uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map to physical pixel index but to logical pixel index as matrix panels will require mapping. 
+                                                // Mapping is done in logicalToPhysical below. Function will not be renamed to keep it consistent with Aircoookie 
   int16_t iGroup = i * SEGMENT.groupLength();
 
   /* reverse just an individual segment */
@@ -155,13 +156,27 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) {
     }
   }
 
-  realIndex += SEGMENT.start;
+  uint16_t x = realIndex;
+  uint16_t y = 0;
+  if (SEGMENT.width) { // ewowi20210624: in case of 2D: index needs to be mapped from segment index to matrix index. Also works for 1D strips
+                        // need to check SEGMENT.width as it looks like Peek is using segment 15 with Width=0
+    //change the segment XY
+    x = realIndex % SEGMENT.width;
+    y = realIndex / SEGMENT.width;
+  }
+
+  //change to matrix XY
+  x+= SEGMENT.startX;
+  y+= SEGMENT.startY;
+
+  realIndex = x + y * matrixWidth;
 
   return realIndex;
 }
 
-void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
+uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
 {
+  uint16_t logicalIndex = 9999;   //ewowi20210701: logicalIndex is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
   //auto calculate white channel value if enabled
   if (isRgbw) {
     if (rgbwMode == RGBW_MODE_AUTO_BRIGHTER || (w == 0 && (rgbwMode == RGBW_MODE_DUAL || rgbwMode == RGBW_MODE_LEGACY)))
@@ -190,17 +205,19 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
 
     /* Set all the pixels in the group, ensuring _skipFirstMode is honored */
     bool reversed = IS_REVERSE;
-    uint16_t realIndex = realPixelIndex(i);
+    uint16_t realIndex = realPixelIndex(i); // ewowi20210624: from segment index to logical index
 
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
-      if (indexSet >= SEGMENT.start && indexSet < SEGMENT.stop) {
-        busses.setPixelColor(indexSet + skip, col);
+      logicalIndex = indexSet + skip;
+      if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210624: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up)
+        busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
           if (indexMir < customMappingSize) indexMir = customMappingTable[indexMir];
-          busses.setPixelColor(indexMir + skip, col);
+          logicalIndex = indexMir + skip;
+          busses.setPixelColor(logicalToPhysical(indexMir) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
       }
     }
@@ -208,13 +225,16 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     if (i < customMappingSize) i = customMappingTable[i];
 
     uint32_t col = ((w << 24) | (r << 16) | (g << 8) | (b));
-    busses.setPixelColor(i + skip, col);
+    logicalIndex = i + skip;
+    busses.setPixelColor(logicalToPhysical(i) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
   }
   if (skip && i == 0) {
     for (uint16_t j = 0; j < skip; j++) {
+      logicalIndex = j;
       busses.setPixelColor(j, BLACK);
     }
   }
+  return logicalIndex;
 }
 
 
@@ -497,7 +517,7 @@ uint32_t WS2812FX::getPixelColor(uint16_t i)
 
   if (i >= _lengthRaw) return 0;
 
-  return busses.getPixelColor(i);
+  return busses.getPixelColor(logicalToPhysical(i)); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
 }
 
 WS2812FX::Segment& WS2812FX::getSegment(uint8_t id) {
@@ -524,6 +544,22 @@ uint8_t WS2812FX::getColorOrder(void) {
 
 void WS2812FX::setColorOrder(uint8_t co) {
   //bus->SetColorOrder(co);
+}
+
+// ewowi20210624: calculate 2D segment variables using start/stop of segment using the x/y coordinnates of start and stop to determine topleft (startX/Y) and bottomright (stopXY) of the segment
+void WS2812FX::set2DSegment(uint8_t n) {
+  Segment& seg = _segments[n];
+
+  uint16_t startX = seg.start%matrixWidth;
+  uint16_t startY= seg.start/matrixWidth;
+  uint16_t stopX = (seg.stop-1)%matrixWidth;
+  uint16_t stopY= (seg.stop-1)/matrixWidth;
+  seg.startX = MIN(startX, stopX);
+  seg.startY= MIN(startY, stopY);
+  seg.stopX = MAX(startX, stopX);
+  seg.stopY= MAX(startY, stopY);
+  seg.width = seg.stopX - seg.startX + 1;
+  seg.height = seg.stopY - seg.startY + 1;
 }
 
 void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping, uint8_t spacing) {
@@ -553,6 +589,9 @@ void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping,
   if (i1 < _length) seg.start = i1;
   seg.stop = i2;
   if (i2 > _length) seg.stop = _length;
+
+  set2DSegment(n); // ewowi20210629: initialize 2D segment variables
+
   if (grouping) {
     seg.grouping = grouping;
     seg.spacing = spacing;

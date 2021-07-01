@@ -34,7 +34,20 @@
  * No blinking. Just plain old static light.
  */
 uint16_t WS2812FX::mode_static(void) {
-  fill(SEGCOLOR(0));
+  //ewowi20210701: this is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
+  if (SEGENV.call == 0) {
+    for (int y=0; y<SEGMENT.height; y++) {
+      for (int x=0; x<SEGMENT.width; x++) {
+        uint16_t logicalIndex = setPixelColor(x + y * SEGMENT.width, 128, 128, 128);
+        Serial.print(logicalIndex);
+        Serial.print(", ");
+      }
+      Serial.println();
+    }
+    Serial.println();
+  }
+  else
+    fill(SEGCOLOR(0));
   return (SEGMENT.getOption(SEG_OPTION_TRANSITIONAL)) ? FRAMETIME : 500; //update faster if in transition
 }
 
@@ -4086,8 +4099,7 @@ uint16_t WS2812FX::mode_aurora(void) {
 
 
 // FastLED array, so we can refer to leds[i] instead of getPixel() and setPixel()
-uint32_t ledData[MAX_LEDS+1];                   // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
-CRGB *leds = (CRGB *)ledData;
+CRGB leds[MAX_LEDS+1];                          // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
 uint32_t dataStore[4096];                       // We are declaring a storage area or 64 x 64 (4096) words.
 
 
@@ -4121,8 +4133,9 @@ extern float fftAvg[];
 ////////////////////////////
 
 void WS2812FX::setPixels(CRGB* leds) {
-   for (int i=0; i<SEGLEN; i++) {
-      setPixelColor(i, leds[i].red, leds[i].green, leds[i].blue);
+   for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { //ewowi20210624: go through each row of the SEGMENT to find the right led (using XY)
+      int i = XY(x,y);
+      setPixelColor(x + y * SEGMENT.width, leds[i].red, leds[i].green, leds[i].blue);
    }
 }
 
@@ -4160,7 +4173,7 @@ uint16_t WS2812FX::mode_wavesins(void) {                          // Uses beatsi
   for (int i = 0; i < SEGLEN; i++) {
     uint8_t bri = sin8(millis()/4+i* (int)SEGMENT.intensity);
 //    leds[i] = CHSV(beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), 255, bri);
-    leds[i] = ColorFromPalette(currentPalette, beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), bri, LINEARBLEND);
+    leds[realPixelIndex(i)] = ColorFromPalette(currentPalette, beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), bri, LINEARBLEND);
   }
   
   setPixels(leds);
@@ -4174,7 +4187,7 @@ uint16_t WS2812FX::mode_wavesins(void) {                          // Uses beatsi
 
 uint16_t WS2812FX::mode_FlowStripe(void) {                        // By: ldirko  https://editor.soulmatelights.com/gallery/392-flow-led-stripe , modifed by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   const float hl = SEGLEN / 1.3;
   uint8_t hue = millis() / (SEGMENT.speed+1);
@@ -4226,47 +4239,51 @@ uint16_t WS2812FX::mode_FlowStripe(void) {                        // By: ldirko 
 //         calls to 'blur' will also result in the light fading,
 //         eventually all the way to black; this is by design so that
 //         it can be used to (slowly) clear the LEDs to black.
-void WS2812FX::blur1d( CRGB* leds, uint16_t numLeds, fract8 blur_amount)
+void WS2812FX::blur1d( CRGB* leds, fract8 blur_amount)
 {
     uint8_t keep = 255 - blur_amount;
     uint8_t seep = blur_amount >> 1;
     CRGB carryover = CRGB::Black;
-    for( uint16_t i = 0; i < numLeds; i++) {
-        CRGB cur = leds[i];
+    for (uint8_t x = 0; x <= SEGMENT.width; x++) for (uint8_t y = 0; y <= SEGMENT.height; y++) { // ewowi20210629: <= to blur all pixels
+        CRGB cur = leds[XY(x,y)];
         CRGB part = cur;
         part.nscale8( seep);
         cur.nscale8( keep);
         cur += carryover;
-        if( i) leds[i-1] += part;
-        leds[i] = cur;
+        if (x > 0) // ewowi20210701: need to test if y test also necessary
+          leds[XY(x-1,y)] += part;
+        // else if (y)
+        //   leds[XY(x,y-1)] += part;
+        leds[XY(x,y)] = cur;
         carryover = part;
     }
 }
 
-void WS2812FX::blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount)
+void WS2812FX::blur2d( CRGB* leds, fract8 blur_amount)
 {
-    blurRows(leds, width, height, blur_amount);
-    blurColumns(leds, width, height, blur_amount);
+    blurRows(leds, blur_amount);
+    blurColumns(leds, blur_amount);
 }
 
 // blurRows: perform a blur1d on every row of a rectangular matrix
-void WS2812FX::blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount)
+void WS2812FX::blurRows( CRGB* leds, fract8 blur_amount)
 {
-    for( uint8_t row = 0; row < height; row++) {
-        CRGB* rowbase = leds + (row * width);
-        blur1d( rowbase, width, blur_amount);
-    }
+  blur1d(leds, blur_amount); //ewowi20210629: this will do all rows of the segment
+    // for( uint8_t row = 0; row < height; row++) {
+    //     CRGB* rowbase = leds + (row * width);
+    //     blur1d( rowbase, width, blur_amount);
+    // }
 }
 
 // blurColumns: perform a blur1d on each column of a rectangular matrix
-void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount)
+void WS2812FX::blurColumns(CRGB* leds, fract8 blur_amount)
 {
     // blur columns
     uint8_t keep = 255 - blur_amount;
     uint8_t seep = blur_amount >> 1;
-    for( uint8_t col = 0; col < width; col++) {
+    for( uint8_t col = 0; col < SEGMENT.width; col++) {
         CRGB carryover = CRGB::Black;
-        for( uint8_t i = 0; i < height; i++) {
+        for( uint8_t i = 0; i < SEGMENT.height; i++) {
             CRGB cur = leds[XY(col,i)];
             CRGB part = cur;
             part.nscale8( seep);
@@ -4279,11 +4296,42 @@ void WS2812FX::blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blu
     }
 }
 
+//ewowi20210628: new functions moved from colorutils: add segment awareness
+
+void WS2812FX::fill_solid( struct CRGB * leds, const struct CRGB& color)
+{
+    for (uint8_t x = 0; x <= SEGMENT.width; x++) for(uint8_t y = 0; y <= SEGMENT.height; y++) {
+        leds[XY(x,y)] = color;
+    }
+}
+
+void  WS2812FX::fadeToBlackBy( CRGB* leds, uint8_t fadeBy)
+{
+    nscale8( leds, 255 - fadeBy);
+}
+
+void  WS2812FX::nscale8( CRGB* leds, uint8_t scale)
+{
+    for (uint8_t x = 0; x <= SEGMENT.width; x++) for(uint8_t y = 0; y <= SEGMENT.height; y++) {
+        leds[XY(x,y)].nscale8( scale);
+    }
+}
+
+
+
+uint16_t WS2812FX::XY( int x, int y) {                              // ewowi20210624: new XY: segmentToMatrix: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
+  return x + SEGMENT.startX + (y + SEGMENT.startY) * matrixWidth;
+}
+
 //Use https://wokwi.com/arduino/projects/300565972972995085 to create layout examples 
 #define RIGHT 1
 #define BOTTOM 1
 #define HORIZONTAL 0
-uint16_t WS2812FX::XY( int x, int y) {                // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
+uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
+                                                                    // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
+
+  int x = i % matrixWidth;
+  int y = i / matrixWidth;
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
@@ -4325,9 +4373,9 @@ uint16_t WS2812FX::XY( int x, int y) {                // By Sutaburosu (major an
 
 uint16_t WS2812FX::mode_2DBlackHole() {            // By: Stepko https://editor.soulmatelights.com/gallery/1012 , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, 32);
+  fadeToBlackBy(leds, 32);
   double t = (float)(millis())/128;
   for (byte i = 0; i < 8; i++) {
     leds[XY(beatsin8(SEGMENT.fft1/8, 0, SEGMENT.width - 1, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(10, 0, SEGMENT.height - 1, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
@@ -4336,7 +4384,7 @@ uint16_t WS2812FX::mode_2DBlackHole() {            // By: Stepko https://editor.
     leds[XY(beatsin8(SEGMENT.fft2/8, SEGMENT.width/4, SEGMENT.width - 1-SEGMENT.width/4, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(SEGMENT.fft3/8, SEGMENT.height/4, SEGMENT.height - 1 - SEGMENT.height/4, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
   }
   leds[XY(SEGMENT.width/2,SEGMENT.height/2)]=CHSV(0,0,255);
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 16);
+  blur2d(leds, 16);
 
   setPixels(leds);
   return FRAMETIME;
@@ -4349,7 +4397,7 @@ uint16_t WS2812FX::mode_2DBlackHole() {            // By: Stepko https://editor.
 
 uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https://editor.soulmatelights.com/gallery/819-colored-bursts , modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   bool dot = false;
   bool grad = true;
@@ -4359,7 +4407,7 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
   
   hue++;
   numLines = SEGMENT.intensity/16;
-  fadeToBlackBy(leds, SEGLEN, 40);
+  fadeToBlackBy(leds, 40);
 
   for (byte i = 0; i < numLines; i++) {
     byte x1 = beatsin8(2 + SEGMENT.speed/16, 0, (SEGMENT.width - 1));
@@ -4385,7 +4433,7 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
       leds[XY(y1, y2)] += CRGB::White;
     }
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 4);
+  blur2d(leds, 4);
 
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
@@ -4398,9 +4446,9 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
 
 uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED conversion by Andrew Tuline.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, 64);
+  fadeToBlackBy(leds, 64);
 
   for(int i = 0; i < SEGMENT.width; i++) {               // change to height if you want to re-orient, and swap the 4 lines below.
  //     leds[XY(beatsin8(SEGMENT.speed/8, 0, SEGMENT.width-1, 0, i*4), i)] = ColorFromPalette(currentPalette, i*5+millis()/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND);
@@ -4409,7 +4457,7 @@ uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at 
       leds[XY(i, beatsin8(SEGMENT.speed/8, 0, SEGMENT.height-1, 0, i*4+128))] = ColorFromPalette(currentPalette,i*5+128+millis()/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND);        // 180 degrees (128) out of phase
   }
 
-  blur2d(leds, SEGMENT.width, SEGMENT.height, SEGMENT.intensity/8);
+  blur2d(leds, SEGMENT.intensity/8);
 
   setPixels(leds);
 
@@ -4423,19 +4471,19 @@ uint16_t WS2812FX::mode_2Ddna(void) {         // dna originally by by ldirko at 
 
 uint16_t WS2812FX::mode_2DDNASpiral() {               // By: ldirko  https://editor.soulmatelights.com/gallery/810 , modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   uint8_t speeds = SEGMENT.speed/2;
   uint8_t freq = SEGMENT.intensity/8;
 
   static byte hue = 0;
   int ms = millis() / 20;
-  nscale8(leds, SEGLEN, 120);
+  nscale8(leds, 120);
 
   for (int i = 0; i < SEGMENT.height; i++) {
     int x = beatsin8(speeds, 0, SEGMENT.width - 1, 0, i * freq) + beatsin8(speeds - 7, 0, SEGMENT.width - 1, 0, i * freq + 128);
     int x1 = beatsin8(speeds, 0, SEGMENT.width - 1, 0, 128 + i * freq) + beatsin8(speeds - 7, 0, SEGMENT.width - 1, 0, 128 + 64 + i * freq);
-    hue = i * 128 / (SEGMENT.width - 1) + ms;
+    hue = i * 128 / SEGMENT.width + ms; //ewowi20210629: not width - 1 to avoid crash if width = 1
     if ((i + ms / 8) & 3) {
       x = x / 2; x1 = x1 / 2;
       byte steps = abs8(x - x1) + 1;
@@ -4462,12 +4510,12 @@ uint16_t WS2812FX::mode_2DDNASpiral() {               // By: ldirko  https://edi
 
 uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.soulmatelights.com/gallery/884-drift , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   #define CenterX ((SEGMENT.width / 2) - 0.5)
   #define CenterY ((SEGMENT.height / 2) - 0.5)
   const byte maxDim = max(SEGMENT.width, SEGMENT.height);
-  fadeToBlackBy(leds, SEGLEN, 128);
+  fadeToBlackBy(leds, 128);
   unsigned long t = millis() / (32 - SEGMENT.speed/8);
   for (float i = 1; i < maxDim / 2; i += 0.25) {
     double angle = radians(t * (maxDim / 2 - i));
@@ -4475,7 +4523,7 @@ uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.
     int myY = (int)(CenterY + cos(angle) * i);
     leds[XY( myX, myY)] += ColorFromPalette(currentPalette, (i * 20) + (t / 20), 255, LINEARBLEND);
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, SEGMENT.intensity/8);
+  blur2d(leds, SEGMENT.intensity/8);
 
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
@@ -4488,7 +4536,7 @@ uint16_t WS2812FX::mode_2DDrift() {              // By: Stepko   https://editor.
 
 uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kriegsman. Converted to WLED by Andrew Tuline.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   const uint8_t COOLING = 50;
   const uint8_t SPARKING = 50;
@@ -4539,7 +4587,7 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
 
 uint16_t WS2812FX::mode_2Dfirenoise(void) {               // firenoise2d. By Andrew Tuline. Yet another short routine.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   uint16_t xscale = SEGMENT.intensity*4;
 //  uint32_t xscale = 600;                                  // How far apart they are
@@ -4577,13 +4625,13 @@ for (int j=0; j < SEGMENT.width; j++) {
 
 uint16_t WS2812FX::mode_2DFrizzles(void) {                 // By: Stepko https://editor.soulmatelights.com/gallery/640-color-frizzles , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, 16);
+  fadeToBlackBy(leds, 16);
   for (byte i = 8; i > 0; i--) {
     leds[XY(beatsin8(SEGMENT.speed/8 + i, 0, SEGMENT.width - 1), beatsin8(SEGMENT.intensity/8 - i, 0, SEGMENT.height - 1))] += ColorFromPalette(currentPalette, beatsin8(12, 0, 255), 255, LINEARBLEND);
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 16);
+  blur2d(leds, 16);
 
   setPixels(leds);
   return FRAMETIME;
@@ -4611,11 +4659,8 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
     const int patternsSize = (SEGMENT.width + SEGMENT.height) * 2; //seems to be a good value to catch also repetition in moving patterns
     if (!SEGENV.allocateData(sizeof(String) * patternsSize)) return mode_static(); //allocation failed
     String* patterns = reinterpret_cast<String*>(SEGENV.data);
-    static int patternIndex; //round robin index of next slot to add pattern
 
     CRGB backgroundColor = SEGCOLOR(1);
-
-    static unsigned long resetMillis; //triggers reset if more than 3 seconds from millis()
 
     if (SEGENV.call == 0) { //effect starts
       //check if no pixels on screen (there could be due to previous effect, which we then take as starting point)
@@ -4624,12 +4669,12 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
         if (leds[XY(x,y)].r > 10 || leds[XY(x,y)].g > 10 || leds[XY(x,y)].b > 10) //looks like some pixels are not completely off
           allZero = false;
       if (!allZero)
-        resetMillis = millis(); //avoid reset
+        SEGENV.aux1 = millis(); //avoid reset
     }
 
     //reset leds if effect repeats (wait 3 seconds after repetition)
-    if (millis() - resetMillis > 3000) { 
-      resetMillis = millis();
+    if (millis() - SEGENV.aux1 > 3000) { 
+      SEGENV.aux1 = millis();  //ewowi20210629: pka static! resetMillis: triggers reset if more than 3 seconds from millis()
 
       random16_set_seed(millis()); //seed the random generator
 
@@ -4643,7 +4688,7 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
       }
 
       //init patterns
-      patternIndex = 0;
+      SEGENV.aux0 = 0; //ewowi20210629: pka static! patternsize: round robin index of next slot to add pattern
       for (int i=0; i<patternsSize; i++) patterns[i] = "";
     }
     else {
@@ -4696,13 +4741,13 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
       //check if repetition of patterns occurs
       bool repetition = false;
       for (int i=0; i<patternsSize && !repetition; i++)
-        repetition = patterns[(patternIndex - 1 - i + patternsSize)%patternsSize] == pattern;
+        repetition = patterns[(SEGENV.aux0 - 1 - i + patternsSize)%patternsSize] == pattern;
 
       //add current pattern to array and increase index (round robin)
-      patterns[patternIndex] = pattern;
-      patternIndex = (patternIndex+1)%patternsSize;
+      patterns[SEGENV.aux0] = pattern;
+      SEGENV.aux0 = (SEGENV.aux0+1)%patternsSize;
 
-      if (!repetition) resetMillis = millis(); //if no repetition avoid reset
+      if (!repetition) SEGENV.aux1 = millis(); //if no repetition avoid reset
     } //not reset
 
     setPixels(leds);
@@ -4718,7 +4763,7 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
 
 uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  https://editor.soulmatelights.com/gallery/810 , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   int a = millis() / 8;
 
@@ -4759,7 +4804,7 @@ typedef struct Julia {              // We can't use the 'static' keyword for per
 
 uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated Julia set by Andrew Tuline.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   if (!SEGENV.allocateData(sizeof(julia))) return mode_static();  // We use this method for allocating memory for static variables.
   Julia* julias = reinterpret_cast<Julia*>(SEGENV.data);          // Because 'static' doesn't work with SEGMENTS.
@@ -4856,7 +4901,7 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
     y += dy;
   }
 
-//  blur2d( leds, SEGMENT.width, SEGMENT.height, 64);
+//  blur2d( leds, 64);
 
 //  setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
@@ -4871,9 +4916,9 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
 
 uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, SEGMENT.intensity);
+  fadeToBlackBy(leds, SEGMENT.intensity);
 
   for (int i=0; i < 256; i ++) {
 
@@ -4896,9 +4941,9 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
 uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy Williams. Adapted by Andrew Tuline.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill_solid(leds, 0);
 
   if (millis() - SEGENV.step >= ((256-SEGMENT.speed) >>2)) {
     SEGENV.step = millis();
@@ -4912,15 +4957,15 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     		}
     	}
 
-    // fade all leds
-    for(int i = 0; i < SEGLEN; i++) {
-      if (leds[i].g != 255) leds[i].nscale8(192);         // only fade trail
+    // fade all leds 
+    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
+      if (leds[XY(x,y)].g != 255) leds[XY(x,y)].nscale8(192);         // only fade trail
     }
 
     // check for empty screen to ensure code spawn
     bool emptyScreen = true;
-    for(int i = 0; i < SEGLEN; i++) {
-      if (leds[i])
+    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
+      if (leds[XY(x,y)])
       {
         emptyScreen = false;
         break;
@@ -4947,7 +4992,7 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
 
 uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Cannot have one of the dimensions be 2 or less. Adapted by Andrew Tuline.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   float speed = 1;
 
@@ -5007,7 +5052,7 @@ uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Ca
 
 uint16_t WS2812FX::mode_2Dnoise(void) {                  // By Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   uint8_t scale = SEGMENT.intensity+2;
 
@@ -5029,9 +5074,9 @@ uint16_t WS2812FX::mode_2Dnoise(void) {                  // By Andrew Tuline
 
 uint16_t WS2812FX::mode_2DPlasmaball(void) {                   // By: Stepko https://editor.soulmatelights.com/gallery/659-plasm-ball , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, 64);
+  fadeToBlackBy(leds, 64);
   double t = millis() / (33 - SEGMENT.speed/8);
   for (byte i = 0; i < SEGMENT.width; i++) {
     byte thisVal = inoise8(i * 30, t, t);
@@ -5052,7 +5097,7 @@ uint16_t WS2812FX::mode_2DPlasmaball(void) {                   // By: Stepko htt
                         (SEGMENT.height - 1 - cy == 0)) ? ColorFromPalette(currentPalette, beat8(5), thisVal, LINEARBLEND) : CHSV(0, 0, 0);
     }
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 4);
+  blur2d(leds, 4);
 
   setPixels(leds);
   return FRAMETIME;
@@ -5070,7 +5115,7 @@ static float fmap(const float x, const float in_min, const float in_max, const f
 
 uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevskyy  https://editor.soulmatelights.com/gallery/762-polar-lights , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   CRGBPalette16 currentPalette  = {0x000000, 0x003300, 0x006600, 0x009900, 0x00cc00, 0x00ff00, 0x33ff00, 0x66ff00, 0x99ff00, 0xccff00, 0xffff00, 0xffcc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 
@@ -5121,7 +5166,7 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
 
 uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https://editor.soulmatelights.com/gallery/878-pulse-test , modifed by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   if (SEGENV.call == 0) FastLED.clear();
 
@@ -5131,7 +5176,7 @@ uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https
   byte y = (sin8(a * 5) + sin8(a * 4) + sin8(a * 2)) / 3 * r / 255;
   uint16_t index = XY (x, (SEGMENT.height / 2 - r / 2 + y) % SEGMENT.width);
   leds[index] = ColorFromPalette(currentPalette, y * 16 - 100, 255, LINEARBLEND);
-  blur2d(leds, SEGMENT.width, SEGMENT.height, SEGMENT.intensity / 16);
+  blur2d(leds, SEGMENT.intensity / 16);
 
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
@@ -5144,9 +5189,9 @@ uint16_t WS2812FX::mode_2DPulser() {                       // By: ldirko   https
 
 uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko   https://editor.soulmatelights.com/gallery/597-sin-dots , modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, 15);
+  fadeToBlackBy(leds, 15);
   byte t1 = millis() / (257 - SEGMENT.speed); // 20;
   byte t2 = sin8(t1) / 4 * 2;
   for (uint16_t i = 0; i < 13; i++) {
@@ -5154,7 +5199,7 @@ uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko 
     byte y = sin8(t2 + i * SEGMENT.intensity/8)*(SEGMENT.height-1)/255;  //  max index now 255x15/255=15!
     leds[XY(x, y)] = ColorFromPalette(currentPalette, i * 255 / 13, 255, LINEARBLEND);  
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 16);
+  blur2d(leds, 16);
 
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
@@ -5169,14 +5214,14 @@ uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman.
                                                           // Modifed by: Andrew Tuline
                                                           // fft3 affects the blur amount.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   const uint8_t kBorderWidth = 2;
 
-  fadeToBlackBy(leds, SEGLEN, 24);
+  fadeToBlackBy(leds, 24);
   // uint8_t blurAmount = dim8_raw( beatsin8(20,64,128) );  //3,64,192
   uint8_t blurAmount = SEGMENT.fft3;
-  blur2d(leds, SEGMENT.width, SEGMENT.height, blurAmount);
+  blur2d(leds, blurAmount);
 
   // Use two out-of-sync sine waves
   uint8_t  i = beatsin8(19, kBorderWidth, SEGMENT.width-kBorderWidth);
@@ -5205,7 +5250,7 @@ uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman.
 uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko https://editor.soulmatelights.com/gallery/599-sun-radiation  , modified by: Andrew Tuline
                                                                  // Does not yet support segments.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   static CRGB chsvLut[256];
   static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!  or (SEGMENT.width+2) * (mtrixHeight+2)
@@ -5257,11 +5302,11 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
 
 uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https://gist.github.com/kriegsman/5adca44e14ad025e6d3b , modified by Andrew Tuline 
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   const uint8_t borderWidth = 2;
 
-  blur2d( leds, SEGMENT.width, SEGMENT.height, SEGMENT.fft1);
+  blur2d( leds, SEGMENT.fft1);
 
   uint8_t  i = beatsin8( 27*SEGMENT.speed/255, borderWidth, SEGMENT.height - borderWidth);
   uint8_t  j = beatsin8( 41*SEGMENT.speed/255, borderWidth, SEGMENT.width - borderWidth);
@@ -5289,7 +5334,7 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
 
 uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://editor.soulmatelights.com/gallery/3-tartan , Modified by: Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   uint8_t hue;
   int offsetX = beatsin16(3, -360, 360);
@@ -5316,9 +5361,9 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
 
 uint16_t WS2812FX::mode_2DWaverly(void) {                                       // By: Stepko, https://editor.soulmatelights.com/gallery/652-wave , modified by Andrew Tuline
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds,SEGLEN,SEGMENT.speed);
+  fadeToBlackBy(leds, SEGMENT.speed);
 
   long t = millis() / 2;
   for (byte i = 0; i < SEGMENT.width; i++) {
@@ -5335,7 +5380,7 @@ uint16_t WS2812FX::mode_2DWaverly(void) {                                       
       leds[XY((SEGMENT.width - 1) - i, (SEGMENT.height - 1) - j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);
     }
   }
-  blur2d(leds, SEGMENT.width, SEGMENT.height, 16);
+  blur2d(leds, 16);
 
   setPixels(leds);
   return FRAMETIME;
@@ -5486,15 +5531,15 @@ uint16_t WS2812FX::mode_juggles(void) {                   // Juggles. By Andrew 
 //////////////////////
 
 uint16_t WS2812FX::mode_matripix(void) {                  // Matripix. By Andrew Tuline.
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill_solid(leds, 0);
 
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500 % 16;
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sample;
     int pixBri = tmpSound * SEGMENT.intensity / 64;
-    leds[SEGLEN-1] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
-    for (int i=0; i<SEGLEN-1; i++) leds[i] = leds[i+1];
+    leds[realPixelIndex(SEGLEN-1)] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
+    for (int i=0; i<SEGLEN-1; i++) leds[realPixelIndex(i)] = leds[realPixelIndex(i+1)];
   }
 
   setPixels(leds);
@@ -5551,7 +5596,7 @@ uint16_t WS2812FX::mode_noisefire(void) {                 // Noisefire. By Andre
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
 
     CRGB color = ColorFromPalette(currentPalette, index, tmpSound*2, LINEARBLEND);     // Use the my own palette.
-    leds[i] = color;
+    leds[realPixelIndex(i)] = color;
   }
 
   setPixels(leds);
@@ -5609,7 +5654,7 @@ uint16_t WS2812FX::mode_pixels(void) {                    // Pixels. By Andrew T
 
 uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andrew Tuline.
 
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill_solid(leds, 0);
   uint8_t secondHand = micros()/(256-SEGMENT.speed)/500+1 % 16;
 
   if(SEGENV.aux0 != secondHand) {
@@ -5617,13 +5662,13 @@ uint16_t WS2812FX::mode_pixelwave(void) {                 // Pixelwave. By Andre
 
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sample;
     int pixBri = tmpSound * SEGMENT.intensity / 64;
-    leds[SEGLEN/2] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
+    leds[realPixelIndex(SEGLEN/2)] = color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), pixBri);
 
     for (int i=SEGLEN-1; i>SEGLEN/2; i--) {               // Move to the right.
-      leds[i] = leds[i-1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i-1)];
     }
     for (int i=0; i<SEGLEN/2; i++) {                      // Move to the left.
-      leds[i]=leds[i+1];
+      leds[realPixelIndex(i)]=leds[realPixelIndex(i+1)];
     }
   }
 
@@ -5647,7 +5692,7 @@ uint16_t WS2812FX::mode_plasmoid(void) {                  // Plasmoid. By Andrew
   if (!SEGENV.allocateData(dataSize)) return mode_static(); //allocation failed
   Plasphase* plasmoip = reinterpret_cast<Plasphase*>(SEGENV.data);
 
-  fadeToBlackBy(leds, SEGLEN, 64);
+  fadeToBlackBy(leds, 64);
 
   plasmoip->thisphase += beatsin8(6,-4,4);                          // You can change direction and speed individually.
   plasmoip->thatphase += beatsin8(7,-4,4);                          // Two phase values to make a complex pattern. By Andrew Tuline.
@@ -5660,7 +5705,7 @@ uint16_t WS2812FX::mode_plasmoid(void) {                  // Plasmoid. By Andrew
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
     if (tmpSound * SEGMENT.intensity / 32 < thisbright) {thisbright = 0;}
 
-    leds[i] += color_blend(SEGCOLOR(1), color_from_palette(colorIndex, false, PALETTE_SOLID_WRAP, 0), thisbright);
+    leds[realPixelIndex(i)] += color_blend(SEGCOLOR(1), color_from_palette(colorIndex, false, PALETTE_SOLID_WRAP, 0), thisbright);
   }
 
   setPixels(leds);
@@ -5858,18 +5903,18 @@ uint16_t WS2812FX::mode_binmap(void) {                    // Binmap. Scale raw f
 
 uint16_t WS2812FX::mode_blurz(void) {                    // Blurz. By Andrew Tuline.
   
-  if (SEGENV.call == 0) {fill_solid(leds,SEGLEN, 0); SEGENV.aux0 = 0; }
+  if (SEGENV.call == 0) {fill_solid(leds, 0); SEGENV.aux0 = 0; }
 
   uint8_t blurAmt = SEGMENT.intensity;
 
   fade_out(SEGMENT.speed);
 
   uint16_t segLoc = random(SEGLEN);
-  leds[segLoc] = color_blend(SEGCOLOR(1), color_from_palette(fftResult[SEGENV.aux0]*240/(SEGLEN-1), false, PALETTE_SOLID_WRAP, 0), fftResult[SEGENV.aux0]);
+  leds[realPixelIndex(segLoc)] = color_blend(SEGCOLOR(1), color_from_palette(fftResult[SEGENV.aux0]*240/(SEGLEN-1), false, PALETTE_SOLID_WRAP, 0), fftResult[SEGENV.aux0]);
   SEGENV.aux0++;
   SEGENV.aux0 = SEGENV.aux0 % 16;
 
-  blur1d(leds, SEGLEN, blurAmt);
+  blur1d(leds, blurAmt);
 
   setPixels(leds);
   return FRAMETIME;
@@ -5889,16 +5934,16 @@ uint16_t WS2812FX::mode_DJLight(void) {                   // Written by ??? Adap
   if (SEGENV.aux0 != secondHand) {                        // Triggered millis timing.
     SEGENV.aux0 = secondHand;
 
-    leds[mid] = CRGB(fftResult[16]/2, fftResult[5]/2, fftResult[0]/2);
-    leds[mid].fadeToBlackBy(map(fftResult[1*4], 0, 255, 255, 10)); // TODO - Update
+    leds[realPixelIndex(mid)] = CRGB(fftResult[16]/2, fftResult[5]/2, fftResult[0]/2);
+    leds[realPixelIndex(mid)].fadeToBlackBy(map(fftResult[1*4], 0, 255, 255, 10)); // TODO - Update
 
     //move to the left
     for (int i = NUM_LEDS - 1; i > mid; i--) {
-      leds[i] = leds[i - 1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i - 1)];
     }
     // move to the right
     for (int i = 0; i < mid; i++) {
-      leds[i] = leds[i + 1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i + 1)];
     }
   }
 
@@ -5967,11 +6012,11 @@ uint16_t WS2812FX::mode_freqmatrix(void) {                // Freqmatrix. By Andr
     }
 
     // Serial.println(color);
-    leds[0] = color;
+    leds[realPixelIndex(0)] = color;
 
     // shift the pixels one pixel up
     for (int i = SEGLEN; i > 0; i--) {                    // Move up
-      leds[i] = leds[i-1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i-1)];
     }
 
     //fadeval = fade;
@@ -6069,14 +6114,14 @@ uint16_t WS2812FX::mode_freqwave(void) {                  // Freqwave. By Andrea
     }
 
     // Serial.println(color);
-    leds[SEGLEN/2] = color;
+    leds[realPixelIndex(SEGLEN/2)] = color;
 
 // shift the pixels one pixel outwards
     for (int i = SEGLEN; i > SEGLEN/2; i--) {             // Move to the right.
-      leds[i] = leds[i-1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i-1)];
     }
     for (int i = 0; i < SEGLEN/2; i++) {                  // Move to the left.
-      leds[i] = leds[i+1];
+      leds[realPixelIndex(i)] = leds[realPixelIndex(i+1)];
     }
 
     // DISPLAY ARRAY
@@ -6157,7 +6202,7 @@ uint16_t WS2812FX::mode_noisemove(void) {                 // Noisemove.    By: A
 
 uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same note from each octave is same colour.    By: Andrew Tuline
 
-  fadeToBlackBy(leds,SEGLEN,64);                          // Just in case something doesn't get faded.
+  fadeToBlackBy(leds, 64);                          // Just in case something doesn't get faded.
 
   double frTemp = FFT_MajorPeak;
   uint8_t octCount = 0;                                   // Octave counter.
@@ -6176,7 +6221,7 @@ uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same not
 
 //    leds[beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8)] += CHSV((uint8_t)frTemp,255,volTemp);                 // Back and forth with different frequencies and phase shift depending on current octave.
   
-  leds[beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8)] += color_blend(SEGCOLOR(1), color_from_palette((uint8_t)frTemp, false, PALETTE_SOLID_WRAP, 0), volTemp);
+  leds[realPixelIndex(beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8))] += color_blend(SEGCOLOR(1), color_from_palette((uint8_t)frTemp, false, PALETTE_SOLID_WRAP, 0), volTemp);
 
 
   setPixels(leds);
@@ -6193,7 +6238,7 @@ uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same not
 
 uint16_t WS2812FX::mode_waterfall(void) {                   // Waterfall. By: Andrew Tuline
 
-  if (SEGENV.call == 0) fill_solid(leds,SEGLEN, 0);
+  if (SEGENV.call == 0) fill_solid(leds, 0);
 
   binNum = SEGMENT.fft2;                               // Select a bin.
   maxVol = SEGMENT.fft3/2;                             // Our volume comparator.
@@ -6206,11 +6251,11 @@ uint16_t WS2812FX::mode_waterfall(void) {                   // Waterfall. By: An
     uint8_t pixCol = (log10((int)FFT_MajorPeak) - 2.26) * 177;  // log10 frequency range is from 2.26 to 3.7. Let's scale accordingly.
 
     if (samplePeak) {
-      leds[SEGLEN-1] = CHSV(92,92,92);
+      leds[realPixelIndex(SEGLEN-1)] = CHSV(92,92,92);
     } else {
-      leds[SEGLEN-1] = color_blend(SEGCOLOR(1), color_from_palette(pixCol+SEGMENT.intensity, false, PALETTE_SOLID_WRAP, 0), (int)FFT_Magnitude>>8);
+      leds[realPixelIndex(SEGLEN-1)] = color_blend(SEGCOLOR(1), color_from_palette(pixCol+SEGMENT.intensity, false, PALETTE_SOLID_WRAP, 0), (int)FFT_Magnitude>>8);
     }
-      for (int i=0; i<SEGLEN-1; i++) leds[i] = leds[i+1];
+      for (int i=0; i<SEGLEN-1; i++) leds[realPixelIndex(i)] = leds[realPixelIndex(i+1)];
   }
 
   setPixels(leds);
@@ -6228,9 +6273,9 @@ uint16_t WS2812FX::mode_waterfall(void) {                   // Waterfall. By: An
 
 uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
-  fadeToBlackBy(leds, SEGLEN, SEGMENT.speed);
+  fadeToBlackBy(leds, SEGMENT.speed);
 
   int NUMB_BANDS = map(SEGMENT.fft3, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);
@@ -6304,7 +6349,7 @@ uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Ma
 
 uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adapted by Will Tatam.
 
-  if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
+  // if (SEGMENT.width < 4 || SEGMENT.height < 4) {return blink(CRGB::Red, CRGB::Black, false, false);}    // No, we're not going to overrun the segment.
 
   int NUMB_BANDS = map(SEGMENT.fft3, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);

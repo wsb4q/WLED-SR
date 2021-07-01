@@ -331,8 +331,12 @@ class WS2812FX {
       uint8_t grouping, spacing;
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
-      uint8_t width;
+      uint8_t width; //ewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
       uint8_t height;
+      uint16_t startX;
+      uint16_t startY;
+      uint16_t stopX;
+      uint16_t stopY;
       bool setColor(uint8_t slot, uint32_t c, uint8_t segn) { //returns true if changed
         if (slot >= NUM_COLORS || segn >= MAX_NUM_SEGMENTS) return false;
         if (c == colors[slot]) return false;
@@ -382,7 +386,7 @@ class WS2812FX {
       }
       uint16_t length()
       {
-        return stop - start;
+        return (stopX - startX + 1) * (stopY - startY + 1); //ewowi20210624: calculate length using SEGMENT x/y. Used by SEGLEN
       }
       uint16_t groupLength()
       {
@@ -748,20 +752,25 @@ class WS2812FX {
       setTransitionMode(bool t),
       calcGammaTable(float),
       trigger(void),
+      set2DSegment(uint8_t n),
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       setPixelColor(uint16_t n, uint32_t c),
-      setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
       setColorOrder(uint8_t co),
       setPixelSegment(uint8_t n),
       noise8_help(uint8_t),
       mapNoiseToLEDsUsingPalette(),
-      blur1d( CRGB* leds, uint16_t numLeds, fract8 blur_amount),
-      blur2d( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurRows( CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
-      blurColumns(CRGB* leds, uint8_t width, uint8_t height, fract8 blur_amount),
+      blur1d( CRGB* leds, fract8 blur_amount),
+      blur2d( CRGB* leds, fract8 blur_amount),
+      blurRows( CRGB* leds, fract8 blur_amount),
+      blurColumns(CRGB* leds, fract8 blur_amount),
+      fill_solid( struct CRGB * leds, const struct CRGB& color),
+      fadeToBlackBy( CRGB* leds, uint8_t fadeBy),
+      nscale8(       CRGB* leds, uint8_t scale),
       setPixels(CRGB* leds);
+
+    uint16_t setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0); // ewowi20210701: temporary returns logicalPixel, to test reverse / mirroring and rotation of segments. Will be removed leter
 
     bool
       isRgbw = false,
@@ -808,7 +817,8 @@ class WS2812FX {
 //      getStripLen(uint8_t strip=0),
       triwave16(uint16_t),
       getFps(),
-      XY(int,int);
+      XY(int,int),            // ewowi20210624: new XY: segmentToLogical: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
+      logicalToPhysical(int); // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
 
     uint32_t
       now,

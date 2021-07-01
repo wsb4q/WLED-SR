@@ -174,8 +174,9 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map t
   return realIndex;
 }
 
-void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
+uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
 {
+  uint16_t logicalIndex = 9999;   //ewowi20210701: logicalIndex is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
   //auto calculate white channel value if enabled
   if (isRgbw) {
     if (rgbwMode == RGBW_MODE_AUTO_BRIGHTER || (w == 0 && (rgbwMode == RGBW_MODE_DUAL || rgbwMode == RGBW_MODE_LEGACY)))
@@ -209,11 +210,13 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
+      logicalIndex = indexSet + skip;
       if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210624: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up)
         busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
           if (indexMir < customMappingSize) indexMir = customMappingTable[indexMir];
+          logicalIndex = indexMir + skip;
           busses.setPixelColor(logicalToPhysical(indexMir) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
       }
@@ -222,13 +225,16 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     if (i < customMappingSize) i = customMappingTable[i];
 
     uint32_t col = ((w << 24) | (r << 16) | (g << 8) | (b));
+    logicalIndex = i + skip;
     busses.setPixelColor(logicalToPhysical(i) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
   }
   if (skip && i == 0) {
     for (uint16_t j = 0; j < skip; j++) {
+      logicalIndex = j;
       busses.setPixelColor(j, BLACK);
     }
   }
+  return logicalIndex;
 }
 
 

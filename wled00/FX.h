@@ -756,7 +756,6 @@ class WS2812FX {
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       setPixelColor(uint16_t n, uint32_t c),
-      setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
       setColorOrder(uint8_t co),
       setPixelSegment(uint8_t n),
@@ -770,6 +769,8 @@ class WS2812FX {
       fadeToBlackBy( CRGB* leds, uint8_t fadeBy),
       nscale8(       CRGB* leds, uint8_t scale),
       setPixels(CRGB* leds);
+
+    uint16_t setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0); // ewowi20210701: temporary returns logicalPixel, to test reverse / mirroring and rotation of segments. Will be removed leter
 
     bool
       isRgbw = false,

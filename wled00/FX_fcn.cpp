@@ -178,10 +178,10 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
     case 5: newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; break; // 101      90      -           MirrorY 
     case 6: newX = y; newY = x; break;                                          // 110      90      MirrorX     -10
     case 7: newX = y; newY = SEGMENT.width - 1 - x; break;                      // 111      90      MirrorX     MirrorY
-    case 90: newX = SEGMENT.height - 1 - y; newY = x; break;
-    case 180: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break;
-    case 270: newX = y; newY = SEGMENT.width - 1 - x; break;
-    default: newX = x; newY = y; //000
+    case 9: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 90º
+    case 18: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break;// 180º
+    case 27: newX = y; newY = SEGMENT.width - 1 - x; break;                     // 270º
+    default: newX = x; newY = y;                                                // 000
   }
 
   //segment XY to rotated and mirrored logical index
@@ -568,9 +568,9 @@ void WS2812FX::set2DSegment(uint8_t n) {
   Segment& seg = _segments[n];
 
   uint16_t startX = seg.start%matrixWidth;
-  uint16_t startY= seg.start/matrixWidth;
+  uint16_t startY= matrixWidth?(seg.start / matrixWidth):0;
   uint16_t stopX = (seg.stop-1)%matrixWidth;
-  uint16_t stopY= (seg.stop-1)/matrixWidth;
+  uint16_t stopY= matrixWidth?((seg.stop-1) / matrixWidth):0;
   seg.startX = MIN(startX, stopX);
   seg.startY= MIN(startY, stopY);
   seg.stopX = MAX(startX, stopX);

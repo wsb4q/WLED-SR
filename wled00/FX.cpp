@@ -4328,15 +4328,15 @@ uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi2021
                                                                     // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
 
   int x = i % matrixWidth;
-  int y = i / matrixWidth;
+  int y = matrixWidth?i / matrixWidth:0;
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
   uint8_t major, minor, sz_major, sz_minor;
 
   //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel 
-  uint16_t panelWidth = matrixPanels?matrixWidth / matrixHorizontalPanels:matrixWidth;
-  uint16_t panelHeight = matrixPanels?matrixHeight / matrixVerticalPanels:matrixHeight;
+  uint16_t panelWidth = (matrixPanels && matrixHorizontalPanels)?(matrixWidth / matrixHorizontalPanels):matrixWidth;
+  uint16_t panelHeight = (matrixPanels && matrixVerticalPanels)?(matrixHeight / matrixVerticalPanels):matrixHeight;
   uint16_t panelSize = panelWidth * panelHeight;
 
   //Horizontal and vertical panel number. 0 if only one panel

@@ -142,7 +142,7 @@ void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
 }
 
 //used to map from segment index to logical pixel, taking into account grouping, offsets, reverse and mirroring
-uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map to physical pixel index but to logical pixel index as matrix panels will require mapping. 
+uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map to physical pixel index but to rotated and mirrored logical pixel index as matrix panels will require mapping. 
                                                 // Mapping is done in logicalToPhysical below. Function will not be renamed to keep it consistent with Aircoookie 
   int16_t iGroup = i * SEGMENT.groupLength();
 
@@ -152,10 +152,11 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map t
     if (IS_MIRROR) {
       realIndex = (SEGMENT.length() -1) / 2 - iGroup;  //only need to index half the pixels
     } else {
-      realIndex = SEGMENT.length() - iGroup - 1;
+      realIndex = SEGMENT.length() - 1 - iGroup;
     }
   }
 
+  //segment index to segment XY
   uint16_t x = realIndex;
   uint16_t y = 0;
   if (SEGMENT.width) { // ewowi20210624: in case of 2D: index needs to be mapped from segment index to matrix index. Also works for 1D strips
@@ -165,11 +166,26 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210624: will not map t
     y = realIndex / SEGMENT.width;
   }
 
-  //change to matrix XY
-  x+= SEGMENT.startX;
-  y+= SEGMENT.startY;
+  // ewowi20210703: apply rotation, mirrorX and mirrorY. Temporary use spacing variable for this
+  uint16_t newX, newY;
+  switch (SEGMENT.spacing)
+  {
+    case 0: newX = x; newY = y; break;                                          // 000      -       -           -
+    case 1: newX = x; newY = SEGMENT.height - 1 - y; break;                     // 001      -       -           MirrorY 
+    case 2: newX = SEGMENT.width - 1 - x; newY = y; break;                      // 010      -       MirrorX     -
+    case 3: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break; // 011      -       MirrorX     MirrorY
+    case 4: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 100      90      -           -
+    case 5: newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; break; // 101      90      -           MirrorY 
+    case 6: newX = y; newY = x; break;                                          // 110      90      MirrorX     -10
+    case 7: newX = y; newY = SEGMENT.width - 1 - x; break;                      // 111      90      MirrorX     MirrorY
+    case 90: newX = SEGMENT.height - 1 - y; newY = x; break;
+    case 180: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break;
+    case 270: newX = y; newY = SEGMENT.width - 1 - x; break;
+    default: newX = x; newY = y; //000
+  }
 
-  realIndex = x + y * matrixWidth;
+  //segment XY to rotated and mirrored logical index
+  realIndex = newX + SEGMENT.startX + (newY + SEGMENT.startY) * matrixWidth;
 
   return realIndex;
 }
@@ -210,8 +226,9 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
-      logicalIndex = indexSet + skip;
-      if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210624: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up)
+      // if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up). 
+      // Check is removed as rotating non square segment will cross boundaries. Maybe i > SEGLEN must be added in the future as safety but all seems to work now
+        logicalIndex = indexSet + skip;
         busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
@@ -219,7 +236,7 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
           logicalIndex = indexMir + skip;
           busses.setPixelColor(logicalToPhysical(indexMir) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
-      }
+      // }
     }
   } else { //live data, etc.
     if (i < customMappingSize) i = customMappingTable[i];

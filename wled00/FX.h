@@ -390,7 +390,7 @@ class WS2812FX {
       }
       uint16_t groupLength()
       {
-        return grouping + spacing;
+        return grouping; //  + spacing ewowi20210702: temporary repurposed for rotation
       }
       uint16_t virtualLength()
       {

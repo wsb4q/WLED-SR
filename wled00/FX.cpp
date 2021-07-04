@@ -25,7 +25,6 @@
 */
 
 #include "FX.h"
-#include "tv_colors.h"
 
 #define IBN 5100
 #define PALETTE_SOLID_WRAP (paletteBlend == 1 || paletteBlend == 3)
@@ -458,25 +457,42 @@ uint16_t WS2812FX::mode_theater_chase_rainbow(void) {
 /*
  * Running lights effect with smooth sine transition base.
  */
-uint16_t WS2812FX::running_base(bool saw) {
+uint16_t WS2812FX::running_base(bool saw, bool dual=false) {
   uint8_t x_scale = SEGMENT.intensity >> 2;
   uint32_t counter = (now * SEGMENT.speed) >> 9;
 
   for(uint16_t i = 0; i < SEGLEN; i++) {
-    uint8_t s = 0;
-    uint8_t a = i*x_scale - counter;
+    uint16_t a = i*x_scale - counter;
     if (saw) {
+      a &= 0xFF;
       if (a < 16)
       {
         a = 192 + a*8;
       } else {
         a = map(a,16,255,64,192);
       }
+      a = 255 - a;
     }
-    s = sin8(a);
-    setPixelColor(i, color_blend(color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), SEGCOLOR(1), s));
+    uint8_t s = dual ? sin_gap(a) : sin8(a);
+    uint32_t ca = color_blend(SEGCOLOR(1), color_from_palette(i, true, PALETTE_SOLID_WRAP, 0), s);
+    if (dual) {
+      uint16_t b = (SEGLEN-1-i)*x_scale - counter;
+      uint8_t t = sin_gap(b);
+      uint32_t cb = color_blend(SEGCOLOR(1), color_from_palette(i, true, PALETTE_SOLID_WRAP, 2), t);
+      ca = color_blend(ca, cb, 127);
+    }
+    setPixelColor(i, ca);
   }
   return FRAMETIME;
+}
+
+
+/*
+ * Running lights in opposite directions.
+ * Idea: Make the gap width controllable with a third slider in the future
+ */
+uint16_t WS2812FX::mode_running_dual(void) {
+  return running_base(false, true);
 }
 
 
@@ -1352,14 +1368,6 @@ uint16_t WS2812FX::tricolor_chase(uint32_t color1, uint32_t color2) {
 
 
 /*
- * Alternating white/red/black pixels running. PLACEHOLDER
- */
-uint16_t WS2812FX::mode_circus_combustus(void) {
-  return tricolor_chase(RED, WHITE);
-}
-
-
-/*
  * Tricolor chase mode
  */
 uint16_t WS2812FX::mode_tricolor_chase(void) {
@@ -1475,8 +1483,8 @@ uint16_t WS2812FX::mode_tricolor_fade(void)
   }
 
   byte stp = prog; // % 256
-  uint32_t color = 0;
   for(uint16_t i = 0; i < SEGLEN; i++) {
+    uint32_t color;
     if (stage == 2) {
       color = color_blend(color_from_palette(i, true, PALETTE_SOLID_WRAP, 2), color2, stp);
     } else if (stage == 1) {
@@ -3094,7 +3102,7 @@ uint16_t WS2812FX::mode_drip(void)
 
   numDrops = 1 + (SEGMENT.intensity >> 6);
 
-  float gravity = -0.001 - (SEGMENT.speed/50000.0);
+  float gravity = -0.0005 - (SEGMENT.speed/50000.0);
   gravity *= SEGLEN;
   int sourcedrop = 12;
 
@@ -3125,7 +3133,7 @@ uint16_t WS2812FX::mode_drip(void)
         drops[j].vel += gravity;
 
         for (uint16_t i=1;i<7-drops[j].colIndex;i++) { // some minor math so we don't expand bouncing droplets
-          uint16_t pos = uint16_t(drops[j].pos) +i; //this is BAD, returns a pos >= SEGLEN occasionally
+          uint16_t pos = constrain(uint16_t(drops[j].pos) +i, 0, SEGLEN-1); //this is BAD, returns a pos >= SEGLEN occasionally
           setPixelColor(pos,color_blend(BLACK,SEGCOLOR(0),drops[j].col/i)); //spread pixel with fade while falling
         }
 
@@ -3835,65 +3843,99 @@ uint16_t WS2812FX::mode_blends(void) {
   return FRAMETIME;
 }
 
-#ifndef WLED_DISABLE_FX_HIGH_FLASH_USE
 typedef struct TvSim {
   uint32_t totalTime = 0;
   uint32_t fadeTime  = 0;
   uint32_t startTime = 0;
   uint32_t elapsed   = 0;
   uint32_t pixelNum  = 0;
+  uint16_t sliderValues = 0;
+  uint32_t sceeneStart    = 0;
+  uint32_t sceeneDuration = 0;
+  uint16_t sceeneColorHue = 0;
+  uint8_t  sceeneColorSat = 0;
+  uint8_t  sceeneColorBri = 0;
+  uint8_t  actualColorR = 0;
+  uint8_t  actualColorG = 0;
+  uint8_t  actualColorB = 0;
   uint16_t pr = 0; // Prev R, G, B
   uint16_t pg = 0;
   uint16_t pb = 0;
 } tvSim;
 
-#define  numTVPixels (sizeof(tv_colors) / 2)  // 2 bytes per Pixel (5/6/5)
-#endif
 
 /*
   TV Simulator
   Modified and adapted to WLED by Def3nder, based on "Fake TV Light for Engineers" by Phillip Burgess https://learn.adafruit.com/fake-tv-light-for-engineers/arduino-sketch
 */
 uint16_t WS2812FX::mode_tv_simulator(void) {
-  #ifdef WLED_DISABLE_FX_HIGH_FLASH_USE
-  return mode_static();
-  #else
-  uint16_t nr, ng, nb, r, g, b, i;
-  uint8_t  hi, lo, r8, g8, b8;
+  uint16_t nr, ng, nb, r, g, b, i, hue;
+  uint8_t  sat, bri, j;
 
   if (!SEGENV.allocateData(sizeof(tvSim))) return mode_static(); //allocation failed
   TvSim* tvSimulator = reinterpret_cast<TvSim*>(SEGENV.data);
 
-  // initialize start of the TV-Colors
-  if (SEGENV.call == 0) {
-    tvSimulator->pixelNum = ((uint8_t)random(18)) * numTVPixels / 18; // Begin at random movie (18 in total)
+  uint8_t colorSpeed     = map(SEGMENT.speed,     0, UINT8_MAX,  1, 20);
+  uint8_t colorIntensity = map(SEGMENT.intensity, 0, UINT8_MAX, 10, 30);
+
+  i = SEGMENT.speed << 8 | SEGMENT.intensity;
+  if (i != tvSimulator->sliderValues) {
+    tvSimulator->sliderValues = i;
+    SEGENV.aux1 = 0;
   }
 
-  // Read next 16-bit (5/6/5) color
-  hi = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2    ]);
-  lo = pgm_read_byte(&tv_colors[tvSimulator->pixelNum * 2 + 1]);
+    // create a new sceene
+    if (((millis() - tvSimulator->sceeneStart) >= tvSimulator->sceeneDuration) || SEGENV.aux1 == 0) {
+      tvSimulator->sceeneStart    = millis();                                               // remember the start of the new sceene
+      tvSimulator->sceeneDuration = random16(60* 250* colorSpeed, 60* 750 * colorSpeed);    // duration of a "movie sceene" which has similar colors (5 to 15 minutes with max speed slider)
+      tvSimulator->sceeneColorHue = random16(   0, 768);                                    // random start color-tone for the sceene
+      tvSimulator->sceeneColorSat = random8 ( 100, 130 + colorIntensity);                   // random start color-saturation for the sceene
+      tvSimulator->sceeneColorBri = random8 ( 200, 240);                                    // random start color-brightness for the sceene
+      SEGENV.aux1 = 1;
+      SEGENV.aux0 = 0;
+    }
 
-  // Expand to 24-bit (8/8/8)
-  r8 = (hi & 0xF8) | (hi >> 5);
-  g8 = ((hi << 5) & 0xff) | ((lo & 0xE0) >> 3) | ((hi & 0x06) >> 1);
-  b8 = ((lo << 3) & 0xff) | ((lo & 0x1F) >> 2);
+    // slightly change the color-tone in this sceene
+    if ( SEGENV.aux0 == 0) {
+      // hue change in both directions
+      j = random8(4 * colorIntensity);
+      hue = (random8() < 128) ? ((j < tvSimulator->sceeneColorHue)       ? tvSimulator->sceeneColorHue - j : 767 - tvSimulator->sceeneColorHue - j) :  // negative
+                                ((j + tvSimulator->sceeneColorHue) < 767 ? tvSimulator->sceeneColorHue + j : tvSimulator->sceeneColorHue + j - 767) ;  // positive
 
-  // Apply gamma correction, further expand to 16/16/16
-  nr = (uint8_t)gamma8(r8) * 257; // New R/G/B
-  ng = (uint8_t)gamma8(g8) * 257;
-  nb = (uint8_t)gamma8(b8) * 257;
+      // saturation
+      j = random8(2 * colorIntensity);
+      sat = (tvSimulator->sceeneColorSat - j) < 0 ? 0 : tvSimulator->sceeneColorSat - j;
+
+      // brightness
+      j = random8(100);
+      bri = (tvSimulator->sceeneColorBri - j) < 0 ? 0 : tvSimulator->sceeneColorBri - j;
+
+      // calculate R,G,B from HSV
+      // Source: https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/
+      { // just to create a local scope for  the variables
+        uint8_t temp[5], n = (hue >> 8) % 3;
+        uint8_t x = ((((hue & 255) * sat) >> 8) * bri) >> 8;
+        uint8_t s = (  (256 - sat) * bri) >> 8;
+        temp[0] = temp[3] =       s;
+        temp[1] = temp[4] =   x + s;
+        temp[2] =           bri - x;
+        tvSimulator->actualColorR = temp[n + 2];
+        tvSimulator->actualColorG = temp[n + 1];
+        tvSimulator->actualColorB = temp[n    ];
+      }
+    }
+    // Apply gamma correction, further expand to 16/16/16
+    nr = (uint8_t)gamma8(tvSimulator->actualColorR) * 257; // New R/G/B
+    ng = (uint8_t)gamma8(tvSimulator->actualColorG) * 257;
+    nb = (uint8_t)gamma8(tvSimulator->actualColorB) * 257;
 
   if (SEGENV.aux0 == 0) {  // initialize next iteration
     SEGENV.aux0 = 1;
 
-    // increase color-index for next loop
-    tvSimulator->pixelNum++;
-    if (tvSimulator->pixelNum >= numTVPixels) tvSimulator->pixelNum = 0;
-
     // randomize total duration and fade duration for the actual color
-    tvSimulator->totalTime = random(250, 2500);                   // Semi-random pixel-to-pixel time
-    tvSimulator->fadeTime  = random(0, tvSimulator->totalTime);   // Pixel-to-pixel transition time
-    if (random(10) < 3) tvSimulator->fadeTime = 0;                // Force scene cut 30% of time
+    tvSimulator->totalTime = random16(250, 2500);                   // Semi-random pixel-to-pixel time
+    tvSimulator->fadeTime  = random16(0, tvSimulator->totalTime);   // Pixel-to-pixel transition time
+    if (random8(10) < 3) tvSimulator->fadeTime = 0;                 // Force scene cut 30% of time
 
     tvSimulator->startTime = millis();
   } // end of initialization
@@ -3926,7 +3968,6 @@ uint16_t WS2812FX::mode_tv_simulator(void) {
   }
 
   return FRAMETIME;
-  #endif
 }
 
 /*
@@ -4174,7 +4215,7 @@ uint16_t WS2812FX::mode_wavesins(void) {                          // Uses beatsi
 //    leds[i] = CHSV(beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), 255, bri);
     leds[realPixelIndex(i)] = ColorFromPalette(currentPalette, beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), bri, LINEARBLEND);
   }
-  
+
   setPixels(leds);
   return FRAMETIME;
 } // mode_waveins()
@@ -4320,7 +4361,7 @@ uint16_t WS2812FX::XY( int x, int y) {                              // ewowi2021
   return realPixelIndex(x + y * SEGMENT.width);
 }
 
-//Use https://wokwi.com/arduino/projects/300565972972995085 to create layout examples 
+//Use https://wokwi.com/arduino/projects/300565972972995085 to create layout examples
 #define RIGHT 1
 #define BOTTOM 1
 #define HORIZONTAL 0
@@ -4334,7 +4375,7 @@ uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi2021
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
   uint8_t major, minor, sz_major, sz_minor;
 
-  //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel 
+  //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel
   uint16_t panelWidth = (matrixPanels && matrixHorizontalPanels)?(matrixWidth / matrixHorizontalPanels):matrixWidth;
   uint16_t panelHeight = (matrixPanels && matrixVerticalPanels)?(matrixHeight / matrixVerticalPanels):matrixHeight;
   uint16_t panelSize = panelWidth * panelHeight;
@@ -4358,7 +4399,7 @@ uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi2021
   //By: Sutaburosu -  Who wrote this VERY COOL and VERY short and MUCH better XY() routine. Thanks!!
   //flip minor if needed, this needs to be done before flipmajor because minor value needed to identify serpentine row
   if (flipminor) minor = sz_minor - 1 - minor;
-  if (flipmajor ^ ((minor & 1) && panelSerpentine)) major = sz_major - 1 - major; //A line of magic. 
+  if (flipmajor ^ ((minor & 1) && panelSerpentine)) major = sz_major - 1 - major; //A line of magic.
   // &=Binary AND, minor&1 is odd rows, ^=Binary XOR => flapmajor or serpentine (odd) row, but not both (XOR)
 
   if (panelTranspose)
@@ -4397,7 +4438,7 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
 
   static byte hue = 0;
   static byte numLines = 10;
-  
+
   hue++;
   numLines = SEGMENT.intensity/16;
   fadeToBlackBy(leds, 40);
@@ -4412,7 +4453,7 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
     byte xsteps = abs8(x1 - y1) + 1;
     byte ysteps = abs8(x2 - y2) + 1;
     byte steps = xsteps >= ysteps ? xsteps : ysteps;
-  
+
     for (byte i = 1; i <= steps; i++) {
       byte dx = lerp8by8(x1, y1, i * 255 / steps);
       byte dy = lerp8by8(x2, y2, i * 255 / steps);
@@ -4420,7 +4461,7 @@ uint16_t WS2812FX::mode_2DColoredBursts() {              // By: ldirko   https:/
       leds[index] += color;           // change to += for brightness look
       if (grad) leds[index] %= (i * 255 / steps); //Draw gradient line
     }
-  
+
     if (dot) { //add white point at the ends of line
       leds[XY(x1, x2)] += CRGB::White;
       leds[XY(y1, y2)] += CRGB::White;
@@ -4656,7 +4697,7 @@ uint16_t WS2812FX::mode_2Dgameoflife(void) { // Written by Ewoud Wijma, inspired
     }
 
     //reset leds if effect repeats (wait 3 seconds after repetition)
-    if (millis() - resetMillis > 3000) { 
+    if (millis() - resetMillis > 3000) {
       resetMillis = millis();
 
       random16_set_seed(millis()); //seed the random generator
@@ -4758,7 +4799,7 @@ uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  ht
       leds[index] = ColorFromPalette(currentPalette, sin8(cos8(x * SEGMENT.speed/16 + a / 3) + sin8(y * SEGMENT.intensity/16 + a / 4) + a), 255, LINEARBLEND);
     }
   }
-  
+
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
 } // mode_2DHiphotic()
@@ -4901,7 +4942,7 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 
     uint8_t xlocn = sin8(millis()/2+i*SEGMENT.speed/64);
     uint8_t ylocn = cos8(millis()/2+i*128/64);
-    
+
     xlocn = map(xlocn,0,255,0,SEGMENT.width-1);
     ylocn = map(ylocn,0,255,0,SEGMENT.height-1);
     leds[XY(xlocn,ylocn)] = ColorFromPalette(currentPalette, millis()/100+i, 255, LINEARBLEND);
@@ -4932,7 +4973,7 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     		}
     	}
 
-    // fade all leds 
+    // fade all leds
     for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
       if (leds[XY(x,y)].g != 255) leds[XY(x,y)].nscale8(192);         // only fade trail
     }
@@ -5093,7 +5134,7 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
   static unsigned long timer;        // Cannot be uint16_t value (aka aux0)
 
   if (SEGENV.aux1 != SEGMENT.fft1/12) {   // Hacky palette rotation. We need that black.
-  
+
     SEGENV.aux1 = SEGMENT.fft1;
     for (int i = 0; i < 16; i++) {
       long ilk;
@@ -5109,7 +5150,7 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
 
   uint16_t _scale = map(SEGMENT.intensity, 1, 255, 30, adjScale);
   byte _speed = map(SEGMENT.speed, 1, 255, 128, 16);
-  
+
   for (byte x = 0; x < SEGMENT.width; x++) {
     for (byte y = 0; y < SEGMENT.height; y++) {
       timer++;
@@ -5160,7 +5201,7 @@ uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko 
   for (uint16_t i = 0; i < 13; i++) {
     byte x = sin8(t1 + i * SEGMENT.intensity/8)*(SEGMENT.width-1)/255;  //   max index now 255x15/255=15!
     byte y = sin8(t2 + i * SEGMENT.intensity/8)*(SEGMENT.height-1)/255;  //  max index now 255x15/255=15!
-    leds[XY(x, y)] = ColorFromPalette(currentPalette, i * 255 / 13, 255, LINEARBLEND);  
+    leds[XY(x, y)] = ColorFromPalette(currentPalette, i * 255 / 13, 255, LINEARBLEND);
   }
   blur2d(leds, 16);
 
@@ -5213,7 +5254,7 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
 
   static CRGB chsvLut[256];
   static byte bump[1156];             // Don't go beyond a 32x32 matrix!!!  or (SEGMENT.width+2) * (mtrixHeight+2)
-  
+
   if (SEGMENT.intensity != SEGENV.aux0) {
     SEGENV.aux0 = SEGMENT.intensity;
     for (int j = 0; j < 256; j++) {
@@ -5229,7 +5270,7 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
       byte col = (inoise8_raw(i * someVal, j * someVal, t)) / 2;
       bump[index++] = col;
     }
-  } 
+  }
 
   int yindex = SEGMENT.width + 3;
   int8_t vly = -(SEGMENT.height / 2 + 1);
@@ -5259,7 +5300,7 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
 //    * 2D Swirl        //
 /////////////////////////
 
-uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https://gist.github.com/kriegsman/5adca44e14ad025e6d3b , modified by Andrew Tuline 
+uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https://gist.github.com/kriegsman/5adca44e14ad025e6d3b , modified by Andrew Tuline
 
   const uint8_t borderWidth = 2;
 
@@ -5304,7 +5345,7 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
       leds[index] += ColorFromPalette(currentPalette, hue, sin8(y * SEGMENT.intensity + offsetY) * sin8(y * SEGMENT.intensity + offsetY) / 255, LINEARBLEND);
     }
   }
-  
+
   setPixels(leds);       // Use this ONLY if we're going to display via leds[x] method.
   return FRAMETIME;
 } // mode_2DTartan()
@@ -5322,7 +5363,7 @@ uint16_t WS2812FX::mode_2DWaverly(void) {                                       
   for (byte i = 0; i < SEGMENT.width; i++) {
   //  byte thisVal = inoise8(i * 45 , t , t);
   // byte thisMax = map(thisVal, 0, 255, 0, SEGMENT.height);
- 
+
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
 
     uint16_t thisVal = tmpSound*SEGMENT.intensity/64 * inoise8(i * 45 , t , t)/64;
@@ -5855,7 +5896,7 @@ uint16_t WS2812FX::mode_binmap(void) {                    // Binmap. Scale raw f
 //////////////////////
 
 uint16_t WS2812FX::mode_blurz(void) {                    // Blurz. By Andrew Tuline.
-  
+
   if (SEGENV.call == 0) {fill_solid(leds, 0); SEGENV.aux0 = 0; }
 
   uint8_t blurAmt = SEGMENT.intensity;
@@ -6161,7 +6202,7 @@ uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same not
   uint8_t octCount = 0;                                   // Octave counter.
   uint8_t volTemp = 0;
   if (FFT_Magnitude > 500) volTemp = 255;                 // We need to squelch out the background noise.
-  
+
   while ( frTemp > 249 ) {
     octCount++;                                           // This should go up to 5.
     frTemp = frTemp/2;
@@ -6173,7 +6214,7 @@ uint16_t WS2812FX::mode_rocktaves(void) {                 // Rocktaves. Same not
   // Serial.print(frTemp); Serial.print("\t"); Serial.print(volTemp); Serial.print("\t");Serial.print(octCount); Serial.print("\t"); Serial.println(FFT_Magnitude);
 
 //    leds[beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8)] += CHSV((uint8_t)frTemp,255,volTemp);                 // Back and forth with different frequencies and phase shift depending on current octave.
-  
+
   leds[realPixelIndex(map(beatsin8(8+octCount*4,0,SEGLEN-1,0,octCount*8),0,255,0,SEGLEN))] += color_blend(SEGCOLOR(1), color_from_palette((uint8_t)frTemp, false, PALETTE_SOLID_WRAP, 0), volTemp);
 
 
@@ -6244,7 +6285,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
   }
   else
     rippleTime = false;
-    
+
   static int previousBarHeight[16]; //array of previous bar heights per frequency band
 
   int b = 0;

@@ -43,6 +43,23 @@
   19, 18, 17, 16, 15, 20, 21, 22, 23, 24, 29, 28, 27, 26, 25]
 */
 
+//factory defaults LED setup
+//#define PIXEL_COUNTS 30, 30, 30, 30
+//#define DATA_PINS 16, 1, 3, 4
+//#define DEFAULT_LED_TYPE TYPE_WS2812_RGB
+
+#ifndef PIXEL_COUNTS
+  #define PIXEL_COUNTS 30
+#endif
+
+#ifndef DATA_PINS
+  #define DATA_PINS LEDPIN
+#endif
+
+#ifndef DEFAULT_LED_TYPE
+  #define DEFAULT_LED_TYPE TYPE_WS2812_RGB
+#endif
+
 //do not call this method from system context (network callback)
 void WS2812FX::finalizeInit(uint16_t countPixels, bool skipFirst)
 {
@@ -57,9 +74,22 @@ void WS2812FX::finalizeInit(uint16_t countPixels, bool skipFirst)
 
   //if busses failed to load, add default (FS issue...)
   if (busses.getNumBusses() == 0) {
-    uint8_t defPin[] = {LEDPIN};
-    BusConfig defCfg = BusConfig(TYPE_WS2812_RGB, defPin, 0, _lengthRaw, COL_ORDER_GRB);
-    busses.add(defCfg);
+    const uint8_t defDataPins[] = {DATA_PINS};
+    const uint16_t defCounts[] = {PIXEL_COUNTS};
+    const uint8_t defNumBusses = ((sizeof defDataPins) / (sizeof defDataPins[0]));
+    const uint8_t defNumCounts = ((sizeof defCounts)   / (sizeof defCounts[0]));
+    uint16_t prevLen = 0;
+    for (uint8_t i = 0; i < defNumBusses; i++) {
+      uint8_t defPin[] = {defDataPins[i]};
+      uint16_t start = prevLen;
+      uint16_t count = _lengthRaw;
+      if (defNumBusses > 1 && defNumCounts) {
+        count = defCounts[(i < defNumCounts) ? i : defNumCounts -1];
+      }
+      prevLen += count;
+      BusConfig defCfg = BusConfig(DEFAULT_LED_TYPE, defPin, start, count, COL_ORDER_GRB);
+      busses.add(defCfg);
+    }
   }
 
   deserializeMap();
@@ -142,8 +172,8 @@ void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
 }
 
 //used to map from segment index to logical pixel, taking into account grouping, offsets, reverse and mirroring
-uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map to physical pixel index but to rotated and mirrored logical pixel index as matrix panels will require mapping. 
-                                                // Mapping is done in logicalToPhysical below. Function will not be renamed to keep it consistent with Aircoookie 
+uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map to physical pixel index but to rotated and mirrored logical pixel index as matrix panels will require mapping.
+                                                // Mapping is done in logicalToPhysical below. Function will not be renamed to keep it consistent with Aircoookie
   int16_t iGroup = i * SEGMENT.groupLength();
 
   /* reverse just an individual segment */
@@ -171,11 +201,11 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
   switch (SEGMENT.spacing)
   {
     case 0: newX = x; newY = y; break;                                          // 000      -       -           -
-    case 1: newX = x; newY = SEGMENT.height - 1 - y; break;                     // 001      -       -           MirrorY 
+    case 1: newX = x; newY = SEGMENT.height - 1 - y; break;                     // 001      -       -           MirrorY
     case 2: newX = SEGMENT.width - 1 - x; newY = y; break;                      // 010      -       MirrorX     -
     case 3: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break; // 011      -       MirrorX     MirrorY
     case 4: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 100      90      -           -
-    case 5: newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; break; // 101      90      -           MirrorY 
+    case 5: newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; break; // 101      90      -           MirrorY
     case 6: newX = y; newY = x; break;                                          // 110      90      MirrorX     -10
     case 7: newX = y; newY = SEGMENT.width - 1 - x; break;                      // 111      90      MirrorX     MirrorY
     case 9: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 90º
@@ -206,7 +236,7 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
       r -= w; g -= w; b -= w;
     }
   }
-  
+
   uint16_t skip = _skipFirstMode ? LED_SKIP_AMOUNT : 0;
   if (SEGLEN) {//from segment
 
@@ -226,7 +256,7 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       int indexSet = realIndex + (reversed ? -j : j);
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
-      // if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up). 
+      // if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up).
       // Check is removed as rotating non square segment will cross boundaries. Maybe i > SEGLEN must be added in the future as safety but all seems to work now
         logicalIndex = indexSet + skip;
         busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
@@ -827,6 +857,12 @@ uint16_t WS2812FX::triwave16(uint16_t in)
 {
   if (in < 0x8000) return in *2;
   return 0xFFFF - (in - 0x8000)*2;
+}
+
+uint8_t WS2812FX::sin_gap(uint16_t in) {
+  if (in & 0x100) return 0;
+  //if (in > 255) return 0;
+  return sin8(in + 192); //correct phase shift of sine so that it starts and stops at 0
 }
 
 /*

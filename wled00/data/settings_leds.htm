@@ -183,7 +183,7 @@
 			d.getElementById('psu').innerHTML = s;
       d.getElementById('psu2').innerHTML = isWS2815 ? "" : s2;
 
-      // 2D Matrix Settings - BROKEN BY MULTI-PIN
+      // 2D Matrix Settings
       var MXW = parseInt(d.Sf.MXW.value, 10);
 			var MXH = parseInt(d.Sf.MXH.value, 10);
 			if (!isNaN(MXW) && !isNaN(MXH) && (MXW > 0 || MXH > 0) && MXW * MXH > parseInt(sLC, 10)) {
@@ -304,7 +304,7 @@
     <select name="PFLLR">
 			<option value="0" selected>Left</option>
 			<option value="1">Right</option>
-		</select><br>    
+		</select><br>
     Orientation: <select name="POHV">
 			<option value="0" selected>Horizontal</option>
 			<option value="1">Vertical</option>

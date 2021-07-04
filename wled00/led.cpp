@@ -114,12 +114,11 @@ void colorUpdated(int callMode)
   {
     effectChanged = false;
     if (realtimeTimeout == UINT32_MAX) realtimeTimeout = 0;
-    if (isPreset) {isPreset = false;}
-        else {currentPreset = -1;}
+    currentPreset = -1; //something changed, so we are no longer in the preset
 
     notify(callMode);
 
-    //set flag to update blynk and mqtt
+    //set flag to update blynk, ws and mqtt
     interfaceUpdateCallMode = callMode;
   } else {
     if (nightlightActive && !nightlightActiveOld &&
@@ -184,6 +183,11 @@ void colorUpdated(int callMode)
 void updateInterfaces(uint8_t callMode)
 {
   sendDataWs();
+  if (callMode == NOTIFIER_CALL_MODE_WS_SEND) {
+    lastInterfaceUpdate = millis();
+    return;
+  }
+
   #ifndef WLED_DISABLE_ALEXA
   if (espalexaDevice != nullptr && callMode != NOTIFIER_CALL_MODE_ALEXA) {
     espalexaDevice->setValue(bri);
@@ -299,19 +303,6 @@ void handleNightlight()
       colorUpdated(NOTIFIER_CALL_MODE_NO_NOTIFY);
     }
     nightlightActiveOld = false;
-  }
-
-  //also handle preset cycle here
-  if (presetCyclingEnabled && (millis() - presetCycledTime > (100*presetCycleTime)))
-  {
-    presetCycledTime = millis();
-    if (bri == 0 || nightlightActive) return;
-
-    if (presetCycCurr < presetCycleMin || presetCycCurr > presetCycleMax) presetCycCurr = presetCycleMin;
-    applyPreset(presetCycCurr); //this handles colorUpdated() for us
-    presetCycCurr++;
-    if (presetCycCurr > 250) presetCycCurr = 1;
-    interfaceUpdateCallMode = 0; //disable updates to MQTT and Blynk
   }
 }
 

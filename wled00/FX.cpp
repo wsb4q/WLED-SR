@@ -42,30 +42,24 @@ uint16_t WS2812FX::mode_static(void) {
  * Blink/strobe function
  * Alternate between color1 and color2
  * if(strobe == true) then create a strobe effect
- * NOTE: Maybe re-rework without timer
  */
 uint16_t WS2812FX::blink(uint32_t color1, uint32_t color2, bool strobe, bool do_palette) {
-  uint16_t stateTime = SEGENV.aux1;
   uint32_t cycleTime = (255 - SEGMENT.speed)*20;
-  uint32_t onTime = 0;
-  uint32_t offTime = cycleTime;
+  uint32_t onTime = FRAMETIME;
+  if (!strobe) onTime += ((cycleTime * SEGMENT.intensity) >> 8);
+  cycleTime += FRAMETIME*2;
+  uint32_t it = now / cycleTime;
+  uint32_t rem = now % cycleTime;
 
-  if (!strobe) {
-    onTime = (cycleTime * SEGMENT.intensity) >> 8;
-    offTime = cycleTime - onTime;
+  bool on = false;
+  if (it != SEGENV.step //new iteration, force on state for one frame, even if set time is too brief
+      || rem <= onTime) {
+    on = true;
   }
 
-  stateTime = ((SEGENV.aux0 & 1) == 0) ? onTime : offTime;
-  stateTime += 20;
+  SEGENV.step = it; //save previous iteration
 
-  if (now - SEGENV.step > stateTime)
-  {
-    SEGENV.aux0++;
-    SEGENV.aux1 = stateTime;
-    SEGENV.step = now;
-  }
-
-  uint32_t color = ((SEGENV.aux0 & 1) == 0) ? color1 : color2;
+  uint32_t color = on ? color1 : color2;
   if (color == color1 && do_palette)
   {
     for(uint16_t i = 0; i < SEGLEN; i++) {
@@ -3958,7 +3952,6 @@ uint16_t WS2812FX::mode_tv_simulator(void) {
 */
 
 //CONFIG
-#define BACKLIGHT 5
 #define W_MAX_COUNT 20            //Number of simultaneous waves
 #define W_MAX_SPEED 6             //Higher number, higher speed
 #define W_WIDTH_FACTOR 6          //Higher number, smaller waves
@@ -4083,9 +4076,13 @@ uint16_t WS2812FX::mode_aurora(void) {
     }
   }
 
+  uint8_t backlight = 1; //dimmer backlight if less active colors
+  if (SEGCOLOR(0)) backlight++;
+  if (SEGCOLOR(1)) backlight++;
+  if (SEGCOLOR(2)) backlight++;
   //Loop through LEDs to determine color
   for(int i = 0; i < SEGLEN; i++) {
-    CRGB mixedRgb = CRGB(BACKLIGHT, BACKLIGHT, BACKLIGHT);
+    CRGB mixedRgb = CRGB(backlight, backlight, backlight);
 
     //For each LED we must check each wave if it is "active" at this position.
     //If there are multiple waves active on a LED we multiply their values.
@@ -4097,7 +4094,7 @@ uint16_t WS2812FX::mode_aurora(void) {
       }
     }
 
-    setPixelColor(i, mixedRgb[0], mixedRgb[1], mixedRgb[2], BACKLIGHT);
+    setPixelColor(i, mixedRgb[0], mixedRgb[1], mixedRgb[2]);
   }
 
   return FRAMETIME;

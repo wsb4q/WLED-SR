@@ -118,6 +118,15 @@ void WS2812FX::service() {
         }
         for (uint8_t c = 0; c < 3; c++) _colors_t[c] = gamma32(_colors_t[c]);
         handle_palette();
+        if (IS_ROTATED && matrixHeight > 1)
+        {
+          SEGMENT.height = SEGMENT.stopX - SEGMENT.startX + 1;
+          SEGMENT.width = SEGMENT.stopY - SEGMENT.startY + 1;
+        }
+        else {
+          SEGMENT.width = SEGMENT.stopX - SEGMENT.startX + 1;
+          SEGMENT.height = SEGMENT.stopY - SEGMENT.startY + 1;
+        }
         delay = (this->*_mode[SEGMENT.mode])(); //effect function
         if (SEGMENT.mode != FX_MODE_HALLOWEEN_EYES) SEGENV.call++;
       }
@@ -148,7 +157,7 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
 
   /* reverse just an individual segment */
   int16_t realIndex = iGroup;
-  if (IS_REVERSE) {
+  if (IS_REVERSE && matrixHeight < 2) { //in case of 1D
     if (IS_MIRROR) {
       realIndex = (SEGMENT.length() -1) / 2 - iGroup;  //only need to index half the pixels
     } else {
@@ -161,27 +170,28 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
   uint16_t y = 0;
   if (SEGMENT.width) { // ewowi20210624: in case of 2D: index needs to be mapped from segment index to matrix index. Also works for 1D strips
                         // need to check SEGMENT.width as it looks like Peek is using segment 15 with Width=0
-    //change the segment XY
     x = realIndex % SEGMENT.width;
     y = realIndex / SEGMENT.width;
   }
 
-  // ewowi20210703: apply rotation, mirrorX and mirrorY. Temporary use spacing variable for this
-  uint16_t newX, newY;
-  switch (SEGMENT.spacing)
+  // ewowi20210703: apply rotation, mirrorX and mirrorY. 
+  uint16_t newX=x;
+  uint16_t newY=y;
+
+  if (matrixHeight > 1) //in case of 2D
   {
-    case 0: newX = x; newY = y; break;                                          // 000      -       -           -
-    case 1: newX = x; newY = SEGMENT.height - 1 - y; break;                     // 001      -       -           MirrorY 
-    case 2: newX = SEGMENT.width - 1 - x; newY = y; break;                      // 010      -       MirrorX     -
-    case 3: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break; // 011      -       MirrorX     MirrorY
-    case 4: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 100      90      -           -
-    case 5: newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; break; // 101      90      -           MirrorY 
-    case 6: newX = y; newY = x; break;                                          // 110      90      MirrorX     -10
-    case 7: newX = y; newY = SEGMENT.width - 1 - x; break;                      // 111      90      MirrorX     MirrorY
-    case 9: newX = SEGMENT.height - 1 - y; newY = x; break;                     // 90º
-    case 18: newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; break;// 180º
-    case 27: newX = y; newY = SEGMENT.width - 1 - x; break;                     // 270º
-    default: newX = x; newY = y;                                                // 000
+    if (!IS_ROTATED) {
+      if (!IS_REVERSE && !IS_REVERSE2D) { newX = x; newY = y; } // 000      -       -           -         (rotate 0)
+      else if (!IS_REVERSE && IS_REVERSE2D) { newX = x; newY = SEGMENT.height - 1 - y; } // 001      -       -           MirrorY   (rotate 180+MirrorX)
+      else if (IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = y; } // 010      -       MirrorX     -         (rotate 0 + MirrorX)
+      else if (IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; } // 011      -       MirrorX     MirrorY   (rotate 180)
+    }
+    else {
+      if (!IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = x; } // 100      90      -           -         (rotate 90)
+      else if (!IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; } // 101      90      -           MirrorY   (rotate 270 + mirrorX)
+      else if (IS_REVERSE && !IS_REVERSE2D) { newX = y; newY = x;  } // 110      90      MirrorX     -         (rotate 90 + mirrorX)
+      else if (IS_REVERSE && IS_REVERSE2D) { newX = y; newY = SEGMENT.width - 1 - x; } // 111      90      MirrorX     MirrorY   (rotate 270)
+    }
   }
 
   //segment XY to rotated and mirrored logical index
@@ -190,9 +200,8 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
   return realIndex;
 }
 
-uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
+void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
 {
-  uint16_t logicalIndex = 9999;   //ewowi20210701: logicalIndex is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
   //auto calculate white channel value if enabled
   if (isRgbw) {
     if (rgbwMode == RGBW_MODE_AUTO_BRIGHTER || (w == 0 && (rgbwMode == RGBW_MODE_DUAL || rgbwMode == RGBW_MODE_LEGACY)))
@@ -228,12 +237,10 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
       if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
       // if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up). 
       // Check is removed as rotating non square segment will cross boundaries. Maybe i > SEGLEN must be added in the future as safety but all seems to work now
-        logicalIndex = indexSet + skip;
         busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
           if (indexMir < customMappingSize) indexMir = customMappingTable[indexMir];
-          logicalIndex = indexMir + skip;
           busses.setPixelColor(logicalToPhysical(indexMir) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
       // }
@@ -242,16 +249,13 @@ uint16_t WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     if (i < customMappingSize) i = customMappingTable[i];
 
     uint32_t col = ((w << 24) | (r << 16) | (g << 8) | (b));
-    logicalIndex = i + skip;
     busses.setPixelColor(logicalToPhysical(i) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
   }
   if (skip && i == 0) {
     for (uint16_t j = 0; j < skip; j++) {
-      logicalIndex = j;
       busses.setPixelColor(j, BLACK);
     }
   }
-  return logicalIndex;
 }
 
 
@@ -575,8 +579,6 @@ void WS2812FX::set2DSegment(uint8_t n) {
   seg.startY= MIN(startY, stopY);
   seg.stopX = MAX(startX, stopX);
   seg.stopY= MAX(startY, stopY);
-  seg.width = seg.stopX - seg.startX + 1;
-  seg.height = seg.stopY - seg.startY + 1;
 }
 
 void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping, uint8_t spacing) {

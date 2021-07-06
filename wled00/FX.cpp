@@ -34,20 +34,7 @@
  * No blinking. Just plain old static light.
  */
 uint16_t WS2812FX::mode_static(void) {
-  //ewowi20210701: this is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
-  if (SEGENV.call == 0) {
-    for (int y=0; y<SEGMENT.height; y++) {
-      for (int x=0; x<SEGMENT.width; x++) {
-        uint16_t logicalIndex = setPixelColor(x + y * SEGMENT.width, 128, 128, 128);
-        Serial.print(logicalIndex);
-        Serial.print(", ");
-      }
-      Serial.println();
-    }
-    Serial.println();
-  }
-  else
-    fill(SEGCOLOR(0));
+  fill(SEGCOLOR(0));
   return (SEGMENT.getOption(SEG_OPTION_TRANSITIONAL)) ? FRAMETIME : 500; //update faster if in transition
 }
 

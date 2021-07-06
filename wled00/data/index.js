@@ -539,13 +539,23 @@ function populateSegments(s)
 				<i class="icons e-icon cnf cnf-s" id="segc${i}" onclick="setSeg(${i})">&#xe390;</i>
 				<i class="icons e-icon del" id="segd${i}" onclick="delSeg(${i})">&#xe037;</i>
 				<label class="check revchkl">
-					Reverse direction
+					Mirror effect
+					<input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+					<span class="checkmark schk"></span>
+				</label>
+				<label class="check revchkl">
+					Reverse direction X
 					<input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
 					<span class="checkmark schk"></span>
 				</label>
 				<label class="check revchkl">
-					Mirror effect
-					<input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+					Reverse direction Y
+					<input type="checkbox" id="seg${i}rev2D" onchange="setrev2D(${i})" ${inst.rev2D ? "checked":""}>
+					<span class="checkmark schk"></span>
+				</label>
+				<label class="check revchkl">
+					Rotation
+					<input type="checkbox" id="seg${i}rot" onchange="setRot(${i})" ${inst.rot ? "checked":""}>
 					<span class="checkmark schk"></span>
 				</label>
 			</div>
@@ -1276,9 +1286,21 @@ function setRev(s){
 	requestJson(obj, false);
 }
 
+function setrev2D(s){
+	var rev2D = d.getElementById(`seg${s}rev2D`).checked;
+	var obj = {"seg": {"id": s, "rev2D": rev2D}};
+	requestJson(obj, false);
+}
+
 function setMi(s){
 	var mi = d.getElementById(`seg${s}mi`).checked;
 	var obj = {"seg": {"id": s, "mi": mi}};
+	requestJson(obj, false);
+}
+
+function setRot(s){
+	var rot = d.getElementById(`seg${s}rot`).checked;
+	var obj = {"seg": {"id": s, "rot": rot}};
 	requestJson(obj, false);
 }
 

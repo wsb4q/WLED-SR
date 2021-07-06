@@ -819,9 +819,16 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   pos = req.indexOf(F("RV="));
   if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_REVERSED, req.charAt(pos+3) != '0');
 
-  //Segment reverse
+  pos = req.indexOf(F("RY="));
+  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_REVERSED2D, req.charAt(pos+3) != '0');
+
+  //Segment mirror
   pos = req.indexOf(F("MI="));
   if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_MIRROR, req.charAt(pos+3) != '0');
+
+  //Segment rotation
+  pos = req.indexOf(F("ROT="));
+  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_ROTATED, req.charAt(pos+3) != '0');
 
   //Segment brightness/opacity
   pos = req.indexOf(F("SB="));

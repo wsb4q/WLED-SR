@@ -108,14 +108,18 @@
 #define SEGMENT_ON   (uint8_t)0x04
 #define REVERSE      (uint8_t)0x02
 #define SELECTED     (uint8_t)0x01
+#define ROTATED     (uint8_t)0x10 //0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40, 0x80, 0xF0 
+#define REVERSE2D     (uint8_t)0x40 //0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40, 0x80, 0xF0 
 #define IS_TRANSITIONAL ((SEGMENT.options & TRANSITIONAL) == TRANSITIONAL)
 #define IS_MIRROR       ((SEGMENT.options & MIRROR      ) == MIRROR      )
 #define IS_SEGMENT_ON   ((SEGMENT.options & SEGMENT_ON  ) == SEGMENT_ON  )
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
+#define IS_REVERSE2D     ((SEGMENT.options & REVERSE2D    ) == REVERSE2D    )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
+#define IS_ROTATED      ((SEGMENT.options & ROTATED     ) == ROTATED     )
 
 //#define MODE_COUNT                     172
-#define MODE_COUNT                      168
+#define MODE_COUNT                      169
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -294,6 +298,7 @@
 #define FX_MODE_2DBLACKHOLE            165
 #define FX_MODE_WAVESINS               166
 #define FX_MODE_ROCKTAVES              167
+#define FX_MODE_2DAKEMI                168
 
 
 //#define FX_MODE_2DPULSER               166
@@ -387,7 +392,7 @@ class WS2812FX {
       }
       uint16_t groupLength()
       {
-        return grouping; //  + spacing ewowi20210702: temporary repurposed for rotation
+        return grouping + spacing;
       }
       uint16_t virtualLength()
       {
@@ -711,6 +716,7 @@ class WS2812FX {
      _mode[FX_MODE_2DBLACKHOLE]              = &WS2812FX::mode_2DBlackHole;
      _mode[FX_MODE_WAVESINS]                 = &WS2812FX::mode_wavesins;
      _mode[FX_MODE_ROCKTAVES]                = &WS2812FX::mode_rocktaves;
+     _mode[FX_MODE_2DAKEMI]                = &WS2812FX::mode_2DAkemi;
 //     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
 //     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
 //     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
@@ -753,6 +759,7 @@ class WS2812FX {
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       setPixelColor(uint16_t n, uint32_t c),
+      setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
       setColorOrder(uint8_t co),
       setPixelSegment(uint8_t n),
@@ -766,8 +773,6 @@ class WS2812FX {
       fadeToBlackBy( CRGB* leds, uint8_t fadeBy),
       nscale8(       CRGB* leds, uint8_t scale),
       setPixels(CRGB* leds);
-
-    uint16_t setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0); // ewowi20210701: temporary returns logicalPixel, to test reverse / mirroring and rotation of segments. Will be removed leter
 
     bool
       isRgbw = false,
@@ -1038,7 +1043,8 @@ class WS2812FX {
       mode_2DDNASpiral(void),
       mode_2DBlackHole(void),
       mode_wavesins(void),
-      mode_rocktaves(void);
+      mode_rocktaves(void),
+      mode_2DAkemi(void);
 //      mode_2DPulser(void),
 //      mode_2DColoredBursts(void),
 //      mode_2DTwister(void),
@@ -1173,7 +1179,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Noise","Perlin Move","* Ripple Peak","2D FireNoise",
 "2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
 "** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D Game Of Life","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Sindots","2D DNA Spiral","2D Black Hole","Wavesins","** Rocktaves"
+"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Sindots","2D DNA Spiral","2D Black Hole","Wavesins","** Rocktaves","** 2D Akemi"
 
 ])=====";
 

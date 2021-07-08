@@ -33,20 +33,7 @@
  * No blinking. Just plain old static light.
  */
 uint16_t WS2812FX::mode_static(void) {
-  //ewowi20210701: this is temporary code, to test reverse / mirroring and rotation of segments. Will be removed leter
-  if (SEGENV.call == 0) {
-    for (int y=0; y<SEGMENT.height; y++) {
-      for (int x=0; x<SEGMENT.width; x++) {
-        uint16_t logicalIndex = setPixelColor(x + y * SEGMENT.width, 128, 128, 128);
-        Serial.print(logicalIndex);
-        Serial.print(", ");
-      }
-      Serial.println();
-    }
-    Serial.println();
-  }
-  else
-    fill(SEGCOLOR(0));
+  fill(SEGCOLOR(0));
   return (SEGMENT.getOption(SEG_OPTION_TRANSITIONAL)) ? FRAMETIME : 500; //update faster if in transition
 }
 
@@ -6382,3 +6369,94 @@ uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adap
   setPixels(leds);
   return FRAMETIME;
 } // mode_2DFunkyPlank
+
+uint16_t WS2812FX::mode_2DAkemi(void) {
+
+  uint16_t counter = (now * ((SEGMENT.speed >> 2) +2)) & 0xFFFF;
+  counter = counter >> 8;
+
+  //Akemi 
+  uint8_t akemi[32][32]={
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,2,2,3,3,3,3,3,3,2,2,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,2,3,3,0,0,0,0,0,0,3,3,2,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,2,3,0,0,0,6,5,5,4,0,0,0,3,2,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,2,3,0,0,6,6,5,5,5,5,4,4,0,0,3,2,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,2,3,0,6,5,5,5,5,5,5,5,5,4,0,3,2,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,2,3,0,6,5,5,5,5,5,5,5,5,5,5,4,0,3,2,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,3,2,0,6,5,5,5,5,5,5,5,5,5,5,4,0,2,3,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,3,2,3,6,5,5,7,7,5,5,5,5,7,7,5,5,4,3,2,3,0,0,0,0,0,0},
+    {0,0,0,0,0,2,3,1,3,6,5,1,7,7,7,5,5,1,7,7,7,5,4,3,1,3,2,0,0,0,0,0},
+    {0,0,0,0,0,8,3,1,3,6,5,1,7,7,7,5,5,1,7,7,7,5,4,3,1,3,8,9,0,0,0,0},
+    {0,0,0,0,0,8,3,1,3,6,5,5,1,1,5,5,5,5,1,1,5,5,4,3,1,3,8,0,0,0,0,0},
+    {0,0,0,0,0,2,3,1,3,6,5,5,5,5,5,5,5,5,5,5,5,5,4,3,1,3,2,0,0,0,0,0},
+    {0,0,0,0,0,0,3,2,3,6,5,5,5,5,5,5,5,5,5,5,5,5,4,3,2,3,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,6,5,5,5,5,5,7,7,5,5,5,5,5,4,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,6,5,5,5,5,5,5,5,5,5,5,5,5,4,0,0,0,0,0,0,0,0,0},
+    {1,0,0,0,0,0,0,0,0,6,5,5,5,5,5,5,5,5,5,5,5,5,4,0,0,0,0,0,0,0,0,2},
+    {0,2,2,2,0,0,0,0,0,6,5,5,5,5,5,5,5,5,5,5,5,5,4,0,0,0,0,0,2,2,2,0},
+    {0,0,0,3,2,0,0,0,6,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,0,0,2,2,0,0,0},
+    {0,0,0,3,2,0,0,0,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,0,0,0,2,3,0,0,0},
+    {0,0,0,0,3,2,0,0,0,0,3,3,0,3,3,0,0,3,3,0,3,3,0,0,0,0,2,2,0,0,0,0},
+    {0,0,0,0,3,2,0,0,0,0,3,2,0,3,2,0,0,3,2,0,3,2,0,0,0,0,2,3,0,0,0,0},
+    {0,0,0,0,0,3,2,0,0,3,2,0,0,3,2,0,0,3,2,0,0,3,2,0,0,2,3,0,0,0,0,0},
+    {0,0,0,0,0,3,2,2,2,2,0,0,0,3,2,0,0,3,2,0,0,0,3,2,2,2,3,0,0,0,0,0},
+    {0,0,0,0,0,0,3,3,3,0,0,0,0,3,2,0,0,3,2,0,0,0,0,3,3,3,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+  };
+
+  //draw and color Akemi
+  for (int y=0; y<SEGMENT.height;y++) for (int x=0; x<SEGMENT.width;x++) {
+    CRGB color=BLACK;
+    CRGB faceColor = color_wheel(counter);
+    CRGB armsAndLegsColor = SEGCOLOR(1)>0?SEGCOLOR(1):0xFFE0A0; //default warmish white 0xABA8FF; //0xFF52e5;// 
+    CRGB soundColor = ORANGE;
+    double lightFactor = 0.15;
+    double normalFactor = 0.4;
+    double base = fftResult[0]/255.0;
+    switch (akemi[y*32/SEGMENT.height][x*32/SEGMENT.width]) {
+      case 0: color=BLACK; break;
+      case 3: armsAndLegsColor.r *= lightFactor; armsAndLegsColor.g *= lightFactor; armsAndLegsColor.b *= lightFactor; color=armsAndLegsColor; break; //light arms and legs 0x9B9B9B
+      case 2: armsAndLegsColor.r *= normalFactor; armsAndLegsColor.g *= normalFactor; armsAndLegsColor.b *= normalFactor; color=armsAndLegsColor; break; //normal arms and legs 0x888888
+      case 1: color=armsAndLegsColor; break; //dark arms and legs 0x686868
+      case 6: faceColor.r *= lightFactor; faceColor.g *= lightFactor; faceColor.b *= lightFactor; color=faceColor; break; //light face 0x31AAFF
+      case 5: faceColor.r *= normalFactor; faceColor.g *= normalFactor; faceColor.b *= normalFactor; color=faceColor; break; //normal face 0x0094FF
+      case 4: color=faceColor; break; //dark face 0x007DC6
+      case 7: color=SEGCOLOR(2)>0?SEGCOLOR(2):0xFFFFFF; break; //eyes and mouth default white
+      case 8: if (base > 0.4) {soundColor.r *= base; soundColor.g *= base; soundColor.b *= base; color=soundColor;} else color=armsAndLegsColor; break;
+      default: color = BLACK;
+    }
+
+    if (SEGMENT.intensity > 128 && fftResult[0] > 128) //dance if base is high
+    {
+      leds[XY(x,0)] = BLACK;
+      leds[XY(x,y+1)] = color;
+    }
+    else
+      leds[XY(x,y)] = color;
+  }
+
+  //add geq left and right
+  for (int x=0;x<SEGMENT.width/8;x++)
+  {
+    int band = x*SEGMENT.width/8;
+    int barHeight = map(fftResult[band], 0, 255, 0, 17*SEGMENT.height/32);
+    CRGB color = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
+
+    for (int y=0;y<barHeight;y++)
+    {
+      leds[XY(x, SEGMENT.height/2-y)] = color;
+      leds[XY(SEGMENT.width-1-x, SEGMENT.height/2-y)] = color;
+    }
+  }
+
+  setPixels(leds);
+  
+  return FRAMETIME;
+} // mode_2DAkemi
+

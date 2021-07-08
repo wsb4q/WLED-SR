@@ -79,10 +79,9 @@ void _overlayAnalogClock()
   }
   if (analogClock5MinuteMarks)
   {
-    int pix;
-    for (int i = 0; i <= 12; i++)
+    for (byte i = 0; i <= 12; i++)
     {
-      pix = analogClock12pixel + round((overlaySize / 12.0) *i);
+      int pix = analogClock12pixel + round((overlaySize / 12.0) *i);
       if (pix > overlayMax) pix -= overlaySize;
       strip.setPixelColor(strip.matrixWidth > 0?circlePixel(i*30):pix, 0x00FFAA);
     }

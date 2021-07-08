@@ -567,7 +567,7 @@ function populateSegments(s)
 				</label>
 				<label class="check revchkl">
 					Rotation
-					<input type="checkbox" id="seg${i}rot" onchange="setRot(${i})" ${inst.rot ? "checked":""}>
+					<input type="checkbox" id="seg${i}rot2D" onchange="setRot2D(${i})" ${inst.rot2D ? "checked":""}>
 					<span class="checkmark schk"></span>
 				</label>
 			</div>
@@ -1310,9 +1310,9 @@ function setMi(s){
 	requestJson(obj, false);
 }
 
-function setRot(s){
-	var rot = d.getElementById(`seg${s}rot`).checked;
-	var obj = {"seg": {"id": s, "rot": rot}};
+function setRot2D(s){
+	var rot2D = d.getElementById(`seg${s}rot2D`).checked;
+	var obj = {"seg": {"id": s, "rot2D": rot2D}};
 	requestJson(obj, false);
 }
 

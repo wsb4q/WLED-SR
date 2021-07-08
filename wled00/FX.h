@@ -64,7 +64,7 @@
   /* How much data bytes all segments combined may allocate */
   #define MAX_SEGMENT_DATA  2048
 #else
-  #define MAX_NUM_SEGMENTS    16
+  #define MAX_NUM_SEGMENTS    32 //ewowi20210708: increased for 2D segments
   #define MAX_NUM_TRANSITIONS 16
   #define MAX_SEGMENT_DATA  8192
 #endif

@@ -34,7 +34,7 @@
  */
 uint16_t WS2812FX::mode_static(void) {
   fill(SEGCOLOR(0));
-  return (SEGMENT.getOption(SEG_OPTION_TRANSITIONAL)) ? FRAMETIME : 500; //update faster if in transition
+  return (SEGMENT.getOption(SEG_OPTION_TRANSITIONAL)) ? FRAMETIME : 350; //update faster if in transition
 }
 
 
@@ -42,30 +42,24 @@ uint16_t WS2812FX::mode_static(void) {
  * Blink/strobe function
  * Alternate between color1 and color2
  * if(strobe == true) then create a strobe effect
- * NOTE: Maybe re-rework without timer
  */
 uint16_t WS2812FX::blink(uint32_t color1, uint32_t color2, bool strobe, bool do_palette) {
-  uint16_t stateTime = SEGENV.aux1;
   uint32_t cycleTime = (255 - SEGMENT.speed)*20;
-  uint32_t onTime = 0;
-  uint32_t offTime = cycleTime;
+  uint32_t onTime = FRAMETIME;
+  if (!strobe) onTime += ((cycleTime * SEGMENT.intensity) >> 8);
+  cycleTime += FRAMETIME*2;
+  uint32_t it = now / cycleTime;
+  uint32_t rem = now % cycleTime;
 
-  if (!strobe) {
-    onTime = (cycleTime * SEGMENT.intensity) >> 8;
-    offTime = cycleTime - onTime;
+  bool on = false;
+  if (it != SEGENV.step //new iteration, force on state for one frame, even if set time is too brief
+      || rem <= onTime) {
+    on = true;
   }
 
-  stateTime = ((SEGENV.aux0 & 1) == 0) ? onTime : offTime;
-  stateTime += 20;
+  SEGENV.step = it; //save previous iteration
 
-  if (now - SEGENV.step > stateTime)
-  {
-    SEGENV.aux0++;
-    SEGENV.aux1 = stateTime;
-    SEGENV.step = now;
-  }
-
-  uint32_t color = ((SEGENV.aux0 & 1) == 0) ? color1 : color2;
+  uint32_t color = on ? color1 : color2;
   if (color == color1 && do_palette)
   {
     for(uint16_t i = 0; i < SEGLEN; i++) {
@@ -499,12 +493,10 @@ uint16_t WS2812FX::mode_saw(void) {
 }
 
 
-
 /*
  * Blink several LEDs in random colors on, reset, repeat.
  * Inspired by www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/
  */
-/*
 uint16_t WS2812FX::mode_twinkle(void) {
   fill(SEGCOLOR(1));
 
@@ -534,7 +526,6 @@ uint16_t WS2812FX::mode_twinkle(void) {
 
   return FRAMETIME;
 }
-*/
 
 
 /*
@@ -1987,7 +1978,7 @@ uint16_t WS2812FX::mode_noise16_4()
 
 
 //based on https://gist.github.com/kriegsman/5408ecd397744ba0393e
-/*uint16_t WS2812FX::mode_colortwinkle()
+uint16_t WS2812FX::mode_colortwinkle()
 {
   uint16_t dataSize = (SEGLEN+7) >> 3; //1 bit per LED
   if (!SEGENV.allocateData(dataSize)) return mode_static(); //allocation failed
@@ -2041,7 +2032,6 @@ uint16_t WS2812FX::mode_noise16_4()
   }
   return FRAMETIME;
 }
-*/
 
 
 //Calm effect, like a lake at night
@@ -2175,7 +2165,7 @@ uint16_t WS2812FX::mode_railway()
 
 //4 bytes
 typedef struct Ripple {
-  int8_t state;
+  int8_t state; //WLEDSR AC has uint8_t while value can be negative???
   uint8_t color;
   uint16_t pos;
 } ripple;
@@ -2261,7 +2251,7 @@ uint16_t WS2812FX::mode_ripple_rainbow(void) {
 }
 
 
-/*
+
 //  TwinkleFOX by Mark Kriegsman: https://gist.github.com/kriegsman/756ea6dcae8e30845b5a
 //
 //  TwinkleFOX: Twinkling 'holiday' lights that fade in and out.
@@ -2401,7 +2391,7 @@ uint16_t WS2812FX::mode_twinklecat()
 {
   return twinklefox_base(true);
 }
-*/
+
 
 //inspired by https://www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/#LEDStripEffectBlinkingHalloweenEyes
 #define HALLOWEEN_EYE_SPACE 3
@@ -3227,8 +3217,8 @@ uint16_t WS2812FX::mode_plasma(void) {
  */
 uint16_t WS2812FX::mode_percent(void) {
 
-  uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
-  uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
+	uint8_t percent = MAX(0, MIN(200, SEGMENT.intensity));
+	uint16_t active_leds = (percent < 100) ? SEGLEN * percent / 100.0
                                          : SEGLEN * (200 - percent) / 100.0;
 
   uint8_t size = (1 + ((SEGMENT.speed * SEGLEN) >> 11));
@@ -3236,22 +3226,22 @@ uint16_t WS2812FX::mode_percent(void) {
 
   if (percent < 100) {
     for (uint16_t i = 0; i < SEGLEN; i++) {
-      if (i < SEGENV.step) {
+	  	if (i < SEGENV.step) {
         setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
-      }
-      else {
+	  	}
+	  	else {
         setPixelColor(i, SEGCOLOR(1));
-      }
-    }
+	  	}
+	  }
   } else {
     for (uint16_t i = 0; i < SEGLEN; i++) {
-      if (i < (SEGLEN - SEGENV.step)) {
+	  	if (i < (SEGLEN - SEGENV.step)) {
         setPixelColor(i, SEGCOLOR(1));
-      }
-      else {
+	  	}
+	  	else {
         setPixelColor(i, color_from_palette(i, true, PALETTE_SOLID_WRAP, 0));
-      }
-    }
+	  	}
+	  }
   }
 
   if(active_leds > SEGENV.step) {  // smooth transition to the target value
@@ -3262,7 +3252,7 @@ uint16_t WS2812FX::mode_percent(void) {
     if (SEGENV.step < active_leds) SEGENV.step = active_leds;
   }
 
-  return FRAMETIME;
+ 	return FRAMETIME;
 }
 
 /*
@@ -3484,12 +3474,12 @@ uint16_t WS2812FX::mode_sunrise() {
 uint16_t WS2812FX::phased_base(uint8_t moder) {                  // We're making sine waves here. By Andrew Tuline.
 
   uint8_t allfreq = 16;                                          // Base frequency.
-  //float* phasePtr = reinterpret_cast<float*>(SEGENV.step);     // Phase change value gets calculated.
+  //float* phasePtr = reinterpret_cast<float*>(SEGENV.step);       // Phase change value gets calculated.
   static float phase = 0;//phasePtr[0];
   uint8_t cutOff = (255-SEGMENT.intensity);                      // You can change the number of pixels.  AKA INTENSITY (was 192).
   uint8_t modVal = 5;//SEGMENT.fft1/8+1;                         // You can change the modulus. AKA FFT1 (was 5).
 
-  uint8_t index = now/64;                                        // Set color rotation speed
+  uint8_t index = now/64;                                    // Set color rotation speed
   phase += SEGMENT.speed/32.0;                                   // You can change the speed of the wave. AKA SPEED (was .4)
   //phasePtr[0] = phase;
 
@@ -3502,10 +3492,12 @@ uint16_t WS2812FX::phased_base(uint8_t moder) {                  // We're making
     b = (b > cutOff) ? (b - cutOff) : 0;                         // A ternary operator to cutoff the light.
     setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, false, 0), b));
     index += 256 / SEGLEN;
+    if (SEGLEN > 256) index ++;                                  // Correction for segments longer than 256 LEDs
   }
 
   return FRAMETIME;
 }
+
 
 
 uint16_t WS2812FX::mode_phased(void) {
@@ -3513,9 +3505,11 @@ uint16_t WS2812FX::mode_phased(void) {
 }
 
 
+
 uint16_t WS2812FX::mode_phased_noise(void) {
   return phased_base(1);
 }
+
 
 
 uint16_t WS2812FX::mode_twinkleup(void) {                 // A very short twinkle routine with fade-in and dual controls. By Andrew Tuline.
@@ -3525,7 +3519,7 @@ uint16_t WS2812FX::mode_twinkleup(void) {                 // A very short twinkl
     uint8_t ranstart = random8();                         // The starting value (aka brightness) for each pixel. Must be consistent each time through the loop for this to work.
     uint8_t pixBri = sin8(ranstart + 16 * now/(256-SEGMENT.speed));
     if (random8() > SEGMENT.intensity) pixBri = 0;
-    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(random8()+millis()/100, false, PALETTE_SOLID_WRAP, 0), pixBri));
+    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(random8()+now/100, false, PALETTE_SOLID_WRAP, 0), pixBri));
   }
 
   return FRAMETIME;
@@ -3533,16 +3527,16 @@ uint16_t WS2812FX::mode_twinkleup(void) {                 // A very short twinkl
 
 
 // Peaceful noise that's slow and with gradually changing palettes. Does not support WLED palettes or default colours or controls.
-uint16_t WS2812FX::mode_noisepal(void) {                      // Slow noise palette by Andrew Tuline.
-  uint16_t scale = 15 + (SEGMENT.intensity >> 2);             //default was 30
+uint16_t WS2812FX::mode_noisepal(void) {                                    // Slow noise palette by Andrew Tuline.
+  uint16_t scale = 15 + (SEGMENT.intensity >> 2); //default was 30
   //#define scale 30
 
-  uint16_t dataSize = sizeof(CRGBPalette16) * 2;              //allocate space for 2 Palettes
-  if (!SEGENV.allocateData(dataSize)) return mode_static();   //allocation failed
+  uint16_t dataSize = sizeof(CRGBPalette16) * 2; //allocate space for 2 Palettes
+  if (!SEGENV.allocateData(dataSize)) return mode_static(); //allocation failed
 
   CRGBPalette16* palettes = reinterpret_cast<CRGBPalette16*>(SEGENV.data);
 
-  uint16_t changePaletteMs = 4000 + SEGMENT.speed *10;        //between 4 - 6.5sec
+  uint16_t changePaletteMs = 4000 + SEGMENT.speed *10; //between 4 - 6.5sec
   if (millis() - SEGENV.step > changePaletteMs)
   {
     SEGENV.step = millis();
@@ -3573,16 +3567,17 @@ uint16_t WS2812FX::mode_noisepal(void) {                      // Slow noise pale
 // Sine waves that have controllable phase change speed, frequency and cutoff. By Andrew Tuline.
 // SEGMENT.speed ->Speed, SEGMENT.intensity -> Frequency (SEGMENT.fft1 -> Color change, SEGMENT.fft2 -> PWM cutoff)
 //
-uint16_t WS2812FX::mode_sinewave(void) {                  // Adjustable sinewave. By Andrew Tuline
-  //#define qsuba(x, b)  ((x>b)?x-b:0)                    // Analog Unsigned subtraction macro. if result <0, then => 0
+uint16_t WS2812FX::mode_sinewave(void) {             // Adjustable sinewave. By Andrew Tuline
+  //#define qsuba(x, b)  ((x>b)?x-b:0)               // Analog Unsigned subtraction macro. if result <0, then => 0
 
-  uint16_t colorIndex = now /32;//(256 - SEGMENT.fft1);   // Amount of colour change.
+  uint16_t colorIndex = now /32;//(256 - SEGMENT.fft1);  // Amount of colour change.
 
-  SEGENV.step += SEGMENT.speed/16;                        // Speed of animation.
-  uint16_t freq = SEGMENT.intensity/4;//SEGMENT.fft2/8;   // Frequency of the signal.
+  SEGENV.step += SEGMENT.speed/16;                   // Speed of animation.
+  uint16_t freq = SEGMENT.intensity/4;//SEGMENT.fft2/8;                       // Frequency of the signal.
 
-  for (int i=0; i<SEGLEN; i++) {                          // For each of the LED's in the strand, set a brightness based on a wave as follows:
+  for (int i=0; i<SEGLEN; i++) {                   // For each of the LED's in the strand, set a brightness based on a wave as follows:
     int pixBri = cubicwave8((i*freq)+SEGENV.step);//qsuba(cubicwave8((i*freq)+SEGENV.step), (255-SEGMENT.intensity)); // qsub sets a minimum value called thiscutoff. If < thiscutoff, then bright = 0. Otherwise, bright = 128 (as defined in qsub)..
+    //setPixCol(i, i*colorIndex/255, pixBri);
     setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(i*colorIndex/255, false, PALETTE_SOLID_WRAP, 0), pixBri));
   }
 
@@ -3962,7 +3957,6 @@ uint16_t WS2812FX::mode_tv_simulator(void) {
 */
 
 //CONFIG
-#define BACKLIGHT 5
 #define W_MAX_COUNT 20            //Number of simultaneous waves
 #define W_MAX_SPEED 6             //Higher number, higher speed
 #define W_WIDTH_FACTOR 6          //Higher number, smaller waves
@@ -4087,9 +4081,13 @@ uint16_t WS2812FX::mode_aurora(void) {
     }
   }
 
+  uint8_t backlight = 1; //dimmer backlight if less active colors
+  if (SEGCOLOR(0)) backlight++;
+  if (SEGCOLOR(1)) backlight++;
+  if (SEGCOLOR(2)) backlight++;
   //Loop through LEDs to determine color
   for(int i = 0; i < SEGLEN; i++) {
-    CRGB mixedRgb = CRGB(BACKLIGHT, BACKLIGHT, BACKLIGHT);
+    CRGB mixedRgb = CRGB(backlight, backlight, backlight);
 
     //For each LED we must check each wave if it is "active" at this position.
     //If there are multiple waves active on a LED we multiply their values.
@@ -4101,16 +4099,15 @@ uint16_t WS2812FX::mode_aurora(void) {
       }
     }
 
-    setPixelColor(i, mixedRgb[0], mixedRgb[1], mixedRgb[2], BACKLIGHT);
+    setPixelColor(i, mixedRgb[0], mixedRgb[1], mixedRgb[2]);
   }
 
   return FRAMETIME;
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//    Start of Audio Reactive fork                                                                                                       //
+//    Start of Audio Reactive fork (WLEDSR)                                                                                                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Order of routines should be alphabetical for each type. They are:
@@ -6375,7 +6372,7 @@ uint16_t WS2812FX::mode_2DAkemi(void) {
   uint16_t counter = (now * ((SEGMENT.speed >> 2) +2)) & 0xFFFF;
   counter = counter >> 8;
 
-  //Akemi 
+  //Akemi
   uint8_t akemi[32][32]={
     {0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0},
     {0,0,0,0,0,0,0,0,0,0,0,2,2,3,3,3,3,3,3,2,2,0,0,0,0,0,0,0,0,0,0,0},
@@ -6414,7 +6411,7 @@ uint16_t WS2812FX::mode_2DAkemi(void) {
   for (int y=0; y<SEGMENT.height;y++) for (int x=0; x<SEGMENT.width;x++) {
     CRGB color=BLACK;
     CRGB faceColor = color_wheel(counter);
-    CRGB armsAndLegsColor = SEGCOLOR(1)>0?SEGCOLOR(1):0xFFE0A0; //default warmish white 0xABA8FF; //0xFF52e5;// 
+    CRGB armsAndLegsColor = SEGCOLOR(1)>0?SEGCOLOR(1):0xFFE0A0; //default warmish white 0xABA8FF; //0xFF52e5;//
     CRGB soundColor = ORANGE;
     double lightFactor = 0.15;
     double normalFactor = 0.4;
@@ -6456,7 +6453,7 @@ uint16_t WS2812FX::mode_2DAkemi(void) {
   }
 
   setPixels(leds);
-  
+
   return FRAMETIME;
 } // mode_2DAkemi
 

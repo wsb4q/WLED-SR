@@ -148,7 +148,7 @@ void WS2812FX::service() {
         }
         for (uint8_t c = 0; c < 3; c++) _colors_t[c] = gamma32(_colors_t[c]);
         handle_palette();
-        if (IS_ROTATED && matrixHeight > 1)
+        if (IS_ROTATED2D && matrixHeight > 1)
         {
           SEGMENT.height = SEGMENT.stopX - SEGMENT.startX + 1;
           SEGMENT.width = SEGMENT.stopY - SEGMENT.startY + 1;
@@ -210,7 +210,7 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
 
   if (matrixHeight > 1) //in case of 2D
   {
-    if (!IS_ROTATED) {
+    if (!IS_ROTATED2D) {
       if (!IS_REVERSE && !IS_REVERSE2D) { newX = x; newY = y; } // 000      -       -           -         (rotate 0)
       else if (!IS_REVERSE && IS_REVERSE2D) { newX = x; newY = SEGMENT.height - 1 - y; } // 001      -       -           MirrorY   (rotate 180+MirrorX)
       else if (IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = y; } // 010      -       MirrorX     -         (rotate 0 + MirrorX)

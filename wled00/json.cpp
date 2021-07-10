@@ -93,7 +93,7 @@ void deserializeSegment(JsonObject elem, byte it)
     seg.setOption(SEG_OPTION_REVERSED, elem["rev"] | seg.getOption(SEG_OPTION_REVERSED));
     seg.setOption(SEG_OPTION_REVERSED2D, elem["rev2D"] | seg.getOption(SEG_OPTION_REVERSED2D));
     seg.setOption(SEG_OPTION_MIRROR  , elem[F("mi")]  | seg.getOption(SEG_OPTION_MIRROR  ));
-    seg.setOption(SEG_OPTION_ROTATED, elem[F("rot2D")]  | seg.getOption(SEG_OPTION_ROTATED  ));
+    seg.setOption(SEG_OPTION_ROTATED2D, elem[F("rot2D")]  | seg.getOption(SEG_OPTION_ROTATED2D  ));
 
     //temporary, strip object gets updated via colorUpdated()
     if (id == strip.getMainSegmentId()) {
@@ -355,7 +355,7 @@ void serializeSegment(JsonObject& root, WS2812FX::Segment& seg, byte id, bool fo
 	root["rev"] = seg.getOption(SEG_OPTION_REVERSED);
 	root["rev2D"] = seg.getOption(SEG_OPTION_REVERSED2D);
   root[F("mi")]  = seg.getOption(SEG_OPTION_MIRROR);
-  root[F("rot2D")]  = seg.getOption(SEG_OPTION_ROTATED);
+  root[F("rot2D")]  = seg.getOption(SEG_OPTION_ROTATED2D);
 }
 
 void serializeState(JsonObject root, bool forPreset, bool includeBri, bool segmentBounds)

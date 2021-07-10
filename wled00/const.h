@@ -174,7 +174,7 @@
 #define SEG_OPTION_REVERSED       1
 #define SEG_OPTION_ON             2
 #define SEG_OPTION_MIRROR         3            //Indicates that the effect will be mirrored within the segment
-#define SEG_OPTION_ROTATED        4            //Indicates that the effect will be rotated 90d within the segment
+#define SEG_OPTION_ROTATED2D      4            //Indicates that the effect will be rotated 90d within the segment
 // #define SEG_OPTION_NONUNITY       4            //Indicates that the effect does not use FRAMETIME or needs getPixelColor
 #define SEG_OPTION_FREEZE         5            //Segment contents will not be refreshed
 #define SEG_OPTION_REVERSED2D     6            //ewowi20210705

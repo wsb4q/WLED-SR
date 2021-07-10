@@ -879,7 +879,7 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
 
   //Segment rotation
   pos = req.indexOf(F("ROT="));
-  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_ROTATED, req.charAt(pos+3) != '0');
+  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_ROTATED2D, req.charAt(pos+3) != '0');
 
   //Segment brightness/opacity
   pos = req.indexOf(F("SB="));

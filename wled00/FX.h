@@ -113,7 +113,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  173 //WLEDSR increased from 118
+#define MODE_COUNT  255 // WLEDSR: no need to change this value when effects are added / deleted. First 128 for AC, second for SR
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -248,68 +248,69 @@
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 #define IS_ROTATED2D      ((SEGMENT.options & ROTATED2D     ) == ROTATED2D     )
 
-#define FX_MODE_PIXELS                 118
-#define FX_MODE_PIXELWAVE              119
-#define FX_MODE_JUGGLES                120
-#define FX_MODE_MATRIPIX               121
-#define FX_MODE_GRAVIMETER             122
-#define FX_MODE_PLASMOID               123
-#define FX_MODE_PUDDLES                124
-#define FX_MODE_MIDNOISE               125
-#define FX_MODE_NOISEMETER             126
-#define FX_MODE_FREQWAVE               127
-#define FX_MODE_FREQMATRIX             128
-#define FX_MODE_2DGEQ                  129
-#define FX_MODE_WATERFALL              130
-#define FX_MODE_FREQPIXELS             131
-#define FX_MODE_BINMAP                 132
-#define FX_MODE_NOISEFIRE              133
-#define FX_MODE_PUDDLEPEAK             134
-#define FX_MODE_NOISEMOVE              135
-#define FX_MODE_2DNOISE                136
-#define FX_MODE_PERLINMOVE             137
-#define FX_MODE_RIPPLEPEAK             138
-#define FX_MODE_2DFIRENOISE            139
-#define FX_MODE_2DSQUAREDSWIRL         140
-#define FX_MODE_2DFIRE2012             141
-#define FX_MODE_2DDNA                  142
-#define FX_MODE_2DMATRIX               143
-#define FX_MODE_2DMETABALLS            144
-#define FX_MODE_FREQMAP                145
-#define FX_MODE_GRAVCENTER             146
-#define FX_MODE_GRAVCENTRIC            147
-#define FX_MODE_GRAVFREQ               148
-#define FX_MODE_DJLIGHT                149
-#define FX_MODE_2DFUNKYPLANK           150
-#define FX_MODE_2DCENTERBARS           151
-#define FX_MODE_2DPULSER               152
-#define FX_MODE_BLURZ                  153
-#define FX_MODE_2DGAMEOFLIFE           154
-#define FX_MODE_2DTARTAN               155
-#define FX_MODE_2DPOLARLIGHTS          156
-#define FX_MODE_2DSWIRL                157
-#define FX_MODE_2DLISSAJOUS            158
-#define FX_MODE_2DFRIZZLES             159
-#define FX_MODE_2DPLASMABALL           160
-#define FX_MODE_FLOWSTRIPE             161
-#define FX_MODE_2DHIPHOTIC             162
-#define FX_MODE_2DSINDOTS              163
-#define FX_MODE_2DDNASPIRAL            164
-#define FX_MODE_2DBLACKHOLE            165
-#define FX_MODE_WAVESINS               166
-#define FX_MODE_ROCKTAVES              167
-#define FX_MODE_2DAKEMI                168
+//these id's should never change as they are saved in api commands of presets
+//currently 118 to 127 is reserved for future AC effects (use Reserved keyword in Json)
+//they must match the order of the effects in JSON_mode_names (if unused, use Reserved keyword in Json)
+#define FX_MODE_PIXELS                 128
+#define FX_MODE_PIXELWAVE              129
+#define FX_MODE_JUGGLES                130
+#define FX_MODE_MATRIPIX               131
+#define FX_MODE_GRAVIMETER             132
+#define FX_MODE_PLASMOID               133
+#define FX_MODE_PUDDLES                134
+#define FX_MODE_MIDNOISE               135
+#define FX_MODE_NOISEMETER             136
+#define FX_MODE_FREQWAVE               137
+#define FX_MODE_FREQMATRIX             138
+#define FX_MODE_2DGEQ                  139
+#define FX_MODE_WATERFALL              140
+#define FX_MODE_FREQPIXELS             141
+#define FX_MODE_BINMAP                 142
+#define FX_MODE_NOISEFIRE              143
+#define FX_MODE_PUDDLEPEAK             144
+#define FX_MODE_NOISEMOVE              145
+#define FX_MODE_2DNOISE                146
+#define FX_MODE_PERLINMOVE             147
+#define FX_MODE_RIPPLEPEAK             148
+#define FX_MODE_2DFIRENOISE            149
+#define FX_MODE_2DSQUAREDSWIRL         150
+#define FX_MODE_2DFIRE2012             151
+#define FX_MODE_2DDNA                  152
+#define FX_MODE_2DMATRIX               153
+#define FX_MODE_2DMETABALLS            154
+#define FX_MODE_FREQMAP                155
+#define FX_MODE_GRAVCENTER             156
+#define FX_MODE_GRAVCENTRIC            157
+#define FX_MODE_GRAVFREQ               158
+#define FX_MODE_DJLIGHT                159
+#define FX_MODE_2DFUNKYPLANK           160
+#define FX_MODE_2DCENTERBARS           161
+#define FX_MODE_2DPULSER               162
+#define FX_MODE_BLURZ                  163
+#define FX_MODE_2DDRIFT                 164
+#define FX_MODE_2DWAVERLY               165
+#define FX_MODE_2DSUNRADIATION          166
+#define FX_MODE_2DCOLOREDBURSTS         167
+#define FX_MODE_2DJULIA                 168
+#define FX_MODE_2DPOOLNOISE            169 //reserved in JSON_mode_names
+#define FX_MODE_2DTWISTER              170 //reserved in JSON_mode_names
+#define FX_MODE_2DCAELEMENTATY         171 //reserved in JSON_mode_names
+#define FX_MODE_2DGAMEOFLIFE           172
+#define FX_MODE_2DTARTAN               173
+#define FX_MODE_2DPOLARLIGHTS          174
+#define FX_MODE_2DSWIRL                175
+#define FX_MODE_2DLISSAJOUS            176
+#define FX_MODE_2DFRIZZLES             177
+#define FX_MODE_2DPLASMABALL           178
+#define FX_MODE_FLOWSTRIPE             179
+#define FX_MODE_2DHIPHOTIC             180
+#define FX_MODE_2DSINDOTS              181
+#define FX_MODE_2DDNASPIRAL            182
+#define FX_MODE_2DBLACKHOLE            183
+#define FX_MODE_WAVESINS               184
+#define FX_MODE_ROCKTAVES              185
+#define FX_MODE_2DAKEMI                186
 
-//these where occupying AC slots, now back to SR slots
-#define FX_MODE_2DDRIFT                 169
-#define FX_MODE_2DWAVERLY               170
-#define FX_MODE_2DSUNRADIATION          171
-#define FX_MODE_2DCOLOREDBURSTS         172
-
-//these are inactive at this moment
-// #define FX_MODE_2DJULIA                152
-//#define FX_MODE_2DPOOLNOISE            163
-// #define FX_MODE_2DTWISTER              168
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                       //
@@ -647,8 +648,6 @@ class WS2812FX {
       _mode[FX_MODE_METEOR_SMOOTH]           = &WS2812FX::mode_meteor_smooth;
       _mode[FX_MODE_RAILWAY]                 = &WS2812FX::mode_railway;
       _mode[FX_MODE_RIPPLE]                  = &WS2812FX::mode_ripple;
-      _mode[FX_MODE_TWINKLEFOX]              = &WS2812FX::mode_twinklefox;
-      _mode[FX_MODE_TWINKLECAT]              = &WS2812FX::mode_twinklecat;
       _mode[FX_MODE_HALLOWEEN_EYES]          = &WS2812FX::mode_halloween_eyes;
       _mode[FX_MODE_STATIC_PATTERN]          = &WS2812FX::mode_static_pattern;
       _mode[FX_MODE_TRI_STATIC_PATTERN]      = &WS2812FX::mode_tri_static_pattern;
@@ -686,14 +685,34 @@ class WS2812FX {
       _mode[FX_MODE_TV_SIMULATOR]            = &WS2812FX::mode_tv_simulator;
       _mode[FX_MODE_DYNAMIC_SMOOTH]          = &WS2812FX::mode_dynamic_smooth;
 
+// Technical notes
+// ===============
+// Defines which effects are incuded in the build. Currently only WLEDSR_LARGE used. 
+// It is possible to just comment any effect you don't like, but it is recommended to use the ifdefs.
+// Note that this is the only place to activate or de-activate effects. No need to (un)comment anything else then 
+      // _mode[<Effect>]          = &WS2812FX::mode_<effect>;
+// in this version, commented effects will show in the UI but will not be executed / compiled, 
+// instead of that, the blink effect will be shown. This is done in WS2812FX::service() in fx_fcn.cpp
+// to do: find out if the effect list can only be loaded with effects which are uncommented here.
+// Note: as in this version, numbering is made future prove (e.g. range for AC, range for SR, fixed numbering). 
+//       If you have old presets, they need to be converted to the new numbering. 
+//       Harry Baas made a VB script to convert them.
+// Note: If all SR effects are disabled: 2.5% of 1.310.720 bytes = 32.768 bytes are saved.
+
+#define WLEDSR_SMALL 1
+#define WLEDSR_MEDIUM 1
+#define WLEDSR_LARGE 1
+
+//WLED AC effects disabled by WlEDSR setting
+#ifdef WLEDSR_LARGE
+      _mode[FX_MODE_TWINKLEFOX]              = &WS2812FX::mode_twinklefox;
+      _mode[FX_MODE_TWINKLECAT]              = &WS2812FX::mode_twinklecat;
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    Start of Audio Reactive fork (WLEDSR)                                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
-     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
-     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
-     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
      _mode[FX_MODE_PIXELS]                  = &WS2812FX::mode_pixels;
       _mode[FX_MODE_PIXELWAVE]               = &WS2812FX::mode_pixelwave;
       _mode[FX_MODE_JUGGLES]                 = &WS2812FX::mode_juggles;
@@ -728,11 +747,12 @@ class WS2812FX {
       _mode[FX_MODE_DJLIGHT]                 = &WS2812FX::mode_DJLight;
       _mode[FX_MODE_2DFUNKYPLANK]            = &WS2812FX::mode_2DFunkyPlank;
       _mode[FX_MODE_2DCENTERBARS]            = &WS2812FX::mode_2DCenterBars;
-//      _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
      _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
-
      _mode[FX_MODE_BLURZ]                   = &WS2812FX::mode_blurz;
-     _mode[FX_MODE_2DGAMEOFLIFE]             = &WS2812FX::mode_2Dgameoflife;
+     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
+     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
+     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
+     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
      _mode[FX_MODE_2DTARTAN]                 = &WS2812FX::mode_2Dtartan;
      _mode[FX_MODE_2DPOLARLIGHTS]            = &WS2812FX::mode_2DPolarLights;
      _mode[FX_MODE_2DSWIRL]                  = &WS2812FX::mode_2DSwirl;
@@ -741,25 +761,26 @@ class WS2812FX {
      _mode[FX_MODE_2DPLASMABALL]             = &WS2812FX::mode_2DPlasmaball;
      _mode[FX_MODE_FLOWSTRIPE]               = &WS2812FX::mode_FlowStripe;
      _mode[FX_MODE_2DHIPHOTIC]               = &WS2812FX::mode_2DHiphotic;
-//     _mode[FX_MODE_2DPOOLNOISE]              = &WS2812FX::mode_2DPoolnoise;
      _mode[FX_MODE_2DSINDOTS]                = &WS2812FX::mode_2DSindots;
      _mode[FX_MODE_2DDNASPIRAL]              = &WS2812FX::mode_2DDNASpiral;
      _mode[FX_MODE_2DBLACKHOLE]              = &WS2812FX::mode_2DBlackHole;
      _mode[FX_MODE_WAVESINS]                 = &WS2812FX::mode_wavesins;
      _mode[FX_MODE_ROCKTAVES]                = &WS2812FX::mode_rocktaves;
      _mode[FX_MODE_2DAKEMI]                = &WS2812FX::mode_2DAkemi;
-//     _mode[FX_MODE_2DPULSER]                 = &WS2812FX::mode_2DPulser;
-//     _mode[FX_MODE_2DCOLOREDBURSTS]          = &WS2812FX::mode_2DColoredBursts;
-//     _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwister;
 
-//     _mode[FX_MODE_2DDRIFT]                  = &WS2812FX::mode_2DDrift;
-//     _mode[FX_MODE_2DWAVERLY]                = &WS2812FX::mode_2DWaverly;
-//     _mode[FX_MODE_2DSUNRADIATION]           = &WS2812FX::mode_2DSunradiation;
+#ifdef WLEDSR_LARGE
+    // _mode[FX_MODE_2DPOOLNOISE]              = &WS2812FX::mode_2DPoolnoise; //code not in fx.cpp
+    // _mode[FX_MODE_2DTWISTER]                = &WS2812FX::mode_2DTwiser; //code not in fx.cpp
+    // _mode[FX_MODE_2DCAElementary]                = &WS2812FX::mode_2DCAElementary; //code not in fx.cpp
 
-      matrixWidth = 30;
-      matrixHeight = 1;
-      matrixVerticalPanels = 1;
-      matrixHorizontalPanels = 1;
+     _mode[FX_MODE_2DJULIA]                 = &WS2812FX::mode_2DJulia;
+     _mode[FX_MODE_2DGAMEOFLIFE]             = &WS2812FX::mode_2Dgameoflife;
+#endif
+
+      // matrixWidth = 30;
+      // matrixHeight = 1;
+      // matrixVerticalPanels = 1;
+      // matrixHorizontalPanels = 1;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                       //
@@ -1015,13 +1036,13 @@ class WS2812FX {
       logicalToPhysical(int); // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
 
     uint16_t
-      matrixWidth,
-      matrixHeight;
+      matrixWidth = 30,
+      matrixHeight = 1;
 
     uint8_t
       matrixPanels,
-      matrixHorizontalPanels,
-      matrixVerticalPanels;
+      matrixHorizontalPanels = 1,
+      matrixVerticalPanels = 1;
 
     uint8_t 
       panelFirstLedTopBottom,
@@ -1085,11 +1106,12 @@ class WS2812FX {
       mode_2DSunradiation(void),
       mode_2DWaverly(void),
       mode_2DDrift(void),
-      mode_2DColoredBursts(void);
+      mode_2DColoredBursts(void),
 
-//      mode_2DJulia(void),
-//      mode_2DPoolnoise(void),
-//      mode_2DTwister(void),
+     mode_2DJulia(void);
+    //  mode_2DPoolnoise(void),
+    //  mode_2DTwister(void);
+    // mode_2DCAElementary(void);
 
     uint16_t
       GEQ_base(bool); //private???
@@ -1188,9 +1210,30 @@ class WS2812FX {
 };
 
 //10 names per line
-//WLEDSR: second part
+// WLEDSR: second part
+// Technical notes
+// ===============
+// If an effect name is followed by an @, slider and color control is effective. 
+// See setSliderAndColorControl in index.js for implementation
+// If not effective then:
+//      - For AC effects (id<128) 2 sliders and 3 colors will be shown
+//      - For SR effects (id<128) 5 sliders and 3 colors will be shown
+// If effective (@)
+//      - a ; seperates slider controls (left) from color controls (right)
+//      - if left or right is empty no controls are shown
+//      - a , seperates slider controls (max 5) or color controls (max 3)
+//      - a ! means that the default is used. 
+//             - For sliders: Effect speeds, Effect intensity, Custom 1, Custom 2, Custom 3
+//             - For colors: Fx color, Background color, Custom
+//
+// Note: In this version not all effects have been specified. For the specified effects, not all colors have been
+//       specified. In that case !,!,! means the 3 default color effects are used
+// Note: The @ is currently shown in the effect list UI so it is clear which effects are done (and not done). 
+//       If all are done this will be removed again.
+
 const char JSON_mode_names[] PROGMEM = R"=====([
-"Solid","Blink","Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
+"Solid@;!",
+"Blink@;!","Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
 "Scan","Scan Dual","Fade","Theater","Theater Rainbow","Running","Saw","Twinkle","Dissolve","Dissolve Rnd",
 "Sparkle","Sparkle Dark","Sparkle+","Strobe","Strobe Rainbow","Strobe Mega","Blink Rainbow","Android","Chase","Chase Random",
 "Chase Rainbow","Chase Flash","Chase Flash Rnd","Rainbow Runner","Colorful","Traffic Light","Sweep Random","Running 2","Aurora","Stream",
@@ -1199,17 +1242,72 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Scanner Dual","Stream 2","Oscillate","Pride 2015","Juggle","Palette","Fire 2012","Colorwaves","Bpm","Fill Noise",
 "Noise 1","Noise 2","Noise 3","Noise 4","Colortwinkles","Lake","Meteor","Meteor Smooth","Railway","Ripple",
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
-"Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn","Drip","Plasma","Percent","Ripple Rainbow",
+"Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn",
+"Drip@Gravity,# of drips;!,!",
+"Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
 "Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth"
-,
-"* Pixels","* Pixelwave",
-"* Juggles","* Matripix","* Gravimeter","* Plasmoid","* Puddles","* Midnoise","* Noisemeter","** Freqwave","** Freqmatrix","** 2D GEQ",
-"** Waterfall","** Freqpixels","** Binmap","* Noisefire","* Puddlepeak","** Noisemove","2D Noise","Perlin Move","* Ripple Peak","2D FireNoise",
-"2D Squared Swirl","2D Fire2012","2D DNA","2D Matrix","2D Metaballs","** Freqmap","* Gravcenter","* Gravcentric","** Gravfreq","** DJ Light",
-"** 2D Funky Plank","** 2D CenterBars","2D Pulser","** Blurz","2D Game Of Life","2D Tartan","2D Polar Lights","* 2D Swirl","2D Lissajous","2D Frizzles",
-"2D Plasma Ball","Flow Stripe","2D Hiphotic","2D Sindots","2D DNA Spiral","2D Black Hole","Wavesins","** Rocktaves","** 2D Akemi",
-"2D Drift","* 2D Waverly","2D Sun Radiation","2D Colored Bursts"
+,"Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved",
+
+"* Pixels@Fade rate,# of pixels;!,!,!",
+"* Pixelwave@!,Sensitivity;!,!,!", 
+"* Juggles@!,# of balls;!,!,!",
+"* Matripix@!,Brightness;!,!,!",
+"* Gravimeter@Rate of fall,Sensitivity;!,!,!",
+"* Plasmoid@,# of pixels;!,!,!",
+"* Puddles",
+"* Midnoise@Fade rate,Maximum length;!,!,!",
+"* Noisemeter",
+"** Freqwave",
+"** Freqmatrix",
+"** 2D GEQ@Bar speed,Ripple time,Bands;!,!,Peak Color",
+"** Waterfall",
+"** Freqpixels",
+"** Binmap",
+"* Noisefire",
+"* Puddlepeak@Fade rate,Puddle size,,Select bin,Volume;!,!,!",
+"** Noisemove",
+"2D Noise",
+"Perlin Move@!,# of pixels,fade rate;!,!,!",
+"* Ripple Peak",
+"2D FireNoise",
+"2D Squared Swirl",
+"2D Fire2012",
+"2D DNA",
+"2D Matrix",
+"2D Metaballs",
+"** Freqmap",
+"* Gravcenter@Rate of fall,Sensitivity;!,!,!",
+"* Gravcentric@Rate of fall,Sensitivity;!,!,!",
+"** Gravfreq",
+"** DJ Light",
+"** 2D Funky Plank",
+"** 2D CenterBars@Bar speed,Ripple time,Bands;!,!,Peak Color",
+"2D Pulser",
+"** Blurz",
+"2D Drift",
+"* 2D Waverly@Amplification,Sensitivity;!,!,!",
+"2D Sun Radiation",
+"2D Colored Bursts",
+"2D Julia",
+"Reserved for PoolNoise",
+"Reserved for Twister",
+"Reserved for Elementary",
+"2D Game Of Life@!,Palette toggle;!,!",
+"2D Tartan",
+"2D Polar Lights",
+"* 2D Swirl@!,Sensitivity,Blur;!,!,!",
+"2D Lissajous",
+"2D Frizzles",
+"2D Plasma Ball",
+"Flow Stripe",
+"2D Hiphotic",
+"2D Sindots",
+"2D DNA Spiral",
+"2D Black Hole",
+"Wavesins",
+"** Rocktaves",
+"** 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth"
 ])=====";
 
 //WLEDSR: second part (not SR specific, but in latest SR, not in AC (anymore?))

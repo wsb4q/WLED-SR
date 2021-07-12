@@ -4800,7 +4800,6 @@ uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  ht
 // FFT2 = Location of Y centerpoint
 // FFT3 = Size of the area (small value = smaller area)
 
-/*
 typedef struct Julia {              // We can't use the 'static' keyword for persistent variables, so we have to go the LONG route to support them.
   float xcen;
   float ycen;
@@ -4911,7 +4910,6 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
   return FRAMETIME;
 
 } // mode_2DJulia()
-*/
 
 
 //////////////////////////////
@@ -6253,7 +6251,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
 
   fadeToBlackBy(leds, SEGMENT.speed);
 
-  int NUMB_BANDS = map(SEGMENT.fft3, 0, 255, 1, 16);
+  int NUMB_BANDS = map(SEGMENT.fft1, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);
   int bandInc = 1;
   if(barWidth == 0) {

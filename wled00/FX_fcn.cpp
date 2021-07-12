@@ -148,6 +148,7 @@ void WS2812FX::service() {
         }
         for (uint8_t c = 0; c < 3; c++) _colors_t[c] = gamma32(_colors_t[c]);
         handle_palette();
+        //WLEDSR: swap width and height if rotated
         if (IS_ROTATED2D && matrixHeight > 1)
         {
           SEGMENT.height = SEGMENT.stopX - SEGMENT.startX + 1;
@@ -157,7 +158,10 @@ void WS2812FX::service() {
           SEGMENT.width = SEGMENT.stopX - SEGMENT.startX + 1;
           SEGMENT.height = SEGMENT.stopY - SEGMENT.startY + 1;
         }
-        delay = (this->*_mode[SEGMENT.mode])(); //effect function
+        if (_mode[SEGMENT.mode] != nullptr)
+          delay = (this->*_mode[SEGMENT.mode])(); //effect function
+        else
+          delay = (this->*_mode[FX_MODE_BLINK])(); //WLEDSR: blink if mode has not been activated
         if (SEGMENT.mode != FX_MODE_HALLOWEEN_EYES) SEGENV.call++;
       }
 

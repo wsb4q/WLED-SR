@@ -6323,7 +6323,7 @@ uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Ma
 
 uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adapted by Will Tatam.
 
-  int NUMB_BANDS = map(SEGMENT.fft3, 0, 255, 1, 16);
+  int NUMB_BANDS = map(SEGMENT.fft1, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);
   int bandInc = 1;
   if(barWidth == 0) {

@@ -698,6 +698,7 @@ class WS2812FX {
 //       If you have old presets, they need to be converted to the new numbering. 
 //       Harry Baas made a VB script to convert them.
 // Note: If all SR effects are disabled: 2.5% of 1.310.720 bytes = 32.768 bytes are saved.
+// Note: the order of numbering is based on the order in which effects are added, so newer effects get higher numbers
 
 #define WLEDSR_SMALL 1
 #define WLEDSR_MEDIUM 1
@@ -1219,22 +1220,26 @@ class WS2812FX {
 //      - For AC effects (id<128) 2 sliders and 3 colors will be shown
 //      - For SR effects (id<128) 5 sliders and 3 colors will be shown
 // If effective (@)
-//      - a ; seperates slider controls (left) from color controls (right)
-//      - if left or right is empty no controls are shown
-//      - a , seperates slider controls (max 5) or color controls (max 3)
+//      - a ; seperates slider controls (left) from color controls (middle) and palette control (right)
+//      - if left, middle or right is empty no controls are shown
+//      - a , seperates slider controls (max 5) or color controls (max 3). Palette has only one value
 //      - a ! means that the default is used. 
 //             - For sliders: Effect speeds, Effect intensity, Custom 1, Custom 2, Custom 3
 //             - For colors: Fx color, Background color, Custom
+//             - For palette: prompt Color palette
 //
 // Note: In this version not all effects have been specified. For the specified effects, not all colors have been
-//       specified. In that case !,!,! means the 3 default color effects are used
+//       specified. In that case !,!,! means the 3 default colors are used. For the palette, palette is on is asumed.
 // Note: The @ is currently shown in the effect list UI so it is clear which effects are done (and not done). 
 //       If all are done this will be removed again.
 
 const char JSON_mode_names[] PROGMEM = R"=====([
-"Solid@;!",
-"Blink@;!","Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
-"Scan","Scan Dual","Fade","Theater","Theater Rainbow","Running","Saw","Twinkle","Dissolve","Dissolve Rnd",
+"Solid@;!;",
+"Blink@;!;!",
+"Breathe","Wipe","Wipe Random","Random Colors","Sweep","Dynamic","Colorloop","Rainbow",
+"Scan@!,# of dots;,!,?;!"
+,"Scan Dual@!,# of dots;,!,?;!",
+"Fade","Theater","Theater Rainbow","Running","Saw","Twinkle","Dissolve","Dissolve Rnd",
 "Sparkle","Sparkle Dark","Sparkle+","Strobe","Strobe Rainbow","Strobe Mega","Blink Rainbow","Android","Chase","Chase Random",
 "Chase Rainbow","Chase Flash","Chase Flash Rnd","Rainbow Runner","Colorful","Traffic Light","Sweep Random","Running 2","Aurora","Stream",
 "Scanner","Lighthouse","Fireworks","Rain","Tetrix","Fire Flicker","Gradient","Loading","Police","Police All",
@@ -1243,33 +1248,33 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Noise 1","Noise 2","Noise 3","Noise 4","Colortwinkles","Lake","Meteor","Meteor Smooth","Railway","Ripple",
 "Twinklefox","Twinklecat","Halloween Eyes","Solid Pattern","Solid Pattern Tri","Spots","Spots Fade","Glitter","Candle","Fireworks Starburst",
 "Fireworks 1D","Bouncing Balls","Sinelon","Sinelon Dual","Sinelon Rainbow","Popcorn",
-"Drip@Gravity,# of drips;!,!",
+"Drip@Gravity,# of drips;!,!;!",
 "Plasma","Percent","Ripple Rainbow",
 "Heartbeat","Pacifica","Candle Multi", "Solid Glitter","Sunrise","Phased","Twinkleup","Noise Pal", "Sine","Phased Noise",
 "Flow","Chunchun","Dancing Shadows","Washing Machine","Candy Cane","Blends","TV Simulator","Dynamic Smooth"
 ,"Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved","Reserved",
 
-"* Pixels@Fade rate,# of pixels;!,!,!",
-"* Pixelwave@!,Sensitivity;!,!,!", 
-"* Juggles@!,# of balls;!,!,!",
-"* Matripix@!,Brightness;!,!,!",
-"* Gravimeter@Rate of fall,Sensitivity;!,!,!",
-"* Plasmoid@,# of pixels;!,!,!",
-"* Puddles",
-"* Midnoise@Fade rate,Maximum length;!,!,!",
-"* Noisemeter",
+"* Pixels@Fade rate,# of pixels;!,!,!;!",
+"* Pixelwave@!,Sensitivity;!,!;!", 
+"* Juggles@!,# of balls;!,!,!;!",
+"* Matripix@!,Brightness;!,!,!;!",
+"* Gravimeter@Rate of fall,Sensitivity;!,!,!;!",
+"* Plasmoid@,# of pixels;!,!;!",
+"* Puddles@Fade rate,Puddle size;!,!;!",
+"* Midnoise@Fade rate,Maximum length;!,!,!;!",
+"* Noisemeter@Fade rate,Width;!,!;!",
 "** Freqwave",
 "** Freqmatrix",
-"** 2D GEQ@Bar speed,Ripple time,Bands;!,!,Peak Color",
-"** Waterfall",
+"** 2D GEQ@Bar speed,Ripple time,Bands;!,!,Peak Color;!",
+"** Waterfall@!,Adjust color,,Select bin, Volume (minimum);!,!;!",
 "** Freqpixels",
 "** Binmap",
-"* Noisefire",
-"* Puddlepeak@Fade rate,Puddle size,,Select bin,Volume;!,!,!",
+"* Noisefire@!,!;;",
+"* Puddlepeak@Fade rate,Puddle size,,Select bin,Volume (minimum);!,!;!",
 "** Noisemove",
 "2D Noise",
-"Perlin Move@!,# of pixels,fade rate;!,!,!",
-"* Ripple Peak",
+"Perlin Move@!,# of pixels,fade rate;!,!,!;!",
+"* Ripple Peak@Fade rate,Max # of ripples,,Select bin,Volume (minimum);!,!;!",
 "2D FireNoise",
 "2D Squared Swirl",
 "2D Fire2012",
@@ -1277,26 +1282,26 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Matrix",
 "2D Metaballs",
 "** Freqmap",
-"* Gravcenter@Rate of fall,Sensitivity;!,!,!",
-"* Gravcentric@Rate of fall,Sensitivity;!,!,!",
+"* Gravcenter@Rate of fall,Sensitivity;!,!,!;!",
+"* Gravcentric@Rate of fall,Sensitivity;!,!,!;!",
 "** Gravfreq",
 "** DJ Light",
-"** 2D Funky Plank",
-"** 2D CenterBars@Bar speed,Ripple time,Bands;!,!,Peak Color",
+"** 2D Funky Plank@Scroll speed,,# of bands;;",
+"** 2D CenterBars@Bar speed,Ripple time,# of bands;!,!,Peak Color;!",
 "2D Pulser",
 "** Blurz",
 "2D Drift",
-"* 2D Waverly@Amplification,Sensitivity;!,!,!",
+"* 2D Waverly@Amplification,Sensitivity;!;!",
 "2D Sun Radiation",
 "2D Colored Bursts",
 "2D Julia",
 "Reserved for PoolNoise",
 "Reserved for Twister",
 "Reserved for Elementary",
-"2D Game Of Life@!,Palette toggle;!,!",
+"2D Game Of Life@!,Palette toggle;!,!;!",
 "2D Tartan",
 "2D Polar Lights",
-"* 2D Swirl@!,Sensitivity,Blur;!,!,!",
+"* 2D Swirl@!,Sensitivity,Blur;;!",
 "2D Lissajous",
 "2D Frizzles",
 "2D Plasma Ball",
@@ -1307,7 +1312,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Black Hole",
 "Wavesins",
 "** Rocktaves",
-"** 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth"
+"** 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth;Face palette"
 ])=====";
 
 //WLEDSR: second part (not SR specific, but in latest SR, not in AC (anymore?))

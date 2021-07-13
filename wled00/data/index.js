@@ -603,7 +603,7 @@ function populateEffects(effects)
 
 	effects.unshift({
 		"id": 0,
-		"name": "Solid@;!", //WLEDSR: add slider and color control as removed above
+		"name": "Solid@;!;", //WLEDSR: add slider and color control as removed above
 		"class": "sticky"
 	});
 
@@ -931,10 +931,7 @@ function setSliderAndColorControl(extra, idx) {
 	var extras = (extra == '')?[]:extra.split(";");
 	var slidersOnOff = (extras.length==0 || extras[0] == '')?[]:extras[0].split(",");
 	var colorsOnOff = (extras.length<2 || extras[1] == '')?[]:extras[1].split(",");
-
-	console.log(extras);
-	console.log(slidersOnOff);
-	console.log(colorsOnOff);
+	var paletteOnOff = (extras.length<3 || extras[2] == '')?[]:extras[2].split(",");
 
 	//set html slider items on off
 	for (let i=0; i<5; i++) {
@@ -971,8 +968,10 @@ function setSliderAndColorControl(extra, idx) {
 			if (colorsOnOff.length>i && colorsOnOff[i] != "!") {
 				var abbreviation = colorsOnOff[i].substr(0,2);
 				button.innerHTML = abbreviation;
-				colorOnOffLabel += sep + abbreviation + '=' + colorsOnOff[i];
-				sep = ', ';
+				if (abbreviation != colorsOnOff[i]) {
+					colorOnOffLabel += sep + abbreviation + '=' + colorsOnOff[i];
+					sep = ', ';
+				}
 			}
 			else if (i==0) button.innerHTML = "Fx";
 			else if (i==1) button.innerHTML = "Bg";
@@ -983,6 +982,23 @@ function setSliderAndColorControl(extra, idx) {
 	}
 	var colorOnOffLabelElement = document.getElementById("colorOnOffLabel");
 	colorOnOffLabelElement.innerHTML = colorOnOffLabel;
+
+	var selectPalette = document.getElementById("selectPalette");
+	var paletteLabel = document.getElementById("paletteLabel");
+	// if (not active and for AC speed or intensity and for SR alle sliders) or slider has a value
+	if ((!active) || (paletteOnOff.length>0 && paletteOnOff[0] != "")) {
+		selectPalette.style.display = "block";
+
+		paletteLabel.style.display = "block";
+		if (paletteOnOff.length>0 && paletteOnOff[0] != "!")
+			paletteLabel.innerHTML = paletteOnOff[0];
+		else paletteLabel.innerHTML = "Color palette";
+	}
+	else {
+		// disable label and slider
+		selectPalette.style.display = "none";
+		paletteLabel.style.display = "none";
+	}
 
 	//set top position of the first effect (fx0=solid)
 	var firstEffect = document.getElementById("fx0");

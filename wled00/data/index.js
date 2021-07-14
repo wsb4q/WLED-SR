@@ -511,7 +511,7 @@ function populateSegments(s)
 		if (i == lowestUnused) lowestUnused = i+1;
 		if (i > lSeg) lSeg = i;
 
-		cn += `<div class="seg">
+		cn += `<div title="Fx${inst.fx}: ${inst.start}x${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
 			<label class="check schkl">
 				&nbsp;
 				<input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
@@ -619,7 +619,7 @@ function populateEffects(effects)
 			html += generateListItemHtml(
 				'fx',
 				effects[i].id,
-				effects[i].name.substr(0,posAt+1),
+				effects[i].name.substr(0,posAt),
 				'setX',
 				'',
 				effects[i].class,
@@ -926,21 +926,21 @@ function cmpP(a, b) {
 function setSliderAndColorControl(extra, idx) {
 	var topPosition = 0;
 
-	var active = (extra.substr(0,1) == "@")?true:false;
+	var controlDefined = (extra.substr(0,1) == "@")?true:false;
 	extra = extra.substr(1);
 	var extras = (extra == '')?[]:extra.split(";");
 	var slidersOnOff = (extras.length==0 || extras[0] == '')?[]:extras[0].split(",");
 	var colorsOnOff = (extras.length<2 || extras[1] == '')?[]:extras[1].split(",");
 	var paletteOnOff = (extras.length<3 || extras[2] == '')?[]:extras[2].split(",");
 
-	//set html slider items on off
+	//set html slider items on/off
 	for (let i=0; i<5; i++) {
-		var button = document.getElementById("staytop" + i);
+		var slider = document.getElementById("staytop" + i);
 		var label = document.getElementById("sliderLabel" + i);
-		// if (not active and for AC speed or intensity and for SR alle sliders) or slider has a value
-		if ((!active && i < ((idx<128)?2:5)) || (slidersOnOff.length>i && slidersOnOff[i] != "")) {
-			button.style.display = "block";
-			button.style.top = topPosition + "px";
+		// if (not controlDefined and for AC speed or intensity and for SR alle sliders) or slider has a value
+		if ((!controlDefined && i < ((idx<128)?2:5)) || (slidersOnOff.length>i && slidersOnOff[i] != "")) {
+			slider.style.display = "block";
+			slider.style.top = topPosition + "px";
 			topPosition += 30; //increase top position for the next slider
 
 			label.style.display = "block";
@@ -949,21 +949,22 @@ function setSliderAndColorControl(extra, idx) {
 			else if (i==0) label.innerHTML = "Effect speed";
 			else if (i==1) label.innerHTML = "Effect intensity";
 			else label.innerHTML = "Custom" + (i-1);
+			slider.setAttribute('title',label.innerHTML);
 		}
 		else {
 			// disable label and slider
-			button.style.display = "none";
+			slider.style.display = "none";
 			label.style.display = "none";
 		}
 	}
 
-	//set html color items on off
+	//set html color items on/off
 	var colorOnOffLabel = '';
 	var sep = '';
 	for (let i=0; i<3; i++) {
 		var button = document.getElementById("colorButton" + i);
-		// if no colorsonoff or slider has a value
-		if (!active || (colorsOnOff.length>i && colorsOnOff[i] != "")) {
+		// if no controlDefined or colorsOnOff has a value
+		if (!controlDefined || (colorsOnOff.length>i && colorsOnOff[i] != "")) {
 			button.style.display = "inline";
 			if (colorsOnOff.length>i && colorsOnOff[i] != "!") {
 				var abbreviation = colorsOnOff[i].substr(0,2);
@@ -977,16 +978,21 @@ function setSliderAndColorControl(extra, idx) {
 			else if (i==1) button.innerHTML = "Bg";
 			else button.innerHTML = "Cs";
 		}
+		else if (paletteOnOff.length>0) { // if palette then all buttons should be shown for color 1..3 palettes
+			button.style.display = "inline";
+			button.innerHTML = "" + (i+1);
+		}
 		else
 			button.style.display = "none";
 	}
 	var colorOnOffLabelElement = document.getElementById("colorOnOffLabel");
 	colorOnOffLabelElement.innerHTML = colorOnOffLabel;
 
+	//set html palette on/off
 	var selectPalette = document.getElementById("selectPalette");
 	var paletteLabel = document.getElementById("paletteLabel");
-	// if (not active and for AC speed or intensity and for SR alle sliders) or slider has a value
-	if ((!active) || (paletteOnOff.length>0 && paletteOnOff[0] != "")) {
+	// if not controlDefined or palette has a value
+	if ((!controlDefined) || (paletteOnOff.length>0 && paletteOnOff[0] != "")) {
 		selectPalette.style.display = "block";
 
 		paletteLabel.style.display = "block";
@@ -1179,7 +1185,7 @@ function requestJson(command, rinfo = true, verbose = true) {
 		}
 		else 
 			extra = "";
-		console.log(extra);
+
 		setSliderAndColorControl(extra, selectedFx);
 
 		// Palettes

@@ -592,7 +592,7 @@ function populateSegments(s)
 
 function populateEffects(effects)
 {
-	var html = `<div class="searchbar"><input type="text" class="search" placeholder="Search" oninput="search(this)" />
+	var html = `<div id="effectsearchbar" class="staytop"><input type="text" class="search" placeholder="Search" oninput="search(this)" />
     <i class="icons search-cancel-icon" onclick="cancelSearch(this)">&#xe38f;</i></div>`;
 
 	effects.shift(); //remove solid
@@ -926,6 +926,8 @@ function cmpP(a, b) {
 function setSliderAndColorControl(extra, idx) {
 	var topPosition = 0;
 
+	var pcmode=localStorage.getItem('pcm') == "true";
+
 	var controlDefined = (extra.substr(0,1) == "@")?true:false;
 	extra = extra.substr(1);
 	var extras = (extra == '')?[]:extra.split(";");
@@ -935,20 +937,29 @@ function setSliderAndColorControl(extra, idx) {
 
 	//set html slider items on/off
 	for (let i=0; i<5; i++) {
-		var slider = document.getElementById("staytop" + i);
+		var slider = document.getElementById("slider" + i);
 		var label = document.getElementById("sliderLabel" + i);
 		// if (not controlDefined and for AC speed or intensity and for SR alle sliders) or slider has a value
 		if ((!controlDefined && i < ((idx<128)?2:5)) || (slidersOnOff.length>i && slidersOnOff[i] != "")) {
-			slider.style.display = "block";
-			slider.style.top = topPosition + "px";
-			topPosition += 30; //increase top position for the next slider
-
 			label.style.display = "block";
 			if (slidersOnOff.length>i && slidersOnOff[i] != "!")
 				label.innerHTML = slidersOnOff[i];
 			else if (i==0) label.innerHTML = "Effect speed";
 			else if (i==1) label.innerHTML = "Effect intensity";
 			else label.innerHTML = "Custom" + (i-1);
+			if (pcmode) {
+				label.style.top = topPosition + "px";
+				topPosition += 20; //increase top position for the next control
+				label.style.zIndex = "1"; //need to be above effects when scrolling
+			}
+			else {
+				label.style.top = "auto";
+				label.style.zIndex = "0"; //need to be behind sliders when scrolling
+			}
+
+			slider.style.display = "block";
+			slider.style.top = topPosition + "px";
+			topPosition += 30; //increase top position for the next control
 			slider.setAttribute('title',label.innerHTML);
 		}
 		else {
@@ -958,13 +969,50 @@ function setSliderAndColorControl(extra, idx) {
 		}
 	}
 
+	var modelabel = document.getElementById("modelabel");
+	var effectsearchbar = document.getElementById("effectsearchbar");
+	effectsearchbar.style.width = '230px'; //correct staytop effect to position searchbar right
+	if (pcmode) {
+		modelabel.style.top = topPosition + "px";
+		topPosition += 20; //increase top position for the next control
+		modelabel.style.zIndex = "170"; //correct staytop effect, same as fx list
+
+		effectsearchbar.style.top = topPosition + "px";
+		topPosition += 40; //increase top position for the next control
+		effectsearchbar.style.zIndex = "170"; //correct staytop effect, same as fx list
+	}
+	else {
+		modelabel.style.top = "auto";
+		modelabel.style.zIndex = "0"; //correct staytop effect, behind sliders
+
+		effectsearchbar.style.top = "auto";
+		effectsearchbar.style.zIndex = "0"; //correct staytop effect, behind sliders
+	}
+
+	//set top position of the first effect (fx0=solid)
+	var firstEffect = document.getElementById("fx0");
+	firstEffect.style.top = topPosition + "px";
+
+	//moved from index.css as top of effectlist needs to be set dynamically
+	var style = document.createElement('style');
+	style.innerHTML =
+	'.lstI.selected {'+
+		'background: var(--c-5);'+
+		'top: '+(topPosition+40)+'px;'+
+	  'bottom: -11px;'+
+	'}';
+	// Get the first script tag
+	var ref = document.querySelector('script');
+	// Insert our new styles before the first script tag
+	ref.parentNode.insertBefore(style, ref);
 	//set html color items on/off
+
 	var colorOnOffLabel = '';
 	var sep = '';
 	for (let i=0; i<3; i++) {
 		var button = document.getElementById("colorButton" + i);
 		// if no controlDefined or colorsOnOff has a value
-		if (!controlDefined || (colorsOnOff.length>i && colorsOnOff[i] != "")) {
+		if (colorsOnOff.length>i && colorsOnOff[i] != "") {
 			button.style.display = "inline";
 			if (colorsOnOff.length>i && colorsOnOff[i] != "!") {
 				var abbreviation = colorsOnOff[i].substr(0,2);
@@ -978,7 +1026,7 @@ function setSliderAndColorControl(extra, idx) {
 			else if (i==1) button.innerHTML = "Bg";
 			else button.innerHTML = "Cs";
 		}
-		else if (paletteOnOff.length>0) { // if palette then all buttons should be shown for color 1..3 palettes
+		else if (!controlDefined || paletteOnOff.length>0) { // if no controls or palette then all buttons should be shown for color 1..3 palettes
 			button.style.display = "inline";
 			button.innerHTML = "" + (i+1);
 		}
@@ -1005,23 +1053,6 @@ function setSliderAndColorControl(extra, idx) {
 		selectPalette.style.display = "none";
 		paletteLabel.style.display = "none";
 	}
-
-	//set top position of the first effect (fx0=solid)
-	var firstEffect = document.getElementById("fx0");
-	firstEffect.style.top = topPosition + "px";
-
-	//moved from index.css as top needs to be set dynamically
-	var style = document.createElement('style');
-	style.innerHTML =
-	'.lstI.selected {'+
-		'background: var(--c-5);'+
-		'top: '+(topPosition+40)+'px;'+
-	  'bottom: -11px;'+
-	'}';
-	// Get the first script tag
-	var ref = document.querySelector('script');
-	// Insert our new styles before the first script tag
-	ref.parentNode.insertBefore(style, ref);
 }
 
 var jsonTimeout;
@@ -1166,37 +1197,45 @@ function requestJson(command, rinfo = true, verbose = true) {
 		d.getElementById('sliderFFT3').value = i.f3x;
 
 		// Effects
-		e1.querySelector(`input[name="fx"][value="${i.fx}"]`).checked = true;
+		var fxElement = e1.querySelector(`input[name="fx"][value="${i.fx}"]`);
+		if (fxElement) //WLEDSR: value can be null
+			fxElement.checked = true;
+
 		var selElement = e1.querySelector('.selected');
 		if (selElement) {
 			selElement.classList.remove('selected')
 		}
 		var selectedEffect = e1.querySelector(`.lstI[data-id="${i.fx}"]`);
-		selectedEffect.classList.add('selected');
-		selectedFx = i.fx;
+		if (selectedEffect) {
+			selectedEffect.classList.add('selected');
+			selectedFx = i.fx;
 
-		//WLEDSR: extract the Slider and color control string from the HTML element and set it.
-		var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
-		var posAt = extra.indexOf("@");
-		if (posAt > 0) {
-			var extra = extra.substring(posAt);
-			var posAt = extra.indexOf(')"');
-			var extra = extra.substring(0,posAt-1);
+			//WLEDSR: extract the Slider and color control string from the HTML element and set it.
+			var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
+			var posAt = extra.indexOf("@");
+			if (posAt > 0) {
+				var extra = extra.substring(posAt);
+				var posAt = extra.indexOf(')"');
+				var extra = extra.substring(0,posAt-1);
+			}
+			else 
+				extra = "";
+
+			setSliderAndColorControl(extra, selectedFx);
 		}
-		else 
-			extra = "";
-
-		setSliderAndColorControl(extra, selectedFx);
 
 		// Palettes
-		e2.querySelector(`input[name="palette"][value="${i.pal}"]`).checked = true;
+		palElement = e2.querySelector(`input[name="palette"][value="${i.pal}"]`);
+		if (palElement)
+			palElement.checked = true;
+
 		selElement = e2.querySelector('.selected');
 		if (selElement) {
 			selElement.classList.remove('selected')
 		}
 		e2.querySelector(`.lstI[data-id="${i.pal}"]`).classList.add('selected');
 
-		if (!command) {
+		if (!command && selectedEffect) {
 			selectedEffect.scrollIntoView({
 				behavior: 'smooth',
 				block: 'nearest',
@@ -1930,6 +1969,7 @@ function togglePcMode(fromB = false)
 	sCol('--bh', d.getElementById('bot').clientHeight + "px");
   _C.style.width = (pcMode)?'100%':'400%';
 	lastw = w;
+	requestJson(null); //WLEDSR: to setSliderAncColorControl depending on pcmode
 }
 
 function isObject(item) {

@@ -4181,7 +4181,7 @@ uint16_t WS2812FX::mode_perlinmove(void) {
   for (int i=0; i<SEGMENT.intensity/16+1; i++) {
     uint16_t locn = inoise16(millis()*128/(260-SEGMENT.speed)+i*15000, millis()*128/(260-SEGMENT.speed));   // Get a new pixel location from moving noise.
     uint16_t pixloc = map(locn,50*256,192*256,0,SEGLEN)%(SEGLEN);                       // Map that to the length of the strand, and ensure we don't go over.
-    setPixelColor(pixloc, color_blend(SEGCOLOR(1), color_from_palette(pixloc%255, false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(pixloc, color_from_palette(pixloc%255, false, PALETTE_SOLID_WRAP, 0));
   }
 
   return FRAMETIME;
@@ -4897,7 +4897,7 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
         setPixelColor(XY(i,j),0);
       } else {
 //        leds[XY(i,j)] = CHSV(iter*255/maxIterations,255,255);   // Near the edge of the set.
-        setPixelColor(XY(i,j), color_blend(SEGCOLOR(1), color_from_palette(iter*255/maxIterations, false, PALETTE_SOLID_WRAP, 0), 255));
+        setPixelColor(XY(i,j), color_from_palette(iter*255/maxIterations, false, PALETTE_SOLID_WRAP, 0));
       }
       x += dx;
     }
@@ -5403,8 +5403,8 @@ uint16_t WS2812FX::mode_gravcenter(void) {                // Gravcenter. By Andr
     gravcen->topLED--;
 
   if (gravcen->topLED >= 0) {
-    setPixelColor(gravcen->topLED+SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
-    setPixelColor(SEGLEN/2-1-gravcen->topLED, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(gravcen->topLED+SEGLEN/2, color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0));
+    setPixelColor(SEGLEN/2-1-gravcen->topLED, color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0));
   }
   gravcen->gravityCounter = (gravcen->gravityCounter + 1) % gravity;
 
@@ -5432,8 +5432,8 @@ uint16_t WS2812FX::mode_gravcentric(void) {                     // Gravcentric. 
 
   for (int i=0; i<tempsamp; i++) {
     uint8_t index = segmentSampleAvg*24+millis()/200;
-    setPixelColor(i+SEGLEN/2, color_blend(SEGCOLOR(0), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
-    setPixelColor(SEGLEN/2-1-i, color_blend(SEGCOLOR(0), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(i+SEGLEN/2, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
+    setPixelColor(SEGLEN/2-1-i, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
   }
 
   if (tempsamp >= gravcen->topLED)
@@ -5479,7 +5479,7 @@ uint16_t WS2812FX::mode_gravimeter(void) {                // Gravmeter. By Andre
     gravcen->topLED--;
 
   if (gravcen->topLED > 0) {
-    setPixelColor(gravcen->topLED, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(gravcen->topLED, color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0));
   }
   gravcen->gravityCounter = (gravcen->gravityCounter + 1) % gravity;
 
@@ -5542,7 +5542,7 @@ uint16_t WS2812FX::mode_midnoise(void) {                  // Midnoise. By Andrew
 
   for (int i=(SEGLEN/2-maxLen); i<(SEGLEN/2+maxLen); i++) {
     uint8_t index = inoise8(i*tmpSound+SEGENV.aux0, SEGENV.aux1+i*tmpSound);  // Get a value from the noise function. I'm using both x and y axis.
-    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(i, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
   }
 
   SEGENV.aux0=SEGENV.aux0+beatsin8(5,0,10);
@@ -5597,7 +5597,7 @@ uint16_t WS2812FX::mode_noisemeter(void) {                // Noisemeter. By Andr
 
   for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
     uint8_t index = inoise8(i*sampleAvg+SEGENV.aux0, SEGENV.aux1+i*sampleAvg);  // Get a value from the noise function. I'm using both x and y axis.
-    setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(i, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
   }
 
   SEGENV.aux0+=beatsin8(5,0,10);
@@ -5713,8 +5713,7 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                // Puddlepeak. By Andr
   }
 
   for(int i=0; i<size; i++) {                             // Flash the LED's.
-    setPixelColor(pos+i, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
-
+    setPixelColor(pos+i, color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0));
   }
 
   return FRAMETIME;
@@ -5739,7 +5738,7 @@ uint16_t WS2812FX::mode_puddles(void) {                   // Puddles. By Andrew 
   }
 
   for(int i=0; i<size; i++) {                             // Flash the LED's.
-    setPixelColor(pos+i, color_blend(SEGCOLOR(1), color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(pos+i, color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0));
   }
 
   return FRAMETIME;
@@ -6129,8 +6128,8 @@ uint16_t WS2812FX::mode_gravfreq(void) {                  // Gravfreq. By Andrew
 
     uint8_t index = (log10((int)FFT_MajorPeak) - (3.71-1.78)) * 255;
 
-    setPixelColor(i+SEGLEN/2, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
-    setPixelColor(SEGLEN/2-i-1, color_blend(SEGCOLOR(1), color_from_palette(index, false, PALETTE_SOLID_WRAP, 0), 255));
+    setPixelColor(i+SEGLEN/2, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
+    setPixelColor(SEGLEN/2-i-1, color_from_palette(index, false, PALETTE_SOLID_WRAP, 0));
   }
 
   if (tempsamp >= gravcen->topLED)
@@ -6260,7 +6259,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
     bandInc = (NUMB_BANDS / SEGMENT.width);
   }
   bool rippleTime;
-  if (millis() - SEGENV.step >= SEGMENT.intensity)
+  if (millis() - SEGENV.step >= 255 - SEGMENT.intensity)
   {
     SEGENV.step = millis();
     rippleTime = true;
@@ -6284,11 +6283,11 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
 
         //bar
         if (y>=yStartBar && y<yStartBar + barHeight)
-          color = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
+          color = color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0);
 
         //low and high peak (must exist && on peak position && only below if centered effect)
-        if ((previousBarHeight[band] > 0) && (SEGMENT.intensity > 0) && (y==yStartPeak || y==yStartPeak + previousBarHeight[band]-1) && (centered || y!=yStartPeak))
-          color = color_blend(SEGCOLOR(1), SEGCOLOR(2)==CRGB::Black?color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0):SEGCOLOR(2), 255); //low peak
+        if ((previousBarHeight[band] > 0) && (SEGMENT.intensity < 255) && (y==yStartPeak || y==yStartPeak + previousBarHeight[band]-1) && (centered || y!=yStartPeak))
+          color = SEGCOLOR(2)==CRGB::Black?color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0):SEGCOLOR(2); //low peak
 
         leds[XY(x, SEGMENT.height - 1 - y)] = color;
       }
@@ -6441,7 +6440,7 @@ uint16_t WS2812FX::mode_2DAkemi(void) {
   {
     int band = x*SEGMENT.width/8;
     int barHeight = map(fftResult[band], 0, 255, 0, 17*SEGMENT.height/32);
-    CRGB color = color_blend(SEGCOLOR(1), color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0), 255);
+    CRGB color = color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0);
 
     for (int y=0;y<barHeight;y++)
     {

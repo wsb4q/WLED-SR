@@ -120,8 +120,8 @@
 	</div>
 
   <div id="Effects" class="tabcontent">
-    <p id="sliderLabel0" class="labels">Effect speed</p>
-    <div class="staytop" id="staytop0">
+    <p id="sliderLabel0" class="staytop">Effect speed</p>
+    <div class="staytop" id="slider0">
       <i class="icons slider-icon">&#xe325;</i>
       <div class="sliderwrap il">
 				<input id="sliderSpeed" class="noslide" onchange="setSpeed()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
@@ -129,8 +129,8 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p id="sliderLabel1" class="labels">Effect intensity</p>
-    <div class="staytop" id="staytop1">
+    <p id="sliderLabel1" class="staytop">Effect intensity</p>
+    <div class="staytop" id="slider1">
       <i class="icons slider-icon" onclick="tglLabels()">&#xe409;</i>
       <div class="sliderwrap il">
 				<input id="sliderIntensity" class="noslide" onchange="setIntensity()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
@@ -138,8 +138,8 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p id="sliderLabel2" class="labels">Custom 1</p>
-    <div class="staytop" id="staytop2">
+    <p id="sliderLabel2" class="staytop">Custom 1</p>
+    <div class="staytop" id="slider2">
       <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT1" class="noslide" onchange="setFFT1()" oninput="updateTrail(this)" max="255" min="0" type="range" value="6" />
@@ -147,8 +147,8 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p id="sliderLabel3" class="labels">Custom 2</p>
-    <div class="staytop" id="staytop3">
+    <p id="sliderLabel3" class="staytop">Custom 2</p>
+    <div class="staytop" id="slider3">
       <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT2" class="noslide" onchange="setFFT2()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
@@ -156,8 +156,8 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p id="sliderLabel4" class="labels">Custom 3</p>
-    <div class="staytop" id="staytop4">
+    <p id="sliderLabel4" class="staytop">Custom 3</p>
+    <div class="staytop" id="slider4">
       <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT3" class="noslide" onchange="setFFT3()" oninput="updateTrail(this)" max="255" min="0" type="range" value="252" />
@@ -165,7 +165,7 @@
         <div class="sliderdisplay"></div>
 			</div>
 		</div>
-		<p class="labels">Effect mode</p>
+		<p id="modelabel" class="staytop">Effect mode</p>
 		<div id="fxlist" class="list">
 			Loading...
 		</div>

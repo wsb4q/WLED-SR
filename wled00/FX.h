@@ -1217,8 +1217,8 @@ class WS2812FX {
 // If an effect name is followed by an @, slider and color control is effective. 
 // See setSliderAndColorControl in index.js for implementation
 // If not effective then:
-//      - For AC effects (id<128) 2 sliders and 3 colors will be shown
-//      - For SR effects (id<128) 5 sliders and 3 colors will be shown
+//      - For AC effects (id<128) 2 sliders and 3 colors and the palette will be shown
+//      - For SR effects (id<128) 5 sliders and 3 colors and the palette will be shown
 // If effective (@)
 //      - a ; seperates slider controls (left) from color controls (middle) and palette control (right)
 //      - if left, middle or right is empty no controls are shown
@@ -1228,15 +1228,17 @@ class WS2812FX {
 //             - For colors: Fx color, Background color, Custom
 //             - For palette: prompt Color palette
 //
-// Note: In this version not all effects have been specified. For the specified effects, not all colors have been
-//       specified. In that case !,!,! means the 3 default colors are used. For the palette, palette is on is asumed.
-// Note: The @ is currently shown in the effect list UI so it is clear which effects are done (and not done). 
-//       If all are done this will be removed again.
+// Note: In this version only SR-effects have been specified. 
+// Note: If palette is on and no colors are specified 1,2 and 3 is shown in each color circle. 
+//       If a color is specified, the 1,2 or 3 is replaced by that specification.
+// Note: Effects can override default pattern behaviour
+//       - FadeToBlack can override the background setting
+//       - Defining SEGCOL(<i>) can override a specific palette using these values (e.g. Color Gradient)
 
 const char JSON_mode_names[] PROGMEM = R"=====([
 "Solid@;!;",
 "Blink@;!;!",
-"Breathe~@Speed;,!;!",
+"Breathe@Speed;,!;!",
 "Wipe",
 "Wipe Random",
 "Random Colors",
@@ -1373,7 +1375,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "* Noisemeter@Fade rate,Width;!,!;!",
 "** Freqwave@Time delay,Sound effect,Low bin,High bin,Pre-amp;;",
 "** Freqmatrix@Time delay,Sound effect,Low bin,High bin,Sensivity;;",
-"** 2D GEQ@Bar speed,Ripple time,Bands;,,Peak Color;!",
+"** 2D GEQ@Bar speed,Ripple decay,Bands;,,Peak Color;!",
 "** Waterfall@!,Adjust color,,Select bin, Volume (minimum);!,!;!",
 "** Freqpixels@Fade rate,Starting colour and # of pixels;;",
 "** Binmap@;!,!;!",
@@ -1383,42 +1385,42 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Noise@Speed,Scale;;!",
 "Perlin Move@!,# of pixels,fade rate;,!;!",
 "* Ripple Peak@Fade rate,Max # of ripples,,Select bin,Volume (minimum);!,!;!",
-"2D FireNoise~@X scale,Y scale;;",
-"2D Squared Swirl~@,,,,Blur;,,;!",
-"2D Fire2012~@Speed;;",
-"2D DNA~@Scroll speed,Blur;;!",
-"2D Matrix~@Falling speed,Spawning rate;;",
-"2D Metaballs~@;;",
+"2D FireNoise@X scale,Y scale;;",
+"2D Squared Swirl@,,,,Blur;,,;!",
+"2D Fire2012@Speed;;",
+"2D DNA@Scroll speed,Blur;;!",
+"2D Matrix@Falling speed,Spawning rate;;",
+"2D Metaballs@;;",
 "** Freqmap@Fade rate,Starting color;,!;!",
 "* Gravcenter@Rate of fall,Sensitivity;,!;!",
 "* Gravcentric@Rate of fall,Sensitivity;!;!",
 "** Gravfreq@Rate of fall,Sensivity;,!;!",
 "** DJ Light@Speed;;",
 "** 2D Funky Plank@Scroll speed,,# of bands;;",
-"** 2D CenterBars@Bar speed,Ripple time,# of bands;,,Peak Color;!",
-"2D Pulser~@Speed,Blur;;!",
-"** Blurz@Fade rate,Blur amount;!,!;!",
-"2D Drift~@Rotation speed,Blur amount;;!",
+"** 2D CenterBars@Bar speed,Ripple decay,# of bands;,,Peak Color;!",
+"2D Pulser@Speed,Blur;;!",
+"** Blurz@Fade rate,Blur amount;,Color mix;!",
+"2D Drift@Rotation speed,Blur amount;;!",
 "* 2D Waverly@Amplification,Sensitivity;;!",
-"2D Sun Radiation~@Variance,Brightness;;",
-"2D Colored Bursts~@Speed,Number of lines;;!",
-"2D Julia",
+"2D Sun Radiation@Variance,Brightness;;",
+"2D Colored Bursts@Speed,Number of lines;;!",
+"2D Julia@,Max iterations per pixel,X center,Y center,Area size;;!",
 "Reserved for PoolNoise",
 "Reserved for Twister",
 "Reserved for Elementary",
 "2D Game Of Life@!,Palette toggle;!,!;!",
 "2D Tartan@X scale,Y scale;;!",
-"2D Polar Lights~@Speed,X scale,Palette;;",
-"* 2D Swirl@!,Sensitivity,Blur;;!",
-"2D Lissajous~@X frequency,Fadetime;;!",
-"2D Frizzles~@X frequency,Y frequency;;!",
-"2D Plasma Ball~@Speed;;!",
-"Flow Stripe~@Hue speed,Effect speed;;",
-"2D Hiphotic~@X scale,Y scale;;!",
-"2D Sindots~@Speed,Dot distance;;!",
-"2D DNA Spiral~@Speed,Frequency;;!",
+"2D Polar Lights@Speed,X scale,Palette;;",
+"* 2D Swirl@!,Sensitivity,Blur;,Bg Swirl;!",
+"2D Lissajous@X frequency,Fadetime;;!",
+"2D Frizzles@X frequency,Y frequency;;!",
+"2D Plasma Ball@Speed;;!",
+"Flow Stripe@Hue speed,Effect speed;;",
+"2D Hiphotic@X scale,Y scale;;!",
+"2D Sindots@Speed,Dot distance;;!",
+"2D DNA Spiral@Speed,Frequency;;!",
 "2D Black Hole@Outer X frequency,Inner X frequency,Inner Y frequency;;",
-"Wavesins~@Speed,Brightness variation,Starting Color,Range of Colors,Color variation;;!",
+"Wavesins@Speed,Brightness variation,Starting Color,Range of Colors,Color variation;;!",
 "** Rocktaves@;,!;!",
 "** 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth;Face palette"
 ])=====";

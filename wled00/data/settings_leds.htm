@@ -324,14 +324,35 @@ Reverse (rotated 180°): <input type="checkbox" name="CV${i}">
     <i>Recommended power supply for brightest white:</i><br>
     <b><span id="psu">?</span></b><br>
     <span id="psu2"><br></span>
-    <!-- 2D Matrix Settings -->
+    <!-- 2D Matrix Settings - BROKEN BY MULTI-PIN -->
     <h3>2D Matrix</h3>
-    <input name="MXW" type="number" min="1" max="1500" oninput="UI()"> x
-    <input name="MXH" type="number" min="1" max="1500" oninput="UI()"><br>
+    Width <input name="MXW" type="number" min="1" max="1500" oninput="UI()"> x
+    Height <input name="MXH" type="number" min="1" max="1500" oninput="UI()"><br>
     <div id="2dwarning" style="color: orange; display: inline;">
       &#9888; width x height should match LED count!<br>
     </div>
-  Serpentine: <input type="checkbox" name="MXWHS" checked> (how leds are laid out)<br>
+    <h3>2D Panels</h3>
+    <i>A matrix is made of 1 or more identical physical led panels</i><br>
+    Multiple panels: <input type="checkbox" id="mxp" name="MXP" onclick="Ps()"><br>
+    <div id="mphv">Horizontal panels: <input name="MPH" type="number" min="1" max="8" oninput="UI()">
+    Vertical panels: <input name="MPV" type="number" min="1" max="8" oninput="UI()"><br></div>
+    <h3>2D Panel layout</h3>
+    <!-- <a href="https://github.com/atuline/WLED/wiki/2D-Functionality">See SR GITHUB Wiki for layout options.</a><br> -->
+    First led position: <select name="PFLTB">
+      <option value="0" selected>Top</option>
+      <option value="1">Bottom</option>
+    </select>
+    <select name="PFLLR">
+      <option value="0" selected>Left</option>
+      <option value="1">Right</option>
+    </select><br>
+    Orientation: <select name="POHV">
+      <option value="0" selected>Horizontal</option>
+      <option value="1">Vertical</option>
+    </select><br>
+    Serpentine: <input type="checkbox" name="PNLS" checked><br>
+    Transpose: <input type="checkbox" name="PNLT" checked><br>
+    <br>
     <br>
     Enable automatic brightness limiter: <input type="checkbox" name="ABen" onchange="enABL()" id="able"><br>
     <div id="abl">

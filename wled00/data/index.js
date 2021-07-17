@@ -536,7 +536,7 @@ function populateSegments(s)
 		if (i == lowestUnused) lowestUnused = i+1;
 		if (i > lSeg) lSeg = i;
 
-		cn += `<div class="seg">
+		cn += `<div title="Fx${inst.fx}: ${inst.start}x${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
 			<label class="check schkl">
 				&nbsp;
 				<input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
@@ -581,13 +581,23 @@ function populateSegments(s)
 				<div class="h" id="seg${i}len"></div>
 				<button class="btn btn-i btn-xs del" id="segd${i}" onclick="delSeg(${i})"><i class="icons btn-icon">&#xe037;</i></button>
 				<label class="check revchkl">
-					Reverse direction
+					Mirror effect
+					<input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+					<span class="checkmark schk"></span>
+				</label>
+				<label class="check revchkl">
+					Reverse direction X
 					<input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
 					<span class="checkmark schk"></span>
 				</label>
 				<label class="check revchkl">
-					Mirror effect
-					<input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+					Reverse direction Y
+					<input type="checkbox" id="seg${i}rev2D" onchange="setrev2D(${i})" ${inst.rev2D ? "checked":""}>
+					<span class="checkmark schk"></span>
+				</label>
+				<label class="check revchkl">
+					Rotation
+					<input type="checkbox" id="seg${i}rot2D" onchange="setRot2D(${i})" ${inst.rot2D ? "checked":""}>
 					<span class="checkmark schk"></span>
 				</label>
 			</div>
@@ -612,7 +622,7 @@ function populateSegments(s)
 
 function populateEffects(effects)
 {
-	var html = `<div class="searchbar"><input type="text" class="search" placeholder="Search" oninput="search(this)" />
+	var html = `<div id="effectsearchbar" class="staytop"><input type="text" class="search" placeholder="Search" oninput="search(this)" />
     <i class="icons search-cancel-icon" onclick="cancelSearch(this)">&#xe38f;</i></div>`;
 
 	effects.shift(); //remove solid
@@ -623,19 +633,29 @@ function populateEffects(effects)
 
 	effects.unshift({
 		"id": 0,
-		"name": "Solid",
+		"name": "Solid@;!;", //WLEDSR: add slider and color control as removed above
 		"class": "sticky"
 	});
 
 	for (let i = 0; i < effects.length; i++) {
-		html += generateListItemHtml(
-			'fx',
-			effects[i].id,
-			effects[i].name,
-			'setX',
-			'',
-			effects[i].class,
-		);
+		//WLEDSR: add slider and color control to setX (used by requestjson)
+		if (effects[i].name.indexOf("Reserved") < 0) {
+			var posAt = effects[i].name.indexOf("@");
+			var extra = '';
+			if (posAt > 0)
+				extra = effects[i].name.substr(posAt);
+			else
+				posAt = 999;
+			html += generateListItemHtml(
+				'fx',
+				effects[i].id,
+				effects[i].name.substr(0,posAt),
+				'setX',
+				'',
+				effects[i].class,
+				extra
+			);
+		}
 	}
 
 	fxlist.innerHTML=html;
@@ -669,6 +689,7 @@ function populatePalettes(palettes)
             'setPalette',
 			`<div class="lstIprev" style="${previewCss}"></div>`,
 			palettes[i].class,
+			''
         );
 	}
 
@@ -741,9 +762,10 @@ function genPalPrevCss(id)
 	return `background: linear-gradient(to right,${gradient.join()});`;
 }
 
-function generateListItemHtml(listName, id, name, clickAction, extraHtml = '', extraClass = '')
+//WLEDSR: add extraPar for slider and color control
+function generateListItemHtml(listName, id, name, clickAction, extraHtml = '', extraClass = '', extraPar = '')
 {
-    return `<div class="lstI btn fxbtn ${extraClass}" data-id="${id}" onClick="${clickAction}(${id})">
+    return `<div id="${listName}${id}" class="lstI btn fxbtn ${extraClass}" data-id="${id}" onClick="${clickAction}(${id}, '${extraPar}')">
 			<label class="radio fxchkl">
 				<input type="radio" value="${id}" name="${listName}">
 				<span class="radiomark"></span>
@@ -999,7 +1021,7 @@ function readState(s,command=false) {
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
-  if (selFx) selFx.checked = true;
+  if (selFx) selFx.checked = true; //WLEDSR: value can be null
   else location.reload(); //effect list is gone (e.g. if restoring tab). Reload.
 
   var selElement = fxlist.querySelector('.selected');
@@ -1007,8 +1029,23 @@ function readState(s,command=false) {
     selElement.classList.remove('selected')
   }
   var selectedEffect = fxlist.querySelector(`.lstI[data-id="${i.fx}"]`);
-  selectedEffect.classList.add('selected');
-  selectedFx = i.fx;
+	if (selectedEffect) {
+    selectedEffect.classList.add('selected');
+    selectedFx = i.fx;
+
+		//WLEDSR: extract the Slider and color control string from the HTML element and set it.
+		var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
+		var posAt = extra.indexOf("@");
+		if (posAt > 0) {
+			var extra = extra.substring(posAt);
+			var posAt = extra.indexOf(')"');
+			var extra = extra.substring(0,posAt-1);
+		}
+		else
+			extra = "";
+
+		setSliderAndColorControl(extra, selectedFx);
+	}
 
   // Palettes
   pallist.querySelector(`input[name="palette"][value="${i.pal}"]`).checked = true;
@@ -1044,6 +1081,138 @@ function readState(s,command=false) {
     showToast('Error ' + s.error + ": " + errstr, true);
   }
   updateUI();
+
+//WLEDSR: control HTML elements for Slider and Color Control
+function setSliderAndColorControl(extra, idx) {
+	var topPosition = 0;
+
+	var pcmode=localStorage.getItem('pcm') == "true";
+
+	var controlDefined = (extra.substr(0,1) == "@")?true:false;
+	extra = extra.substr(1);
+	var extras = (extra == '')?[]:extra.split(";");
+	var slidersOnOff = (extras.length==0 || extras[0] == '')?[]:extras[0].split(",");
+	var colorsOnOff = (extras.length<2 || extras[1] == '')?[]:extras[1].split(",");
+	var paletteOnOff = (extras.length<3 || extras[2] == '')?[]:extras[2].split(",");
+
+	//set html slider items on/off
+	for (let i=0; i<5; i++) {
+		var slider = document.getElementById("slider" + i);
+		var label = document.getElementById("sliderLabel" + i);
+		// if (not controlDefined and for AC speed or intensity and for SR alle sliders) or slider has a value
+		if ((!controlDefined && i < ((idx<128)?2:5)) || (slidersOnOff.length>i && slidersOnOff[i] != "")) {
+			label.style.display = "block";
+			if (slidersOnOff.length>i && slidersOnOff[i] != "!")
+				label.innerHTML = slidersOnOff[i];
+			else if (i==0) label.innerHTML = "Effect speed";
+			else if (i==1) label.innerHTML = "Effect intensity";
+			else label.innerHTML = "Custom" + (i-1);
+			if (pcmode) {
+				label.style.top = topPosition + "px";
+				topPosition += 20; //increase top position for the next control
+				label.style.zIndex = "1"; //need to be above effects when scrolling
+			}
+			else {
+				label.style.top = "auto";
+				label.style.zIndex = "0"; //need to be behind sliders when scrolling
+			}
+
+			slider.style.display = "block";
+			slider.style.top = topPosition + "px";
+			topPosition += 30; //increase top position for the next control
+			slider.setAttribute('title',label.innerHTML);
+		}
+		else {
+			// disable label and slider
+			slider.style.display = "none";
+			label.style.display = "none";
+		}
+	}
+
+	var modelabel = document.getElementById("modelabel");
+	var effectsearchbar = document.getElementById("effectsearchbar");
+	effectsearchbar.style.width = '230px'; //correct staytop effect to position searchbar right
+	if (pcmode) {
+		modelabel.style.top = topPosition + "px";
+		topPosition += 20; //increase top position for the next control
+		modelabel.style.zIndex = "170"; //correct staytop effect, same as fx list
+
+		effectsearchbar.style.top = topPosition + "px";
+		topPosition += 40; //increase top position for the next control
+		effectsearchbar.style.zIndex = "170"; //correct staytop effect, same as fx list
+	}
+	else {
+		modelabel.style.top = "auto";
+		modelabel.style.zIndex = "0"; //correct staytop effect, behind sliders
+
+		effectsearchbar.style.top = "auto";
+		effectsearchbar.style.zIndex = "0"; //correct staytop effect, behind sliders
+	}
+
+	//set top position of the first effect (fx0=solid)
+	var firstEffect = document.getElementById("fx0");
+	firstEffect.style.top = topPosition + "px";
+
+	//moved from index.css as top of effectlist needs to be set dynamically
+	var style = document.createElement('style');
+	style.innerHTML =
+	'.lstI.selected {'+
+		'background: var(--c-5);'+
+		'top: '+(topPosition+40)+'px;'+
+	  'bottom: -11px;'+
+	'}';
+	// Get the first script tag
+	var ref = document.querySelector('script');
+	// Insert our new styles before the first script tag
+	ref.parentNode.insertBefore(style, ref);
+	//set html color items on/off
+
+	var colorOnOffLabel = '';
+	var sep = '';
+	for (let i=0; i<3; i++) {
+		var button = document.getElementById("colorButton" + i);
+		// if no controlDefined or colorsOnOff has a value
+		if (colorsOnOff.length>i && colorsOnOff[i] != "") {
+			button.style.display = "inline";
+			if (colorsOnOff.length>i && colorsOnOff[i] != "!") {
+				var abbreviation = colorsOnOff[i].substr(0,2);
+				button.innerHTML = abbreviation;
+				if (abbreviation != colorsOnOff[i]) {
+					colorOnOffLabel += sep + abbreviation + '=' + colorsOnOff[i];
+					sep = ', ';
+				}
+			}
+			else if (i==0) button.innerHTML = "Fx";
+			else if (i==1) button.innerHTML = "Bg";
+			else button.innerHTML = "Cs";
+		}
+		else if (!controlDefined || paletteOnOff.length>0) { // if no controls or palette then all buttons should be shown for color 1..3 palettes
+			button.style.display = "inline";
+			button.innerHTML = "" + (i+1);
+		}
+		else
+			button.style.display = "none";
+	}
+	var colorOnOffLabelElement = document.getElementById("colorOnOffLabel");
+	colorOnOffLabelElement.innerHTML = colorOnOffLabel;
+
+	//set html palette on/off
+	var selectPalette = document.getElementById("selectPalette");
+	var paletteLabel = document.getElementById("paletteLabel");
+	// if not controlDefined or palette has a value
+	if ((!controlDefined) || (paletteOnOff.length>0 && paletteOnOff[0] != "")) {
+		selectPalette.style.display = "block";
+
+		paletteLabel.style.display = "block";
+		if (paletteOnOff.length>0 && paletteOnOff[0] != "!")
+			paletteLabel.innerHTML = paletteOnOff[0];
+		else paletteLabel.innerHTML = "Color palette";
+	}
+	else {
+		// disable label and slider
+		selectPalette.style.display = "none";
+		paletteLabel.style.display = "none";
+	}
 }
 
 var jsonTimeout;
@@ -1122,7 +1291,7 @@ function requestJson(command, rinfo = true) {
 						});
 					});
 				},25);
-				
+
         reqsLegal = true;
 			}
 
@@ -1503,9 +1672,21 @@ function setRev(s){
 	requestJson(obj, false);
 }
 
+function setrev2D(s){
+	var rev2D = d.getElementById(`seg${s}rev2D`).checked;
+	var obj = {"seg": {"id": s, "rev2D": rev2D}};
+	requestJson(obj, false);
+}
+
 function setMi(s){
 	var mi = d.getElementById(`seg${s}mi`).checked;
 	var obj = {"seg": {"id": s, "mi": mi}};
+	requestJson(obj, false);
+}
+
+function setRot2D(s){
+	var rot2D = d.getElementById(`seg${s}rot2D`).checked;
+	var obj = {"seg": {"id": s, "rot2D": rot2D}};
 	requestJson(obj, false);
 }
 
@@ -1519,7 +1700,8 @@ function setSegBri(s){
 	requestJson(obj);
 }
 
-function setX(ind = null) {
+//WLEDSR: add extra parameter for slider and color control
+function setX(ind = null, extra) {
 	if (ind === null) {
 		ind = parseInt(d.querySelector('#fxlist input[name="fx"]:checked').value);
 	} else {
@@ -1535,7 +1717,8 @@ function setX(ind = null) {
 	requestJson(obj);
 }
 
-function setPalette(paletteId = null)
+//WLEDSR: parameter extra added, used by generateListItemHtml (for setX)
+function setPalette(paletteId = null, extra)
 {
 	if (paletteId === null) {
 		paletteId = parseInt(d.querySelector('#pallist input[name="palette"]:checked').value);
@@ -2055,6 +2238,7 @@ function togglePcMode(fromB = false)
 	sCol('--bh', d.getElementById('bot').clientHeight + "px");
   _C.style.width = (pcMode)?'100%':'400%';
 	lastw = w;
+	requestJson(null); //WLEDSR: to setSliderAncColorControl depending on pcmode
 }
 
 function isObject(item) {

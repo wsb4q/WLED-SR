@@ -313,24 +313,9 @@ Effect Speed */
 	border-radius: 25px;
 }
 /* Effect Intensity */
-#staytop1 {
+/* WLEDSR: Removed as set in javascript dynamic top */
+/* #staytop1 {
 	top: 30px;
-}
-/* FFT Low */
-#staytop2 {
-	top: 60px;
-}
-/* FFT High */
-#staytop3 {
-	top: 90px;
-}
-/* FFT Custom */
-#staytop4 {
-	top: 120px;
-}
-/* Solid Effect Mode */
-/* #staytop5 {
-	top: 150px;
 } */
 
 #fxb0 {
@@ -535,7 +520,7 @@ input[type=range]:active + .sliderbubble {
 	display: none;
 }
 
-/* Modified for SR-WLED */
+/* Modified for WLEDSR */
 .sliderwrap {
 	height: 31px;
 	width: 240px;
@@ -998,7 +983,7 @@ input[type=number]::-webkit-outer-spin-button {
 	z-index: 1;
 }
 
-/* Modified for SR-WLED */
+/* Modified for WLEDSR */
 #pallist .lstI.selected {
 	top: 36px;
 	bottom: -11px;
@@ -1008,15 +993,15 @@ input[type=number]::-webkit-outer-spin-button {
 	top: -11px;
 }
 
-/* Modified for SR-WLED */
+/* Modified for WLEDSR: removed as set in javascript (with dynamic top) */
 /* Selected Effect */
-.lstI.selected {
+/* .lstI.selected {
 	background: var(--c-5);
 	top: 188px;
   bottom: -11px;
-}
+} */
 
-/* Modified for SR-WLED */
+/* Modified for WLEDSR */
 /* Solid Effect */
 .lstI.sticky {
 	top: 150px;

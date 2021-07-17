@@ -339,6 +339,10 @@ void getSettingsJS(byte subPage, char* dest)
     oappend(";");
 
     sappend('v',SET_F("LC"),ledCount);
+    sappend('v',SET_F("MXW"),strip.matrixWidth);
+    sappend('v',SET_F("MXH"),strip.matrixHeight);
+    sappend('v',SET_F("MPH"),strip.matrixHorizontalPanels);
+    sappend('v',SET_F("MPV"),strip.matrixVerticalPanels);
 
     for (uint8_t s=0; s < busses.getNumBusses(); s++) {
       Bus* bus = busses.getBus(s);
@@ -404,7 +408,15 @@ void getSettingsJS(byte subPage, char* dest)
     // 2D Matrix Settings
     sappend('v',SET_F("MXW"),strip.matrixWidth);
     sappend('v',SET_F("MXH"),strip.matrixHeight);
-    sappend('c',SET_F("MXWHS"),strip.matrixSerpentine);
+    // 2D Panel Settings
+    sappend('c',SET_F("MXP"),strip.matrixPanels);
+    sappend('v',SET_F("MPH"),strip.matrixHorizontalPanels);
+    sappend('v',SET_F("MPV"),strip.matrixVerticalPanels);
+    sappend('v',SET_F("PFLTB"),strip.panelFirstLedTopBottom);
+    sappend('v',SET_F("PFLLR"),strip.panelFirstLedLeftRight);
+    sappend('v',SET_F("POHV"),strip.panelOrientationHorVert);
+    sappend('c',SET_F("PNLS"),strip.panelSerpentine);
+    sappend('c',SET_F("PNLT"),strip.panelTranspose);
   }
 
   if (subPage == 3)
@@ -619,6 +631,7 @@ void getSettingsJS(byte subPage, char* dest)
   {
     sappend('v',SET_F("SQ"),soundSquelch);
     sappend('v',SET_F("GN"),sampleGain);
+    sappend('c',SET_F("AGC"),soundAgc);
     sappend('v',SET_F("SI"),audioPin);
     sappend('c',SET_F("DMM"),dmEnabled);
     sappend('v',SET_F("DI"),i2ssdPin);

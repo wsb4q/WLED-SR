@@ -3,7 +3,7 @@
 /*
  * Used to draw clock overlays over the strip
  */
- 
+
 void initCronixie()
 {
   if (overlayCurrent == 3 && dP[0] == 255) //if dP[0] is 255, cronixie is not yet init'ed
@@ -13,7 +13,7 @@ void initCronixie()
   } else if (dP[0] < 255 && overlayCurrent != 3)
   {
     strip.getSegment(0).grouping = 1;
-    dP[0] = 255; 
+    dP[0] = 255;
   }
 }
 
@@ -27,6 +27,22 @@ void handleOverlays()
   }
 }
 
+uint16_t circlePixel(double angle) {
+  uint16_t circleLength = min(strip.matrixWidth, strip.matrixHeight);
+  uint16_t deltaWidth=0, deltaHeight=0;
+
+  if (circleLength < strip.matrixHeight) //portrait
+    deltaHeight = (strip.matrixHeight - circleLength) / 2;
+  if (circleLength < strip.matrixWidth) //portrait
+    deltaWidth = (strip.matrixWidth - circleLength) / 2;
+
+  double halfLength = (circleLength-1)/2.0;
+
+  //calculate circle positions, round to 5 digits and then round again to cater for radians inprecision (e.g. 3.49->3.5->4)
+  int x = round(round((sin(radians(angle)) * halfLength + halfLength) * 10)/10) + deltaWidth;
+  int y = round(round((halfLength - cos(radians(angle)) * halfLength) * 10)/10) + deltaHeight;
+  return strip.XY(x,y);
+}
 
 void _overlayAnalogClock()
 {
@@ -42,7 +58,7 @@ void _overlayAnalogClock()
   int hourPixel = floor(analogClock12pixel + overlaySize*hourP);
   if (hourPixel > overlayMax) hourPixel = overlayMin -1 + hourPixel - overlayMax;
   int minutePixel = floor(analogClock12pixel + overlaySize*minuteP);
-  if (minutePixel > overlayMax) minutePixel = overlayMin -1 + minutePixel - overlayMax; 
+  if (minutePixel > overlayMax) minutePixel = overlayMin -1 + minutePixel - overlayMax;
   int secondPixel = floor(analogClock12pixel + overlaySize*secondP);
   if (secondPixel > overlayMax) secondPixel = overlayMin -1 + secondPixel - overlayMax;
   if (analogClockSecondsTrail)
@@ -62,12 +78,12 @@ void _overlayAnalogClock()
     {
       int pix = analogClock12pixel + round((overlaySize / 12.0) *i);
       if (pix > overlayMax) pix -= overlaySize;
-      strip.setPixelColor(pix, 0x00FFAA);
+      strip.setPixelColor(strip.matrixWidth > 0?circlePixel(i*30):pix, 0x00FFAA);
     }
   }
-  if (!analogClockSecondsTrail) strip.setPixelColor(secondPixel, 0xFF0000);
-  strip.setPixelColor(minutePixel, 0x00FF00);
-  strip.setPixelColor(hourPixel, 0x0000FF);
+  if (!analogClockSecondsTrail) strip.setPixelColor(strip.matrixWidth > 0?circlePixel(secondP * 360):secondPixel, 0xFF0000);
+  strip.setPixelColor(strip.matrixWidth > 0?circlePixel(minuteP * 360):minutePixel, 0x00FF00);
+  strip.setPixelColor(strip.matrixWidth > 0?circlePixel(hourP * 360):hourPixel, 0x0000FF);
 }
 
 
@@ -125,14 +141,14 @@ void handleOverlayDraw() {
 /*
  * Support for the Cronixie clock
  */
- 
+
 #ifndef WLED_DISABLE_CRONIXIE
 byte _digitOut[6] = {10,10,10,10,10,10};
- 
+
 byte getSameCodeLength(char code, int index, char const cronixieDisplay[])
 {
   byte counter = 0;
-  
+
   for (int i = index+1; i < 6; i++)
   {
     if (cronixieDisplay[i] == code)
@@ -204,27 +220,27 @@ void setCronixie()
   //M MinuteUpper | MM Minute of Hour | MMM Minute of 12h | MMMM Minute of Day | MMMMM Minute of Month | MMMMMM Minute of Year
   //S SecondUpper | SS Second of Minute | SSS Second of 10 Minute | SSSS Second of Hour | SSSSS Second of Day | SSSSSS Second of Week
   //B AM/PM | BB 0-6/6-12/12-18/18-24 | BBB 0-3... | BBBB 0-1.5... | BBBBB 0-1 | BBBBBB 0-0.5
-  
+
   //Y YearLower | YY - Year LU | YYYY - Std.
-  //I MonthLower | II - Month of Year 
+  //I MonthLower | II - Month of Year
   //W Week of Month | WW Week of Year
   //D Day of Week | DD Day Of Month | DDD Day Of Year
 
   DEBUG_PRINT("cset ");
   DEBUG_PRINTLN(cronixieDisplay);
-  
+
   for (int i = 0; i < 6; i++)
   {
     dP[i] = 10;
     switch (cronixieDisplay[i])
     {
-      case '_': dP[i] = 10; break; 
-      case '-': dP[i] = 11; break; 
+      case '_': dP[i] = 10; break;
+      case '-': dP[i] = 11; break;
       case 'r': dP[i] = random(1,7); break; //random btw. 1-6
       case 'R': dP[i] = random(0,10); break; //random btw. 0-9
       //case 't': break; //Test upw.
       //case 'T': break; //Test dnw.
-      case 'b': dP[i] = 14 + getSameCodeLength('b',i,cronixieDisplay); i = i+dP[i]-14; break; 
+      case 'b': dP[i] = 14 + getSameCodeLength('b',i,cronixieDisplay); i = i+dP[i]-14; break;
       case 'B': dP[i] = 14 + getSameCodeLength('B',i,cronixieDisplay); i = i+dP[i]-14; break;
       case 'h': dP[i] = 70 + getSameCodeLength('h',i,cronixieDisplay); i = i+dP[i]-70; break;
       case 'H': dP[i] = 20 + getSameCodeLength('H',i,cronixieDisplay); i = i+dP[i]-20; break;
@@ -234,10 +250,10 @@ void setCronixie()
       case 'M': dP[i] = 24 + getSameCodeLength('M',i,cronixieDisplay); i = i+dP[i]-24; break;
       case 's': dP[i] = 80 + getSameCodeLength('s',i,cronixieDisplay); i = i+dP[i]-80; break; //refresh more often bc. of secs
       case 'S': dP[i] = 30 + getSameCodeLength('S',i,cronixieDisplay); i = i+dP[i]-30; break;
-      case 'Y': dP[i] = 36 + getSameCodeLength('Y',i,cronixieDisplay); i = i+dP[i]-36; break; 
-      case 'y': dP[i] = 86 + getSameCodeLength('y',i,cronixieDisplay); i = i+dP[i]-86; break; 
+      case 'Y': dP[i] = 36 + getSameCodeLength('Y',i,cronixieDisplay); i = i+dP[i]-36; break;
+      case 'y': dP[i] = 86 + getSameCodeLength('y',i,cronixieDisplay); i = i+dP[i]-86; break;
       case 'I': dP[i] = 39 + getSameCodeLength('I',i,cronixieDisplay); i = i+dP[i]-39; break;  //Month. Don't ask me why month and minute both start with M.
-      case 'i': dP[i] = 89 + getSameCodeLength('i',i,cronixieDisplay); i = i+dP[i]-89; break; 
+      case 'i': dP[i] = 89 + getSameCodeLength('i',i,cronixieDisplay); i = i+dP[i]-89; break;
       //case 'W': break;
       //case 'w': break;
       case 'D': dP[i] = 43 + getSameCodeLength('D',i,cronixieDisplay); i = i+dP[i]-43; break;
@@ -299,13 +315,13 @@ void _overlayCronixie()
           case 20: _digitOut[i] = h- (h/10)*10; break; //H
           case 24: _digitOut[i] = m/10; break; //M
           case 30: _digitOut[i] = s/10; break; //S
-          
+
           case 43: _digitOut[i] = weekday(localTime); _digitOut[i]--; if (_digitOut[i]<1) _digitOut[i]= 7; break; //D
           case 44: _digitOut[i] = d/10; _digitOut[i+1] = d- _digitOut[i]*10; i++; break; //DD
           case 40: _digitOut[i] = mi/10; _digitOut[i+1] = mi- _digitOut[i]*10; i++; break; //II
           case 37: _digitOut[i] = y/10; _digitOut[i+1] = y- _digitOut[i]*10; i++; break; //YY
           case 39: _digitOut[i] = 2; _digitOut[i+1] = 0; _digitOut[i+2] = y/10; _digitOut[i+3] = y- _digitOut[i+2]*10; i+=3; break; //YYYY
-          
+
           //case 16: _digitOut[i+2] = ((h0/3)&1)?1:0; i++; //BBB (BBBB NI)
           //case 15: _digitOut[i+1] = (h0>17 || (h0>5 && h0<12))?1:0; i++; //BB
           case 14: _digitOut[i] = (h0>11)?1:0; break; //B
@@ -335,14 +351,14 @@ void _overlayCronixie()
 void _drawOverlayCronixie()
 {
   byte offsets[] = {5, 0, 6, 1, 7, 2, 8, 3, 9, 4};
-  
+
   for (uint16_t i = 0; i < 6; i++)
   {
     byte o = 10*i;
     byte excl = 10;
     if(_digitOut[i] < 10) excl = offsets[_digitOut[i]];
     excl += o;
-    
+
     if (cronixieBacklight && _digitOut[i] <11)
     {
       uint32_t col = strip.gamma32(strip.getSegment(0).colors[1]);

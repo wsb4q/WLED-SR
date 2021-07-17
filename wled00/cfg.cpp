@@ -88,7 +88,17 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   // 2D Matrix Settings
   CJSON(strip.matrixWidth, hw_led[F("mxw")]);
   CJSON(strip.matrixHeight, hw_led[F("mxh")]);
-  CJSON(strip.matrixSerpentine, hw_led[F("mxs")]);
+
+  CJSON(strip.matrixPanels, hw_led[F("mxp")]);
+  CJSON(strip.matrixHorizontalPanels, hw_led[F("mph")]);
+  CJSON(strip.matrixVerticalPanels, hw_led[F("mpv")]);
+
+  CJSON(strip.panelFirstLedTopBottom, hw_led[F("pfltb")]);
+  CJSON(strip.panelFirstLedLeftRight, hw_led[F("pfllr")]);
+  CJSON(strip.panelOrientationHorVert, hw_led[F("pohv")]);
+  CJSON(strip.panelSerpentine, hw_led[F("pnls")]);
+  CJSON(strip.panelTranspose, hw_led[F("pnlt")]);
+
 
   JsonArray ins = hw_led["ins"];
   if (fromFS || !ins.isNull()) {
@@ -457,6 +467,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   JsonObject snd_cfg = sound[F("cfg")];       // Sound Reactive Configuration
   CJSON(soundSquelch, snd_cfg[F("sq")]);      // sound squelch
   CJSON(sampleGain, snd_cfg[F("gn")]);        // gain
+  CJSON(soundAgc, snd_cfg[F("agc")]);         // agc
 
   JsonObject snd_fft = sound[F("fft")];       // FFT Settings
   CJSON(effectFFT1, snd_fft[F("f1")]);
@@ -567,8 +578,19 @@ void serializeConfig() {
 
   // 2D Matrix Settings
   hw_led[F("mxw")] = strip.matrixWidth;
-  hw_led[F("mxs")] = strip.matrixSerpentine;
   hw_led[F("mxh")] = strip.matrixHeight;
+
+  // 2D Matrix Panels
+  hw_led[F("mxp")] = strip.matrixPanels;
+  hw_led[F("mph")] = strip.matrixHorizontalPanels;
+  hw_led[F("mpv")] = strip.matrixVerticalPanels;
+
+  hw_led[F("pfltb")] = strip.panelFirstLedTopBottom;
+  hw_led[F("pfllr")] = strip.panelFirstLedLeftRight;
+  hw_led[F("pohv")] = strip.panelOrientationHorVert;
+  hw_led[F("pnls")] = strip.panelSerpentine;
+  hw_led[F("pnlt")] = strip.panelTranspose;
+
 
   JsonArray hw_led_ins = hw_led.createNestedArray("ins");
 
@@ -801,6 +823,7 @@ void serializeConfig() {
   JsonObject snd_cfg = sound.createNestedObject("cfg");   // Sound Reactive Configuration
   snd_cfg[F("sq")] = soundSquelch;
   snd_cfg[F("gn")] = sampleGain;
+  snd_cfg[F("agc")] = soundAgc;
 
   JsonObject snd_fft = sound.createNestedObject("fft");   // FFT Settings
   snd_fft[F("f1")] = effectFFT1;

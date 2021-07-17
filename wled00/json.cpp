@@ -102,27 +102,29 @@ void deserializeSegment(JsonObject elem, byte it, byte presetId)
   }
   #endif
 
-  //if (pal != seg.palette && pal < strip.getPaletteCount()) strip.setPalette(pal);
-  seg.setOption(SEG_OPTION_SELECTED, elem[F("sel")] | seg.getOption(SEG_OPTION_SELECTED));
-  seg.setOption(SEG_OPTION_REVERSED, elem["rev"] | seg.getOption(SEG_OPTION_REVERSED));
-  seg.setOption(SEG_OPTION_MIRROR  , elem[F("mi")]  | seg.getOption(SEG_OPTION_MIRROR  ));
+    //if (pal != seg.palette && pal < strip.getPaletteCount()) strip.setPalette(pal);
+    seg.setOption(SEG_OPTION_SELECTED  , elem[F("sel")]   | seg.getOption(SEG_OPTION_SELECTED  ));
+    seg.setOption(SEG_OPTION_REVERSED  , elem["rev"]      | seg.getOption(SEG_OPTION_REVERSED  ));
+    seg.setOption(SEG_OPTION_REVERSED2D, elem["rev2D"]    | seg.getOption(SEG_OPTION_REVERSED2D));
+    seg.setOption(SEG_OPTION_MIRROR    , elem[F("mi")]    | seg.getOption(SEG_OPTION_MIRROR    ));
+    seg.setOption(SEG_OPTION_ROTATED2D , elem[F("rot2D")] | seg.getOption(SEG_OPTION_ROTATED2D ));
 
-  //temporary, strip object gets updated via colorUpdated()
-  if (id == strip.getMainSegmentId()) {
-    byte effectPrev = effectCurrent;
-    effectCurrent = elem["fx"] | effectCurrent;
-    if (!presetId && effectCurrent != effectPrev) unloadPlaylist(); //stop playlist if active and FX changed manually
-    effectSpeed = elem[F("sx")] | effectSpeed;
-    effectIntensity = elem[F("ix")] | effectIntensity;
-    effectFFT1 = elem[F("f1x")] | effectFFT1;
-    effectFFT2 = elem[F("f2x")] | effectFFT2;
-    effectFFT3 = elem[F("f3x")] | effectFFT3;
-    effectPalette = elem["pal"] | effectPalette;
-  } else { //permanent
-    byte fx = elem["fx"] | seg.mode;
-    if (fx != seg.mode && fx < strip.getModeCount()) {
-      strip.setMode(id, fx);
-      if (!presetId) unloadPlaylist(); //stop playlist if active and FX changed manually
+    //temporary, strip object gets updated via colorUpdated()
+    if (id == strip.getMainSegmentId()) {
+      byte effectPrev = effectCurrent;
+      effectCurrent = elem[F("fx")] | effectCurrent;
+      if (!presetId && effectCurrent != effectPrev) unloadPlaylist(); //stop playlist if active and FX changed manually
+      effectSpeed = elem[F("sx")] | effectSpeed;
+      effectIntensity = elem[F("ix")] | effectIntensity;
+      effectFFT1 = elem[F("f1x")] | effectFFT1;
+      effectFFT2 = elem[F("f2x")] | effectFFT2;
+      effectFFT3 = elem[F("f3x")] | effectFFT3;
+      effectPalette = elem["pal"] | effectPalette;
+    } else { //permanent
+      byte fx = elem[F("fx")] | seg.mode;
+      if (fx != seg.mode && fx < strip.getModeCount()) {
+        strip.setMode(id, fx);
+        if (!presetId) unloadPlaylist(); //stop playlist if active and FX changed manually
     }
     seg.speed = elem[F("sx")] | seg.speed;
     seg.intensity = elem[F("ix")] | seg.intensity;
@@ -377,7 +379,9 @@ void serializeSegment(JsonObject& root, WS2812FX::Segment& seg, byte id, bool fo
 	root["pal"] = seg.palette;
 	root[F("sel")] = seg.isSelected();
 	root["rev"] = seg.getOption(SEG_OPTION_REVERSED);
+	root["rev2D"] = seg.getOption(SEG_OPTION_REVERSED2D);
   root[F("mi")]  = seg.getOption(SEG_OPTION_MIRROR);
+  root[F("rot2D")]  = seg.getOption(SEG_OPTION_ROTATED2D);
 }
 
 void serializeState(JsonObject root, bool forPreset, bool includeBri, bool segmentBounds)

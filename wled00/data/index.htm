@@ -80,15 +80,16 @@
 			<div class="qcs" onclick="pC('rnd');" title="Random" style="background-color:var(--c-3); padding: 4px 8px; transform: translateY(-10px);">R</div>
 		</div>
 		<div id="csl">
-			<button class="xxs cl btn" onclick="selectSlot(0);">1</button>
-			<button class="xxs cl btn" onclick="selectSlot(1);">2</button>
-			<button class="xxs cl btn" onclick="selectSlot(2);">3</button>
+			<button id="colorButton0" class="xxs cl btn" onclick="selectSlot(0);">1</button>
+			<button id="colorButton1" class="xxs cl btn" onclick="selectSlot(1);">2</button>
+			<button id="colorButton2" class="xxs cl btn" onclick="selectSlot(2);">3</button>
 		</div>
+		<p id="colorOnOffLabel" class="h"></p>
 		<div id="hexw">
 			<input id="hexc" type="text" class="noslide" onkeydown="hexEnter(this)" autocomplete="off" maxlength="8" />
 			<button id="hexcnf" class="xxs btn" onclick="fromHex();"><i class="icons btna-icon">&#xe390;</i></button>
 		</div>
-		<p class="labels">
+		<p id="paletteLabel" class="labels">
 			<i class="icons sel-icon" onclick="tglHex()">&#xe2b3;</i>
 			Color palette
 		</p>
@@ -119,8 +120,8 @@
 	</div>
 
   <div id="Effects" class="tabcontent">
-    <p class="labels">Effect speed</p>
-    <div class="staytop">
+    <p id="sliderLabel0" class="staytop">Effect speed</p>
+    <div class="staytop" id="slider0">
       <i class="icons slider-icon">&#xe325;</i>
       <div class="sliderwrap il">
 				<input id="sliderSpeed" class="noslide" onchange="setSpeed()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
@@ -128,8 +129,8 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p class="labels">Effect intensity</p>
-    <div class="staytop" id="staytop1">
+    <p id="sliderLabel1" class="staytop">Effect intensity</p>
+    <div class="staytop" id="slider1">
       <i class="icons slider-icon" onclick="tglLabels()">&#xe409;</i>
       <div class="sliderwrap il">
 				<input id="sliderIntensity" class="noslide" onchange="setIntensity()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
@@ -137,34 +138,34 @@
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p class="labels">FFT Low</p>
-    <div class="staytop" id="staytop2">
-      <i class="icons slider-icon">&#xe409;</i>
+    <p id="sliderLabel2" class="staytop">Custom 1</p>
+    <div class="staytop" id="slider2">
+      <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT1" class="noslide" onchange="setFFT1()" oninput="updateTrail(this)" max="255" min="0" type="range" value="6" />
 				<output class="sliderbubble hidden"></output>
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p class="labels">FFT High</p>
-    <div class="staytop" id="staytop3">
-      <i class="icons slider-icon">&#xe409;</i>
+    <p id="sliderLabel3" class="staytop">Custom 2</p>
+    <div class="staytop" id="slider3">
+      <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT2" class="noslide" onchange="setFFT2()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
 				<output class="sliderbubble hidden"></output>
         <div class="sliderdisplay"></div>
       </div>
     </div>
-    <p class="labels">FFT Custom</p>
-    <div class="staytop" id="staytop4">
-      <i class="icons slider-icon">&#xe409;</i>
+    <p id="sliderLabel4" class="staytop">Custom 3</p>
+    <div class="staytop" id="slider4">
+      <i class="icons slider-icon">&#xe410;</i>
       <div class="sliderwrap il">
 				<input id="sliderFFT3" class="noslide" onchange="setFFT3()" oninput="updateTrail(this)" max="255" min="0" type="range" value="252" />
 				<output class="sliderbubble hidden"></output>
         <div class="sliderdisplay"></div>
 			</div>
 		</div>
-		<p class="labels">Effect mode</p>
+		<p id="modelabel" class="staytop">Effect mode</p>
 		<div id="fxlist" class="list">
 			Loading...
 		</div>

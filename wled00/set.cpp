@@ -189,7 +189,16 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     // 2D Matrix Settings - BROKEN BY MULTI-PIN
     strip.matrixWidth = request->arg(F("MXW")).toInt();
     strip.matrixHeight = request->arg(F("MXH")).toInt();
-    strip.matrixSerpentine = request->hasArg(F("MXWHS"));
+
+    strip.matrixPanels = request->hasArg(F("MXP"));
+    strip.matrixHorizontalPanels = request->arg(F("MPH")).toInt();
+    strip.matrixVerticalPanels = request->arg(F("MPV")).toInt();
+
+    strip.panelFirstLedTopBottom = request->arg(F("PFLTB")).toInt();
+    strip.panelFirstLedLeftRight = request->arg(F("PFLLR")).toInt();
+    strip.panelOrientationHorVert = request->arg(F("POHV")).toInt();
+    strip.panelSerpentine = request->hasArg(F("PNLS"));
+    strip.panelTranspose = request->hasArg(F("PNLT"));
   }
 
   //UI
@@ -541,6 +550,9 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     t = request->arg(F("GN")).toInt();
     if (t >= 0) sampleGain = t;
 
+    t = request->hasArg(F("AGC"));
+    if (t >=0) soundAgc = t;
+
     // Analog mic pin
     int hw_amic_pin = request->arg(F("SI")).toInt();
     if (pinManager.allocatePin(hw_amic_pin,false)) {
@@ -882,9 +894,16 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   pos = req.indexOf(F("RV="));
   if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_REVERSED, req.charAt(pos+3) != '0');
 
-  //Segment reverse
+  pos = req.indexOf(F("RY="));
+  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_REVERSED2D, req.charAt(pos+3) != '0');
+
+  //Segment mirror
   pos = req.indexOf(F("MI="));
   if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_MIRROR, req.charAt(pos+3) != '0');
+
+  //Segment rotation
+  pos = req.indexOf(F("ROT="));
+  if (pos > 0) strip.getSegment(selectedSeg).setOption(SEG_OPTION_ROTATED2D, req.charAt(pos+3) != '0');
 
   //Segment brightness/opacity
   pos = req.indexOf(F("SB="));

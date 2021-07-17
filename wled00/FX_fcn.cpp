@@ -289,10 +289,11 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
       int indexSet = realIndex + (reversed ? -j : j);
       // The following line is in WLED master - https://github.com/Aircoookie/WLED/blame/master/wled00/FX_fcn.cpp#L244
       // if (indexSet >= SEGMENT.start && indexSet < SEGMENT.stop) {
-      if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet];
-      // if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up).
-      // Check is removed as rotating non square segment will cross boundaries. Maybe i > SEGLEN must be added in the future as safety but all seems to work now
-        busses.setPixelColor(logicalToPhysical(indexSet) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
+      ///////
+      // if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet]; // CHRIS - Is this in the wrong place???
+      /* if (unsigned(indexSet%matrixWidth - SEGMENT.startX) <= (SEGMENT.stopX - SEGMENT.startX) && unsigned(indexSet/matrixWidth - SEGMENT.startY) <= (SEGMENT.stopY - SEGMENT.startY)) { // ewowi20210703: indexSet must be within the SEGMENT boundaries (not the case if i>=SEGLEN or reversed or customMappingTable screws things up).
+        Check is removed as rotating non square segment will cross boundaries. Maybe i > SEGLEN must be added in the future as safety but all seems to work now  */
+        // busses.setPixelColor(logicalToPhysical(indexSet), col); // CHRIS - Is this in the wrong place??? // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         if (IS_MIRROR) { //set the corresponding mirrored pixel
           uint16_t indexMir = SEGMENT.stop - indexSet + SEGMENT.start - 1;
           /* offset/phase */
@@ -300,21 +301,21 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
           if (indexMir >= SEGMENT.stop) indexMir -= len;
 
           if (indexMir < customMappingSize) indexMir = customMappingTable[indexMir];
-          busses.setPixelColor(logicalToPhysical(indexMir) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
+          busses.setPixelColor(logicalToPhysical(indexMir), col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
         /* offset/phase */
-          indexSet += SEGMENT.offset;
-          if (indexSet >= SEGMENT.stop) indexSet -= len;
+        indexSet += SEGMENT.offset;
+        if (indexSet >= SEGMENT.stop) indexSet -= len;
 
         if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet]; // This line is also on L292
-        busses.setPixelColor(indexSet, col);
+        busses.setPixelColor(logicalToPhysical(indexSet), col);
       }
       // }
     } else { //live data, etc.
     if (i < customMappingSize) i = customMappingTable[i];
 
     uint32_t col = ((w << 24) | (r << 16) | (g << 8) | (b));
-    busses.setPixelColor(logicalToPhysical(i) + skip, col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
+    busses.setPixelColor(logicalToPhysical(i), col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
   }
 }
 

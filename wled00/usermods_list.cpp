@@ -74,6 +74,14 @@
 #include "../usermods/EleksTube_IPS/usermod_elekstube_ips.h"
 #endif
 
+#ifdef USERMOD_ROTARY_ENCODER_BRIGHTNESS_COLOR
+#include "../usermods/usermod_rotary_brightness_color/usermod_rotary_brightness_color.h"
+#endif
+
+#ifdef RGB_ROTARY_ENCODER
+#include "../usermods/rgb-rotary-encoder/rgb-rotary-encoder.h"
+#endif
+
 void registerUsermods()
 {
 /*
@@ -142,5 +150,13 @@ void registerUsermods()
 
   #ifdef USERMOD_ELEKSTUBE_IPS
   usermods.add(new ElekstubeIPSUsermod());
+  #endif
+
+  #ifdef USERMOD_ROTARY_ENCODER_BRIGHTNESS_COLOR
+  usermods.add(new RotaryEncoderBrightnessColor());
+  #endif
+
+  #ifdef RGB_ROTARY_ENCODER
+  usermods.add(new RgbRotaryEncoderUsermod());
   #endif
 }

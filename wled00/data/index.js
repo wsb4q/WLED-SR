@@ -1021,8 +1021,9 @@ function readState(s,command=false) {
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
+	console.log(`i.fx = ${i.fx}`);
   if (selFx) selFx.checked = true; //WLEDSR: value can be null
-  else location.reload(); //effect list is gone (e.g. if restoring tab). Reload.
+  // else location.reload(); //effect list is gone (e.g. if restoring tab). Reload.
 
   var selElement = fxlist.querySelector('.selected');
   if (selElement) {
@@ -1049,8 +1050,11 @@ function readState(s,command=false) {
 	}
 
   // Palettes
+	console.log(`i.pal = ${i.pal}`);
   pallist.querySelector(`input[name="palette"][value="${i.pal}"]`).checked = true;
   selElement = pallist.querySelector('.selected');
+	console.log(pallist.querySelector(`input[name="palette"][value="${i.pal}"]`))
+	console.log(selElement);
   if (selElement) {
     selElement.classList.remove('selected')
   }
@@ -1099,8 +1103,8 @@ function setSliderAndColorControl(extra, idx) {
 
 	//set html slider items on/off
 	for (let i=0; i<5; i++) {
-		var slider = document.getElementById("slider" + i);
-		var label = document.getElementById("sliderLabel" + i);
+		var slider = d.getElementById("slider" + i);
+		var label = d.getElementById("sliderLabel" + i);
 		// if (not controlDefined and for AC speed or intensity and for SR alle sliders) or slider has a value
 		if ((!controlDefined && i < ((idx<128)?2:5)) || (slidersOnOff.length>i && slidersOnOff[i] != "")) {
 			label.style.display = "block";
@@ -1131,8 +1135,8 @@ function setSliderAndColorControl(extra, idx) {
 		}
 	}
 
-	var modelabel = document.getElementById("modelabel");
-	var effectsearchbar = document.getElementById("effectsearchbar");
+	var modelabel = d.getElementById("modelabel");
+	var effectsearchbar = d.getElementById("effectsearchbar");
 	effectsearchbar.style.width = '230px'; //correct staytop effect to position searchbar right
 	if (pcmode) {
 		modelabel.style.top = topPosition + "px";
@@ -1152,11 +1156,11 @@ function setSliderAndColorControl(extra, idx) {
 	}
 
 	//set top position of the first effect (fx0=solid)
-	var firstEffect = document.getElementById("fx0");
+	var firstEffect = d.getElementById("fx0");
 	firstEffect.style.top = topPosition + "px";
 
 	//moved from index.css as top of effectlist needs to be set dynamically
-	var style = document.createElement('style');
+	var style = d.createElement('style');
 	style.innerHTML =
 	'.lstI.selected {'+
 		'background: var(--c-5);'+
@@ -1164,7 +1168,7 @@ function setSliderAndColorControl(extra, idx) {
 	  'bottom: -11px;'+
 	'}';
 	// Get the first script tag
-	var ref = document.querySelector('script');
+	var ref = d.querySelector('script');
 	// Insert our new styles before the first script tag
 	ref.parentNode.insertBefore(style, ref);
 	//set html color items on/off
@@ -1172,7 +1176,7 @@ function setSliderAndColorControl(extra, idx) {
 	var colorOnOffLabel = '';
 	var sep = '';
 	for (let i=0; i<3; i++) {
-		var button = document.getElementById("colorButton" + i);
+		var button = d.getElementById("colorButton" + i);
 		// if no controlDefined or colorsOnOff has a value
 		if (colorsOnOff.length>i && colorsOnOff[i] != "") {
 			button.style.display = "inline";
@@ -1196,25 +1200,26 @@ function setSliderAndColorControl(extra, idx) {
 			button.style.display = "none";
 		}
 	}
-	var colorOnOffLabelElement = document.getElementById("colorOnOffLabel");
+	var colorOnOffLabelElement = d.getElementById("colorOnOffLabel");
 	colorOnOffLabelElement.innerHTML = colorOnOffLabel;
 
 	//set html palette on/off
-	var selectPalette = document.getElementById("selectPalette");
-	var paletteLabel = document.getElementById("paletteLabel");
+	// pallist defined as d.getElementById("pallist")
+	// var selectPalette = d.getElementById("selectPalette");
+	var pallabel = d.getElementById("paletteLabel");
 	// if not controlDefined or palette has a value
 	if ((!controlDefined) || (paletteOnOff.length>0 && paletteOnOff[0] != "")) {
-		selectPalette.style.display = "block";
+		pallist.style.display = "block";
 
-		paletteLabel.style.display = "block";
+		pallabel.style.display = "block";
 		if (paletteOnOff.length>0 && paletteOnOff[0] != "!")
-			paletteLabel.innerHTML = paletteOnOff[0];
-		else paletteLabel.innerHTML = "Color palette";
+		pallabel.innerHTML = paletteOnOff[0];
+		else pallabel.innerHTML = "Color palette";
 	}
 	else {
 		// disable label and slider
-		selectPalette.style.display = "none";
-		paletteLabel.style.display = "none";
+		pallist.style.display = "none";
+		pallabel.style.display = "none";
 	}
 }
 

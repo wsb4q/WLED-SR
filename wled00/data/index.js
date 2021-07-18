@@ -1041,8 +1041,9 @@ function readState(s,command=false) {
 			var posAt = extra.indexOf(')"');
 			var extra = extra.substring(0,posAt-1);
 		}
-		else
+		else {
 			extra = "";
+		}
 
 		setSliderAndColorControl(extra, selectedFx);
 	}
@@ -1081,6 +1082,7 @@ function readState(s,command=false) {
     showToast('Error ' + s.error + ": " + errstr, true);
   }
   updateUI();
+}
 
 //WLEDSR: control HTML elements for Slider and Color Control
 function setSliderAndColorControl(extra, idx) {
@@ -1190,8 +1192,9 @@ function setSliderAndColorControl(extra, idx) {
 			button.style.display = "inline";
 			button.innerHTML = "" + (i+1);
 		}
-		else
+		else {
 			button.style.display = "none";
+		}
 	}
 	var colorOnOffLabelElement = document.getElementById("colorOnOffLabel");
 	colorOnOffLabelElement.innerHTML = colorOnOffLabel;

@@ -1021,7 +1021,6 @@ function readState(s,command=false) {
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
-	console.log(`i.fx = ${i.fx}`);
   if (selFx) selFx.checked = true; //WLEDSR: value can be null
   // else location.reload(); //effect list is gone (e.g. if restoring tab). Reload.
 
@@ -1030,37 +1029,38 @@ function readState(s,command=false) {
     selElement.classList.remove('selected')
   }
   var selectedEffect = fxlist.querySelector(`.lstI[data-id="${i.fx}"]`);
-	if (selectedEffect) {
+  if (selectedEffect) {
     selectedEffect.classList.add('selected');
     selectedFx = i.fx;
 
-		//WLEDSR: extract the Slider and color control string from the HTML element and set it.
-		var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
-		var posAt = extra.indexOf("@");
-		if (posAt > 0) {
-			var extra = extra.substring(posAt);
-			var posAt = extra.indexOf(')"');
-			var extra = extra.substring(0,posAt-1);
-		}
-		else {
-			extra = "";
-		}
-
-		setSliderAndColorControl(extra, selectedFx);
+	//WLEDSR: extract the Slider and color control string from the HTML element and set it.
+	var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
+	var posAt = extra.indexOf("@");
+	if (posAt > 0) {
+		var extra = extra.substring(posAt);
+		var posAt = extra.indexOf(')"');
+		var extra = extra.substring(0,posAt-1);
+	}
+	else {
+		extra = "";
 	}
 
+	setSliderAndColorControl(extra, selectedFx);
+  }
+
   // Palettes
-	console.log(`i.pal = ${i.pal}`);
-  pallist.querySelector(`input[name="palette"][value="${i.pal}"]`).checked = true;
+  var pal = pallist.querySelector(`input[name="palette"][value="${i.pal}"]`);
+  if (pal) //WLEDSR: value can be null
+	pal.checked = true;
   selElement = pallist.querySelector('.selected');
-	console.log(pallist.querySelector(`input[name="palette"][value="${i.pal}"]`))
-	console.log(selElement);
   if (selElement) {
     selElement.classList.remove('selected')
   }
-  pallist.querySelector(`.lstI[data-id="${i.pal}"]`).classList.add('selected');
+  pal = pallist.querySelector(`.lstI[data-id="${i.pal}"]`);
+  if (pal) //WLEDSR: value can be null
+  	pal.classList.add('selected');
 
-  if (!command) {
+  if (!command && selectedEffect) { //WLEDSR: value can be null
     selectedEffect.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
@@ -2246,7 +2246,7 @@ function togglePcMode(fromB = false)
 	sCol('--bh', d.getElementById('bot').clientHeight + "px");
   _C.style.width = (pcMode)?'100%':'400%';
 	lastw = w;
-	requestJson(null); //WLEDSR: to setSliderAncColorControl depending on pcmode
+	requestJson(null); //WLEDSR: to setSliderAndColorControl depending on pcmode
 }
 
 function isObject(item) {

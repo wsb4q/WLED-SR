@@ -46,7 +46,7 @@
       if (bquot > 100) {var msg = "Too many LEDs for me to handle!"; if (maxM < 10000) msg += "\n\rConsider using an ESP32."; alert(msg);}
       if (d.Sf.checkValidity()) d.Sf.submit(); //https://stackoverflow.com/q/37323914
     }
-		function S(){GetV();setABL();}
+		function S(){GetV();setABL();Ps();} //WLED: add Ps for panel selection
     function enABL()
     {
       var en = gId('able').checked;
@@ -305,6 +305,10 @@ Reverse (rotated 180°): <input type="checkbox" name="CV${i}">
       c += `<span style="cursor: pointer;" onclick="off('${bt}')">&nbsp;&#215;</span><br>`;
       gId("btns").innerHTML = c;
     }
+    function Ps() //WLEDSR enable/disable panel
+		{
+			d.getElementById("mphv").style.display=(d.getElementById("mxp").checked)?"block":"none";
+		}
 		function GetV()
 		{
       //values injected by server while sending HTML

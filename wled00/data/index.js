@@ -1015,9 +1015,9 @@ function readState(s,command=false) {
 
   d.getElementById('sliderSpeed').value = i.sx;
   d.getElementById('sliderIntensity').value = i.ix;
-	d.getElementById('sliderFFT1').value = i.f1x;
-	d.getElementById('sliderFFT2').value = i.f2x;
-	d.getElementById('sliderFFT3').value = i.f3x;
+	d.getElementById('sliderFFT1').value  = i.f1x;
+	d.getElementById('sliderFFT2').value  = i.f2x;
+	d.getElementById('sliderFFT3').value  = i.f3x;
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
@@ -1033,34 +1033,34 @@ function readState(s,command=false) {
     selectedEffect.classList.add('selected');
     selectedFx = i.fx;
 
-	//WLEDSR: extract the Slider and color control string from the HTML element and set it.
-	var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
-	var posAt = extra.indexOf("@");
-	if (posAt > 0) {
-		var extra = extra.substring(posAt);
-		var posAt = extra.indexOf(')"');
-		var extra = extra.substring(0,posAt-1);
-	}
-	else {
-		extra = "";
-	}
+    // WLEDSR: extract the Slider and color control string from the HTML element and set it.
+    var extra = selectedEffect.outerHTML.replace(/&amp;/g, "&");
+    var posAt = extra.indexOf("@");
+    if (posAt > 0) {
+      var extra = extra.substring(posAt);
+      var posAt = extra.indexOf(')"');
+      var extra = extra.substring(0,posAt-1);
+    }
+    else {
+      extra = "";
+    }
 
-	setSliderAndColorControl(extra, selectedFx);
+    setSliderAndColorControl(extra, selectedFx);
   }
 
   // Palettes
   var pal = pallist.querySelector(`input[name="palette"][value="${i.pal}"]`);
-  if (pal) //WLEDSR: value can be null
-	pal.checked = true;
+  if (pal) pal.checked = true; // WLEDSR: value can be null
+
   selElement = pallist.querySelector('.selected');
   if (selElement) {
     selElement.classList.remove('selected')
   }
   pal = pallist.querySelector(`.lstI[data-id="${i.pal}"]`);
-  if (pal) //WLEDSR: value can be null
+  if (pal) // WLEDSR: value can be null
   	pal.classList.add('selected');
 
-  if (!command && selectedEffect) { //WLEDSR: value can be null
+  if (!command && selectedEffect) { // WLEDSR: value can be null
     selectedEffect.scrollIntoView({
       behavior: 'smooth',
       block: 'nearest',
@@ -1088,20 +1088,20 @@ function readState(s,command=false) {
   updateUI();
 }
 
-//WLEDSR: control HTML elements for Slider and Color Control
+// WLEDSR: control HTML elements for Slider and Color Control
 function setSliderAndColorControl(extra, idx) {
 	var topPosition = 0;
 
-	var pcmode=localStorage.getItem('pcm') == "true";
+	var pcmode = localStorage.getItem('pcm') == "true";
 
 	var controlDefined = (extra.substr(0,1) == "@")?true:false;
 	extra = extra.substr(1);
 	var extras = (extra == '')?[]:extra.split(";");
 	var slidersOnOff = (extras.length==0 || extras[0] == '')?[]:extras[0].split(",");
-	var colorsOnOff = (extras.length<2 || extras[1] == '')?[]:extras[1].split(",");
-	var paletteOnOff = (extras.length<3 || extras[2] == '')?[]:extras[2].split(",");
+	var colorsOnOff  = (extras.length<2  || extras[1] == '')?[]:extras[1].split(",");
+	var paletteOnOff = (extras.length<3  || extras[2] == '')?[]:extras[2].split(",");
 
-	//set html slider items on/off
+	// set html slider items on/off
 	for (let i=0; i<5; i++) {
 		var slider = d.getElementById("slider" + i);
 		var label = d.getElementById("sliderLabel" + i);
@@ -1115,17 +1115,17 @@ function setSliderAndColorControl(extra, idx) {
 			else label.innerHTML = "Custom" + (i-1);
 			if (pcmode) {
 				label.style.top = topPosition + "px";
-				topPosition += 20; //increase top position for the next control
-				label.style.zIndex = "1"; //need to be above effects when scrolling
+				topPosition += 20;        // increase top position for the next control
+				label.style.zIndex = "1"; // need to be above effects when scrolling
 			}
 			else {
 				label.style.top = "auto";
-				label.style.zIndex = "0"; //need to be behind sliders when scrolling
+				label.style.zIndex = "0"; // need to be behind sliders when scrolling
 			}
 
 			slider.style.display = "block";
 			slider.style.top = topPosition + "px";
-			topPosition += 30; //increase top position for the next control
+			topPosition += 30;          // increase top position for the next control
 			slider.setAttribute('title',label.innerHTML);
 		}
 		else {
@@ -1137,29 +1137,29 @@ function setSliderAndColorControl(extra, idx) {
 
 	var modelabel = d.getElementById("modelabel");
 	var effectsearchbar = d.getElementById("effectsearchbar");
-	effectsearchbar.style.width = '230px'; //correct staytop effect to position searchbar right
+	effectsearchbar.style.width = '230px';  // correct staytop effect to position searchbar right
 	if (pcmode) {
 		modelabel.style.top = topPosition + "px";
-		topPosition += 20; //increase top position for the next control
-		modelabel.style.zIndex = "170"; //correct staytop effect, same as fx list
+		topPosition += 20;                    // increase top position for the next control
+		modelabel.style.zIndex = "170";       // correct staytop effect, same as fx list
 
 		effectsearchbar.style.top = topPosition + "px";
-		topPosition += 40; //increase top position for the next control
-		effectsearchbar.style.zIndex = "170"; //correct staytop effect, same as fx list
+		topPosition += 40;                    // increase top position for the next control
+		effectsearchbar.style.zIndex = "170"; // correct staytop effect, same as fx list
 	}
 	else {
 		modelabel.style.top = "auto";
-		modelabel.style.zIndex = "0"; //correct staytop effect, behind sliders
+		modelabel.style.zIndex = "0";         // correct staytop effect, behind sliders
 
 		effectsearchbar.style.top = "auto";
-		effectsearchbar.style.zIndex = "0"; //correct staytop effect, behind sliders
+		effectsearchbar.style.zIndex = "0";   // correct staytop effect, behind sliders
 	}
 
-	//set top position of the first effect (fx0=solid)
+	// set top position of the first effect (fx0=solid)
 	var firstEffect = d.getElementById("fx0");
 	firstEffect.style.top = topPosition + "px";
 
-	//moved from index.css as top of effectlist needs to be set dynamically
+	// moved from index.css as top of effectlist needs to be set dynamically
 	var style = d.createElement('style');
 	style.innerHTML =
 	'.lstI.selected {'+
@@ -1171,8 +1171,8 @@ function setSliderAndColorControl(extra, idx) {
 	var ref = d.querySelector('script');
 	// Insert our new styles before the first script tag
 	ref.parentNode.insertBefore(style, ref);
-	//set html color items on/off
 
+  // set html color items on/off
 	var colorOnOffLabel = '';
 	var sep = '';
 	for (let i=0; i<3; i++) {
@@ -1203,7 +1203,7 @@ function setSliderAndColorControl(extra, idx) {
 	var colorOnOffLabelElement = d.getElementById("colorOnOffLabel");
 	colorOnOffLabelElement.innerHTML = colorOnOffLabel;
 
-	//set html palette on/off
+	// set html palette on/off
 	// pallist defined as d.getElementById("pallist")
 	// var selectPalette = d.getElementById("selectPalette");
 	var pallabel = d.getElementById("paletteLabel");

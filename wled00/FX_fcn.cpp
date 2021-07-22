@@ -235,16 +235,16 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
   if (matrixHeight > 1) // in case of 2D
   {
     if (!IS_ROTATED2D) {
-      if (!IS_REVERSE && !IS_REVERSE2D) { newX = x; newY = y; }                           // 000      -       -           -         (rotate 0)
-      else if (!IS_REVERSE && IS_REVERSE2D) { newX = x; newY = SEGMENT.height - 1 - y; }  // 001      -       -           MirrorY   (rotate 180+MirrorX)
-      else if (IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = y; }   // 010      -       MirrorX     -         (rotate 0 + MirrorX)
-      else if (IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; } // 011      -       MirrorX     MirrorY   (rotate 180)
+      if (!IS_REVERSE && !IS_REVERSE2D) { newX = x; newY = y; }                                               // 000      -       -           -         (rotate 0)
+      else if (!IS_REVERSE && IS_REVERSE2D) { newX = x; newY = SEGMENT.height - 1 - y; }                      // 001      -       -           MirrorY   (rotate 180+MirrorX)
+      else if (IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = y; }                       // 010      -       MirrorX     -         (rotate 0 + MirrorX)
+      else if (IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.width - 1 - x; newY = SEGMENT.height - 1 - y; }   // 011      -       MirrorX     MirrorY   (rotate 180)
     }
     else {
-      if (!IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = x; }      // 100      90      -           -         (rotate 90)
-      else if (!IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; } // 101      90      -           MirrorY   (rotate 270 + mirrorX)
-      else if (IS_REVERSE && !IS_REVERSE2D) { newX = y; newY = x;  }                      // 110      90      MirrorX     -         (rotate 90 + mirrorX)
-      else if (IS_REVERSE && IS_REVERSE2D) { newX = y; newY = SEGMENT.width - 1 - x; }    // 111      90      MirrorX     MirrorY   (rotate 270)
+      if (!IS_REVERSE && !IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = x; }                          // 100      90      -           -         (rotate 90)
+      else if (!IS_REVERSE && IS_REVERSE2D) { newX = SEGMENT.height - 1 - y; newY = SEGMENT.width - 1 - x; }  // 101      90      -           MirrorY   (rotate 270 + mirrorX)
+      else if (IS_REVERSE && !IS_REVERSE2D) { newX = y; newY = x;  }                                          // 110      90      MirrorX     -         (rotate 90 + mirrorX)
+      else if (IS_REVERSE && IS_REVERSE2D) { newX = y; newY = SEGMENT.width - 1 - x; }                        // 111      90      MirrorX     MirrorY   (rotate 270)
     }
   }
 

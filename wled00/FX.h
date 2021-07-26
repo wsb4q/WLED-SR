@@ -96,7 +96,7 @@
 
 // options
 // bit    7: segment is in transition mode
-// bits 4-6: TBD
+// bits 4-6: See WLEDSR below
 // bit    3: mirror effect within segment
 // bit    2: segment is on
 // bit    1: reverse segment
@@ -242,10 +242,10 @@
 #define DEFAULT_FFT2       (uint8_t)128
 #define DEFAULT_FFT3       (uint8_t)128
 
+// bits 4-6: WLEDSR: used for rotation and reverse
 #define ROTATED2D     (uint8_t)0x10 //0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40, 0x80, 0xF0
 #define REVERSE2D     (uint8_t)0x40 //0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40, 0x80, 0xF0
 #define IS_REVERSE2D     ((SEGMENT.options & REVERSE2D    ) == REVERSE2D    )
-#define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 #define IS_ROTATED2D      ((SEGMENT.options & ROTATED2D     ) == ROTATED2D     )
 
 //these id's should never change as they are saved in api commands of presets
@@ -1328,7 +1328,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Glitter",
 "Candle",
 "Fireworks Starburst",
-"Fireworks 1D",
+"Fireworks 1D@Gravity,Firing side;;!",
 "Bouncing Balls",
 "Sinelon",
 "Sinelon Dual",

@@ -42,8 +42,6 @@ const int BLOCK_SIZE = 64;
 
 const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
 
-TaskHandle_t FFT_Task;
-
 //Use userVar0 and userVar1 (API calls &U0=,&U1=, uint16_t)
 
 #ifndef LED_BUILTIN     // Set LED_BUILTIN if it is not defined by Arduino framework
@@ -267,7 +265,7 @@ double fftAdd( int from, int to) {
 
 // FFT main code
 void FFTcode( void * parameter) {
-  //DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
+  DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
   //double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
   //double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
 

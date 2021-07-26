@@ -166,10 +166,13 @@ void initServer()
     },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
       if(!index){
         DEBUG_PRINTLN(F("OTA Update Start"));
+        DEBUG_PRINT("OTA running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
+        vTaskPrioritySet( FFT_Task, tskIDLE_PRIORITY); //WLEDSR: Avoid crash due to angry watchdog 
         #ifdef ESP8266
         Update.runAsync(true);
         #endif
         Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000);
+        vTaskPrioritySet( FFT_Task, 1); //WLEDSR: watchdog at ease
       }
       if(!Update.hasError()) Update.write(data, len);
       if(final){

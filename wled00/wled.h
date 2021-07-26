@@ -636,6 +636,8 @@ WLED_GLOBAL bool doInitBusses _INIT(false);
 // Usermod manager
 WLED_GLOBAL UsermodManager usermods _INIT(UsermodManager());
 
+WLED_GLOBAL TaskHandle_t FFT_Task; //WLEDSR: Moved from audio_reactive.h to global as OTA updates sets it to idle
+
 // Status LED
 #if STATUSLED
   WLED_GLOBAL unsigned long ledStatusLastMillis _INIT(0);

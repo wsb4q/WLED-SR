@@ -39,10 +39,14 @@
 
 #ifndef USERMOD_FOUR_LINE_DISPLAY
 // These constants won't be defined if we aren't using FourLineDisplay.
-#define FLD_LINE_3_BRIGHTNESS       0
-#define FLD_LINE_3_EFFECT_SPEED     0
-#define FLD_LINE_3_EFFECT_INTENSITY 0
-#define FLD_LINE_3_PALETTE          0
+#define FLD_LINE_BRIGHTNESS       0
+#define FLD_LINE_MODE             0
+#define FLD_LINE_EFFECT_SPEED     0
+#define FLD_LINE_EFFECT_INTENSITY 0
+#define FLD_LINE_EFFECT_FFT1      0 //WLEDSR
+#define FLD_LINE_EFFECT_FFT2      0 //WLEDSR
+#define FLD_LINE_EFFECT_FFT3      0 //WLEDSR
+#define FLD_LINE_PALETTE          0
 #endif
 
 
@@ -68,6 +72,7 @@ private:
   void* display = nullptr;
 #endif
 
+  char **modes_qstrings = nullptr;        //WLEDSR (HarryB-210729): Add invalid effect index skip
   byte *modes_alpha_indexes = nullptr;
   byte *palettes_alpha_indexes = nullptr;
 
@@ -93,6 +98,7 @@ public:
     loopTime = currentTime;
 
     ModeSortUsermod *modeSortUsermod = (ModeSortUsermod*) usermods.lookup(USERMOD_ID_MODE_SORT);
+    modes_qstrings = modeSortUsermod->getModesQStrings(); //WLEDSR (HarryB-210729): Add invalid effect index skip
     modes_alpha_indexes = modeSortUsermod->getModesAlphaIndexes();
     palettes_alpha_indexes = modeSortUsermod->getPalettesAlphaIndexes();
 
@@ -101,7 +107,7 @@ public:
     // But it's optional. But you want it.
     display = (FourLineDisplayUsermod*) usermods.lookup(USERMOD_ID_FOUR_LINE_DISP);
     if (display != nullptr) {
-      display->setLineThreeType(FLD_LINE_3_BRIGHTNESS);
+      display->setLineType(FLD_LINE_BRIGHTNESS);
       display->setMarkLine(3);
     }
 #endif
@@ -153,19 +159,28 @@ public:
           if (display != nullptr) {
             switch(newState) {
               case 0:
-                changedState = changeState("Brightness", FLD_LINE_3_BRIGHTNESS, 3);
+                changedState = changeState("Brightness", FLD_LINE_BRIGHTNESS, 3);
                 break;
               case 1:
-                changedState = changeState("Select FX", FLD_LINE_3_EFFECT_SPEED, 2);
+                changedState = changeState("Select FX", FLD_LINE_MODE, 2);
                 break;
               case 2:
-                changedState = changeState("FX Speed", FLD_LINE_3_EFFECT_SPEED, 3);
+                changedState = changeState("FX Speed", FLD_LINE_EFFECT_SPEED, 3);
                 break;
               case 3:
-                changedState = changeState("FX Intensity", FLD_LINE_3_EFFECT_INTENSITY, 3);
+                changedState = changeState("FX Intensity", FLD_LINE_EFFECT_INTENSITY, 3);
                 break;
               case 4:
-                changedState = changeState("Palette", FLD_LINE_3_PALETTE, 3);
+                changedState = changeState("Custom 1", FLD_LINE_EFFECT_FFT1, 3); //WLEDSR
+                break;
+              case 5:
+                changedState = changeState("Custom 2", FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
+                break;
+              case 6:
+                changedState = changeState("Custom 3", FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
+                break;
+              case 7:
+                changedState = changeState("Palette", FLD_LINE_PALETTE, 3);
                 break;
             }
           }
@@ -198,6 +213,15 @@ public:
               changeEffectIntensity(true);
               break;
             case 4:
+              changeEffectFFT1(true); //WLEDSR
+              break;
+            case 5:
+              changeEffectFFT2(true); //WLEDSR
+              break;
+            case 6:
+              changeEffectFFT3(true); //WLEDSR
+              break;
+            case 7:
               changePalette(true);
               break;
           }
@@ -218,6 +242,15 @@ public:
               changeEffectIntensity(false);
               break;
             case 4:
+              changeEffectFFT1(false); //WLEDSR
+              break;
+            case 5:
+              changeEffectFFT2(false); //WLEDSR
+              break;
+            case 6:
+              changeEffectFFT3(false); //WLEDSR
+              break;
+            case 7:
               changePalette(false);
               break;
           }
@@ -231,7 +264,7 @@ public:
   void findCurrentEffectAndPalette() {
     currentEffectAndPaleeteInitialized = true;
     for (uint8_t i = 0; i < strip.getModeCount(); i++) {
-      byte value = modes_alpha_indexes[i];
+      //byte value = modes_alpha_indexes[i];
       if (modes_alpha_indexes[i] == effectCurrent) {
         effectCurrentIndex = i;
         break;
@@ -239,7 +272,7 @@ public:
     }
 
     for (uint8_t i = 0; i < strip.getPaletteCount(); i++) {
-      byte value = palettes_alpha_indexes[i];
+      //byte value = palettes_alpha_indexes[i];
       if (palettes_alpha_indexes[i] == strip.getSegment(0).palette) {
         effectPaletteIndex = i;
         break;
@@ -255,7 +288,7 @@ public:
         return false;
       }
       display->overlay("Mode change", stateName, 1500);
-      display->setLineThreeType(lineThreeMode);
+      display->setLineType(lineThreeMode);
       display->setMarkLine(markedLine);
     }
   #endif
@@ -263,7 +296,7 @@ public:
   }
 
   void lampUdated() {
-    bool fxChanged = strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectPalette);
+    bool fxChanged = strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette); // Harry 210725 lacks 3 fft arguments, temp set to 128
 
     //call for notifier -> 0: init 1: direct change 2: button 3: notification 4: nightlight 5: other (No notification)
     // 6: fx changed 7: hue 8: preset cycle 9: blynk 10: alexa
@@ -288,18 +321,25 @@ public:
   }
 
   void changeEffect(bool increase) {
+    char reservedEffectsName[] = "Reserved";  //WLEDSR(HarryB-210729) Add invalid effect index skip
+    bool isReservedEffectIndex = true;  //WLEDSR(HarryB-210729) Add invalid effect index skip
 #ifdef USERMOD_FOUR_LINE_DISPLAY
     if (display && display->wakeDisplay()) {
       // Throw away wake up input
       return;
     }
 #endif
-    if (increase) {
-      effectCurrentIndex = (effectCurrentIndex + 1 >= strip.getModeCount()) ? 0 : (effectCurrentIndex + 1);
-    }
-    else {
-      effectCurrentIndex = (effectCurrentIndex - 1 < 0) ? (strip.getModeCount() - 1) : (effectCurrentIndex - 1);
-    }
+    do {    //WLEDSR(HarryB-210729) Add invalid effect index skip  ** repeats increase/decrease until valid effectindex reached
+      if (increase) {
+        effectCurrentIndex = (effectCurrentIndex + 1 >= strip.getModeCount()) ? 0 : (effectCurrentIndex + 1);
+      }
+      else {
+        effectCurrentIndex = (effectCurrentIndex - 1 < 0) ? (strip.getModeCount() - 1) : (effectCurrentIndex - 1);
+      }
+      for (int j=0; (j<8 && isReservedEffectIndex); j++) {    //WLEDSR(HarryB-210729) Add invalid effect index skip  *** checks single characters (max 8) of new effectname until different from "Reserved"
+        isReservedEffectIndex = reservedEffectsName[j] == pgm_read_byte_near(modes_qstrings[modes_alpha_indexes[effectCurrentIndex]]+j);    //WLEDSR(HarryB-210729) Add invalid effect index skip
+      }
+    } while (isReservedEffectIndex);   //WLEDSR(HarryB-210729) Add invalid effect index skip
     effectCurrent = modes_alpha_indexes[effectCurrentIndex];
     lampUdated();
   }
@@ -332,6 +372,54 @@ public:
     }
     else {
       effectIntensity = (effectIntensity - fadeAmount >= 0) ? (effectIntensity - fadeAmount) : 0;
+    }
+    lampUdated();
+  }
+
+  void changeEffectFFT1(bool increase) { //WLEDSR
+#ifdef USERMOD_FOUR_LINE_DISPLAY
+    if (display && display->wakeDisplay()) {
+      // Throw away wake up input
+      return;
+    }
+#endif
+    if (increase) {
+      effectFFT1 = (effectFFT1 + fadeAmount <= 255) ? (effectFFT1 + fadeAmount) : 255;
+    }
+    else {
+      effectFFT1 = (effectFFT1 - fadeAmount >= 0) ? (effectFFT1 - fadeAmount) : 0;
+    }
+    lampUdated();
+  }
+
+  void changeEffectFFT2(bool increase) { //WLEDSR
+#ifdef USERMOD_FOUR_LINE_DISPLAY
+    if (display && display->wakeDisplay()) {
+      // Throw away wake up input
+      return;
+    }
+#endif
+    if (increase) {
+      effectFFT2 = (effectFFT2 + fadeAmount <= 255) ? (effectFFT2 + fadeAmount) : 255;
+    }
+    else {
+      effectFFT2 = (effectFFT2 - fadeAmount >= 0) ? (effectFFT2 - fadeAmount) : 0;
+    }
+    lampUdated();
+  }
+
+  void changeEffectFFT3(bool increase) { //WLEDSR
+#ifdef USERMOD_FOUR_LINE_DISPLAY
+    if (display && display->wakeDisplay()) {
+      // Throw away wake up input
+      return;
+    }
+#endif
+    if (increase) {
+      effectFFT3 = (effectFFT3 + fadeAmount <= 255) ? (effectFFT3 + fadeAmount) : 255;
+    }
+    else {
+      effectFFT3 = (effectFFT3 - fadeAmount >= 0) ? (effectFFT3 - fadeAmount) : 0;
     }
     lampUdated();
   }

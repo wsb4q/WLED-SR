@@ -57,8 +57,12 @@ typedef enum {
   FLD_LINE_BRIGHTNESS = 0,
   FLD_LINE_EFFECT_SPEED,
   FLD_LINE_EFFECT_INTENSITY,
+  FLD_LINE_EFFECT_FFT1, //WLEDSR
+  FLD_LINE_EFFECT_FFT2, //WLEDSR
+  FLD_LINE_EFFECT_FFT3, //WLEDSR
   FLD_LINE_MODE,
   FLD_LINE_PALETTE,
+  FLD_LINE_PRESET, //WLEDSR
   FLD_LINE_TIME
 } Line4Type;
 
@@ -133,6 +137,7 @@ class FourLineDisplayUsermod : public Usermod {
       if (type == NONE) return;
       if (!pinManager.allocatePin(sclPin)) { sclPin = -1; type = NONE; return;}
       if (!pinManager.allocatePin(sdaPin)) { pinManager.deallocatePin(sclPin); sclPin = sdaPin = -1; type = NONE; return; }
+      DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
         case SSD1306:
           #ifdef ESP8266
@@ -184,12 +189,19 @@ class FourLineDisplayUsermod : public Usermod {
           type = NONE;
           return;
       }
-      (static_cast<U8X8*>(u8x8))->begin();
+      initDone = true;
+      if (u8x8 != nullptr) {
+        DEBUG_PRINTLN(F("Starting display."));
+        (static_cast<U8X8*>(u8x8))->begin();
+      } else {
+        DEBUG_PRINTLN(F("Display init failed."));
+        type = NONE;
+        return;
+      }
       setFlipMode(flip);
       setContrast(contrast); //Contrast setup will help to preserve OLED lifetime. In case OLED need to be brighter increase number up to 255
       setPowerSave(0);
       drawString(0, 0, "Loading...");
-      initDone = true;
     }
 
     // gets called every time WiFi is (re-)connected. Initialize own network
@@ -200,9 +212,10 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || strip.isUpdating()) return;
+      //if (millis() - lastUpdate < (clockMode?1000:refreshRate) || strip.isUpdating()) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+      if (millis() - lastUpdate < (clockMode?1000:refreshRate)) return;
       lastUpdate = millis();
-
+      //DEBUG_PRINTLN("Redraw..");
       redraw(false);
     }
 
@@ -296,6 +309,19 @@ class FourLineDisplayUsermod : public Usermod {
             lineType = FLD_LINE_EFFECT_INTENSITY;
             break;
           case FLD_LINE_EFFECT_INTENSITY:
+            lineType = FLD_LINE_EFFECT_FFT1; //WLEDSR
+            break;
+          case FLD_LINE_EFFECT_FFT1:
+            lineType = FLD_LINE_EFFECT_FFT2; //WLEDSR
+            JSON_mode_names
+            break;
+          case FLD_LINE_EFFECT_FFT2:
+            lineType = FLD_LINE_EFFECT_FFT3; //WLEDSR
+            break;
+          case FLD_LINE_EFFECT_FFT3:
+            lineType = FLD_LINE_PRESET;
+            break;
+          case FLD_LINE_PRESET:
             lineType = FLD_LINE_PALETTE;
             break;
           default:
@@ -381,6 +407,22 @@ class FourLineDisplayUsermod : public Usermod {
           sprintf_P(lineBuffer, PSTR("FX Intens. %3d"), effectIntensity);
           drawString(2, line*lineHeight, lineBuffer);
           break;
+        case FLD_LINE_EFFECT_FFT1: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("FX Custom1 %3d"), effectFFT1);
+          drawString(2, line*lineHeight, lineBuffer);
+          break;
+        case FLD_LINE_EFFECT_FFT2: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("FX Custom2 %3d"), effectFFT2);
+          drawString(2, line*lineHeight, lineBuffer);
+          break;
+        case FLD_LINE_EFFECT_FFT3: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("FX Custom3 %3d"), effectFFT3);
+          drawString(2, line*lineHeight, lineBuffer);
+          break;
+        case FLD_LINE_PRESET:
+          sprintf_P(lineBuffer, PSTR("FX Preset %3d"), currentPreset);
+          drawString(2, line*lineHeight, lineBuffer);
+          break;
         case FLD_LINE_MODE:
           showCurrentEffectOrPalette(knownMode, JSON_mode_names, line);
           break;
@@ -388,10 +430,8 @@ class FourLineDisplayUsermod : public Usermod {
           showCurrentEffectOrPalette(knownPalette, JSON_palette_names, line);
           break;
         case FLD_LINE_TIME:
-          showTime(false);
-          break;
         default:
-          // unknown type, do nothing
+          showTime(false);
           break;
       }
     }
@@ -408,8 +448,10 @@ class FourLineDisplayUsermod : public Usermod {
       char singleJsonSymbol;
 
       // Find the mode name in JSON
+      DEBUG_PRINTLN("Display new effect started");
       for (size_t i = 0; i < strlen_P(qstring); i++) {
         singleJsonSymbol = pgm_read_byte_near(qstring + i);
+        if ((singleJsonSymbol == '@') && (qComma == knownMode)) break;       //WLEDSR(HarryB): Stop reading, we've got all we want
         if (singleJsonSymbol == '\0') break;
         switch (singleJsonSymbol) {
           case '"':
@@ -419,7 +461,9 @@ class FourLineDisplayUsermod : public Usermod {
           case ']':
             break;
           case ',':
-            qComma++;
+            if (!insideQuotes) {       //WLEDSR(HarryB) added condition to differentiate between comma in mode name or as seperator
+              qComma++;
+            }
           default:
             if (!insideQuotes || (qComma != knownMode)) break;
             lineBuffer[printedChars++] = singleJsonSymbol;
@@ -428,6 +472,7 @@ class FourLineDisplayUsermod : public Usermod {
       }
       for (;printedChars < getCols()-2 && printedChars < sizeof(lineBuffer)-2; printedChars++) lineBuffer[printedChars]=' ';
       lineBuffer[printedChars] = 0;
+      DEBUG_PRINTLN(lineBuffer);
       drawString(2, row*lineHeight, lineBuffer);
     }
 
@@ -464,6 +509,10 @@ class FourLineDisplayUsermod : public Usermod {
       if (line1) drawString(0, 1*lineHeight, line1);
       if (line2) drawString(0, 2*lineHeight, line2);
       overlayUntil = millis() + showHowLong;
+    }
+
+    void setLineType(byte lT) {
+      lineType = (Line4Type) lT;
     }
 
     /**
@@ -648,6 +697,7 @@ class FourLineDisplayUsermod : public Usermod {
         type = newType;
         DEBUG_PRINTLN(F(" config loaded."));
       } else {
+        DEBUG_PRINTLN(F(" config (re)loaded."));
         // changing parameters from settings page
         if (sclPin!=newScl || sdaPin!=newSda || type!=newType) {
           if (type != NONE) delete (static_cast<U8X8*>(u8x8));
@@ -665,7 +715,6 @@ class FourLineDisplayUsermod : public Usermod {
         setContrast(contrast);
         setFlipMode(flip);
         if (needsRedraw && !wakeDisplay()) redraw(true);
-        DEBUG_PRINTLN(F(" config (re)loaded."));
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
       return true;

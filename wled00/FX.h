@@ -113,7 +113,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT  255 // WLEDSR: no need to change this value when effects are added / deleted. First 128 for AC, second for SR
+#define MODE_COUNT 187// 255 // WLEDSR: no need to change this value when effects are added / deleted. First 128 for AC, second for SR
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -1356,16 +1356,16 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Blends",
 "TV Simulator",
 "Dynamic Smooth",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
-"Reserved",
+"Reserved0",
+"Reserved1",
+"Reserved2",
+"Reserved3",
+"Reserved4",
+"Reserved5",
+"Reserved6",
+"Reserved7",
+"Reserved8",
+"Reserved9",
 "* Pixels@Fade rate,# of pixels;,!;!",
 "* Pixelwave@!,Sensitivity;!,!;!",
 "* Juggles@!,# of balls;,!;!",

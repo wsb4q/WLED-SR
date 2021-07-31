@@ -11,7 +11,7 @@
 // 
 // char **getModesQStrings()
 // Provides an array of char* (pointers) to the names of the
-// palettes within JSON_mode_names, in the same order as 
+// modes within JSON_mode_names, in the same order as 
 // JSON_mode_names. These strings end in double quote (")
 // (or \0 if there is a problem).
 //
@@ -55,6 +55,7 @@ int re_qstringCmp(const void *ap, const void *bp) {
             aVal -= 32;
         }
         char bVal = pgm_read_byte_near(b + i);
+        DEBUG_PRINT(".");
         if (bVal >= 97 && bVal <= 122) {
             // Lowercase
             bVal -= 32;
@@ -186,6 +187,7 @@ public:
         char singleJsonSymbol;
 
         // Find the mode name in JSON
+        DEBUG_PRINTLN("Start Find mode names");
         bool complete = false;
         for (size_t i = 0; i < strlen_P(json); i++) {
             singleJsonSymbol = pgm_read_byte_near(json + i);
@@ -203,7 +205,11 @@ public:
                 complete = true;
                 break;
             case ',':
-                modeIndex++;
+                if (!insideQuotes) {                //WLEDSR(HarryB) added condition to differentiate between comma in mode name or as seperator
+                    modeIndex++;
+                    DEBUG_PRINT(" idx:");
+                    DEBUG_PRINT(modeIndex);
+                }
             default:
                 if (!insideQuotes) {
                     break;
@@ -213,6 +219,7 @@ public:
                 break;
             }
         }
+        DEBUG_PRINTLN("        Finished Find mode names ");
         return modeStrings;
     }
 

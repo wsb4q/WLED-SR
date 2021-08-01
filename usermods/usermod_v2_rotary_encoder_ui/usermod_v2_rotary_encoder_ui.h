@@ -26,7 +26,7 @@
 //
 
 #ifndef ENCODER_DT_PIN
-#define ENCODER_DT_PIN 12
+#define ENCODER_DT_PIN 12 //12 needed for bootstrap... (no current at boot) overwrite in env for other values
 #endif
 
 #ifndef ENCODER_CLK_PIN
@@ -296,7 +296,7 @@ public:
   }
 
   void lampUdated() {
-    bool fxChanged = strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette); // Harry 210725 lacks 3 fft arguments, temp set to 128
+    strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette); // Harry 210725 lacks 3 fft arguments, temp set to 128
 
     //call for notifier -> 0: init 1: direct change 2: button 3: notification 4: nightlight 5: other (No notification)
     // 6: fx changed 7: hue 8: preset cycle 9: blynk 10: alexa

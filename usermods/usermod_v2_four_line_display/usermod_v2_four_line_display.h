@@ -137,7 +137,6 @@ class FourLineDisplayUsermod : public Usermod {
       if (type == NONE) return;
       if (!pinManager.allocatePin(sclPin)) { sclPin = -1; type = NONE; return;}
       if (!pinManager.allocatePin(sdaPin)) { pinManager.deallocatePin(sclPin); sclPin = sdaPin = -1; type = NONE; return; }
-      DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
         case SSD1306:
           #ifdef ESP8266
@@ -212,8 +211,7 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      //if (millis() - lastUpdate < (clockMode?1000:refreshRate) || strip.isUpdating()) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate)) return;
+      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || strip.isUpdating()) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
       lastUpdate = millis();
       //DEBUG_PRINTLN("Redraw..");
       redraw(false);
@@ -313,7 +311,6 @@ class FourLineDisplayUsermod : public Usermod {
             break;
           case FLD_LINE_EFFECT_FFT1:
             lineType = FLD_LINE_EFFECT_FFT2; //WLEDSR
-            JSON_mode_names
             break;
           case FLD_LINE_EFFECT_FFT2:
             lineType = FLD_LINE_EFFECT_FFT3; //WLEDSR

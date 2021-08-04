@@ -47,11 +47,14 @@
 #define FLD_LINE_EFFECT_FFT2      0 //WLEDSR
 #define FLD_LINE_EFFECT_FFT3      0 //WLEDSR
 #define FLD_LINE_PALETTE          0
+
+char sliderNames[5][LINE_BUFFER_SIZE*2] = {"FX Speed", "FX Intens.", "FX Custom1", "FX Custom2", "FX Custom3"}; //WLEDSR
+
 #endif
 
 
 // The last UI state
-#define LAST_UI_STATE 4
+#define LAST_UI_STATE 7
 
 
 class RotaryEncoderUIUsermod : public Usermod {
@@ -59,9 +62,10 @@ private:
   int fadeAmount = 10;             // Amount to change every step (brightness)
   unsigned long currentTime;
   unsigned long loopTime;
-  const int pinA = ENCODER_DT_PIN;     // DT from encoder
-  const int pinB = ENCODER_CLK_PIN;    // CLK from encoder
-  const int pinC = ENCODER_SW_PIN;     // SW from encoder
+  //  -D ENCODER_DT_PIN=26 -D ENCODER_CLK_PIN=27 -D ENCODER_SW_PIN=33  
+  int8_t pinA = ENCODER_DT_PIN;       // DT from encoder
+  int8_t pinB = ENCODER_CLK_PIN;      // CLK from encoder
+  int8_t pinC = ENCODER_SW_PIN;       // SW from encoder
   unsigned char select_state = 0;      // 0: brightness, 1: effect, 2: effect speed
   unsigned char button_state = HIGH;
   unsigned char prev_button_state = HIGH;
@@ -84,6 +88,16 @@ private:
   uint8_t effectCurrentIndex = 0;
   uint8_t effectPaletteIndex = 0;
 
+  bool initDone = false;
+  bool enabled = true;
+
+  // strings to reduce flash memory usage (used more than twice)
+  static const char _name[];
+  static const char _enabled[];
+  static const char _DT_pin[];
+  static const char _CLK_pin[];
+  static const char _SW_pin[];
+
 public:
   /*
      * setup() is called once at boot. WiFi is not yet connected at this point.
@@ -91,6 +105,10 @@ public:
      */
   void setup()
   {
+    if (!pinManager.allocatePin(pinA)) { enabled = false; return;}
+    if (!pinManager.allocatePin(pinB)) { pinManager.deallocatePin(pinA); enabled = false; return; }
+    if (!pinManager.allocatePin(pinC)) { pinManager.deallocatePin(pinA); pinManager.deallocatePin(pinB); enabled = false; return; }
+
     pinMode(pinA, INPUT_PULLUP);
     pinMode(pinB, INPUT_PULLUP);
     pinMode(pinC, INPUT_PULLUP);
@@ -111,6 +129,8 @@ public:
       display->setMarkLine(3);
     }
 #endif
+
+    initDone = true;
   }
 
   /*
@@ -134,6 +154,8 @@ public:
      */
   void loop()
   {
+    if (!enabled) return;
+
     currentTime = millis(); // get the current elapsed time
 
     // Initialize effectCurrentIndex and effectPaletteIndex to
@@ -153,6 +175,19 @@ public:
           prev_button_state = button_state;
 
           char newState = select_state + 1;
+
+          //WLEDSR: Skip slider if not used
+          if (newState == 2 && strlen_P(sliderNames[0]) == 0)
+            newState++;
+          if (newState == 3 && strlen_P(sliderNames[1]) == 0)
+            newState++;
+          if (newState == 4 && strlen_P(sliderNames[2]) == 0)
+            newState++;
+          if (newState == 5 && strlen_P(sliderNames[3]) == 0)
+            newState++;
+          if (newState == 6 && strlen_P(sliderNames[4]) == 0)
+            newState++;
+
           if (newState > LAST_UI_STATE) newState = 0;
           
           bool changedState = true;
@@ -165,19 +200,19 @@ public:
                 changedState = changeState("Select FX", FLD_LINE_MODE, 2);
                 break;
               case 2:
-                changedState = changeState("FX Speed", FLD_LINE_EFFECT_SPEED, 3);
+                changedState = changeState(sliderNames[0], FLD_LINE_EFFECT_SPEED, 3);
                 break;
               case 3:
-                changedState = changeState("FX Intensity", FLD_LINE_EFFECT_INTENSITY, 3);
+                changedState = changeState(sliderNames[1], FLD_LINE_EFFECT_INTENSITY, 3);
                 break;
               case 4:
-                changedState = changeState("Custom 1", FLD_LINE_EFFECT_FFT1, 3); //WLEDSR
+                changedState = changeState(sliderNames[2], FLD_LINE_EFFECT_FFT1, 3); //WLEDSR
                 break;
               case 5:
-                changedState = changeState("Custom 2", FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
+                changedState = changeState(sliderNames[3], FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
                 break;
               case 6:
-                changedState = changeState("Custom 3", FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
+                changedState = changeState(sliderNames[4], FLD_LINE_EFFECT_FFT3, 3); //WLEDSR
                 break;
               case 7:
                 changedState = changeState("Palette", FLD_LINE_PALETTE, 3);
@@ -296,8 +331,7 @@ public:
   }
 
   void lampUdated() {
-    strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette); // Harry 210725 lacks 3 fft arguments, temp set to 128
-
+    strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette);
     //call for notifier -> 0: init 1: direct change 2: button 3: notification 4: nightlight 5: other (No notification)
     // 6: fx changed 7: hue 8: preset cycle 9: blynk 10: alexa
     colorUpdated(CALL_MODE_DIRECT_CHANGE);
@@ -474,8 +508,71 @@ public:
      */
   void readFromJsonState(JsonObject &root)
   {
-    userVar0 = root["user0"] | userVar0; //if "user0" key exists in JSON, update, else keep old value
+    //userVar0 = root["user0"] | userVar0; //if "user0" key exists in JSON, update, else keep old value
     //if (root["bri"] == 255) Serial.println(F("Don't burn down your garage!"));
+  }
+
+  /**
+   * addToConfig() (called from set.cpp) stores persistent properties to cfg.json
+   */
+  void addToConfig(JsonObject &root) {
+    // we add JSON object: {"Rotary-Encoder":{"DT-pin":12,"CLK-pin":14,"SW-pin":13}}
+    JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
+    top[FPSTR(_enabled)] = enabled;
+    top[FPSTR(_DT_pin)]  = pinA;
+    top[FPSTR(_CLK_pin)] = pinB;
+    top[FPSTR(_SW_pin)]  = pinC;
+    DEBUG_PRINTLN(F("Rotary Encoder config saved."));
+  }
+
+  /**
+   * readFromConfig() is called before setup() to populate properties from values stored in cfg.json
+   *
+   * The function should return true if configuration was successfully loaded or false if there was no configuration.
+   */
+  bool readFromConfig(JsonObject &root) {
+    // we look for JSON object: {"Rotary-Encoder":{"DT-pin":12,"CLK-pin":14,"SW-pin":13}}
+    JsonObject top = root[FPSTR(_name)];
+    if (top.isNull()) {
+      DEBUG_PRINT(FPSTR(_name));
+      DEBUG_PRINTLN(F(": No config found. (Using defaults.)"));
+      return false;
+    }
+    int8_t newDTpin  = pinA;
+    int8_t newCLKpin = pinB;
+    int8_t newSWpin  = pinC;
+
+    enabled   = top[FPSTR(_enabled)] | enabled;
+    newDTpin  = top[FPSTR(_DT_pin)]  | newDTpin;
+    newCLKpin = top[FPSTR(_CLK_pin)] | newCLKpin;
+    newSWpin  = top[FPSTR(_SW_pin)]  | newSWpin;
+
+    DEBUG_PRINT(FPSTR(_name));
+    if (!initDone) {
+      // first run: reading from cfg.json
+      pinA = newDTpin;
+      pinB = newCLKpin;
+      pinC = newSWpin;
+      DEBUG_PRINTLN(F(" config loaded."));
+    } else {
+      DEBUG_PRINTLN(F(" config (re)loaded."));
+      // changing parameters from settings page
+      if (pinA!=newDTpin || pinB!=newCLKpin || pinC!=newSWpin) {
+        pinManager.deallocatePin(pinA);
+        pinManager.deallocatePin(pinB);
+        pinManager.deallocatePin(pinC);
+        pinA = newDTpin;
+        pinB = newCLKpin;
+        pinC = newSWpin;
+        if (pinA<0 || pinB<0 || pinC<0) {
+          enabled = false;
+          return true;
+        }
+        setup();
+      }
+    }
+    // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
+    return !top[FPSTR(_enabled)].isNull();
   }
 
   /*
@@ -487,3 +584,10 @@ public:
     return USERMOD_ID_ROTARY_ENC_UI;
   }
 };
+
+// strings to reduce flash memory usage (used more than twice)
+const char RotaryEncoderUIUsermod::_name[]     PROGMEM = "Rotary-Encoder";
+const char RotaryEncoderUIUsermod::_enabled[]  PROGMEM = "enabled";
+const char RotaryEncoderUIUsermod::_DT_pin[]   PROGMEM = "DT-pin";
+const char RotaryEncoderUIUsermod::_CLK_pin[]  PROGMEM = "CLK-pin";
+const char RotaryEncoderUIUsermod::_SW_pin[]   PROGMEM = "SW-pin";

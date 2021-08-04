@@ -2,6 +2,7 @@
 
 #include "wled.h"
 #include <U8x8lib.h> // from https://github.com/olikraus/u8g2/
+#include "Wire.h"
 
 //
 // Insired by the v1 usermod: ssd1306_i2c_oled_u8g2
@@ -75,6 +76,9 @@ typedef enum {
   SSD1305_64  // U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C
 } DisplayType;
 
+    char sliderNames[5][LINE_BUFFER_SIZE*2]; //WLEDSR
+    const char sliderDefaults[5][LINE_BUFFER_SIZE] = {"FX Speed", "FX Intens.", "FX Custom1", "FX Custom2", "FX Custom3"}; //WLEDSR
+
 class FourLineDisplayUsermod : public Usermod {
 
   private:
@@ -93,6 +97,7 @@ class FourLineDisplayUsermod : public Usermod {
     uint32_t screenTimeout = SCREEN_TIMEOUT_MS;       // in ms
     bool sleepMode = true;          // allow screen sleep?
     bool clockMode = false;         // display clock
+    bool wokeUp = false; //WLEDSR
 
     // Next variables hold the previous known values to determine if redraw is
     // required.
@@ -101,6 +106,9 @@ class FourLineDisplayUsermod : public Usermod {
     uint8_t knownBrightness = 0;
     uint8_t knownEffectSpeed = 0;
     uint8_t knownEffectIntensity = 0;
+    uint8_t knownEffectFFT1 = 0; //WLEDSR
+    uint8_t knownEffectFFT2 = 0; //WLEDSR
+    uint8_t knownEffectFFT3 = 0; //WLEDSR
     uint8_t knownMode = 0;
     uint8_t knownPalette = 0;
     uint8_t knownMinute = 99;
@@ -134,6 +142,9 @@ class FourLineDisplayUsermod : public Usermod {
     // gets called once at boot. Do all initialization that doesn't depend on
     // network here
     void setup() {
+      Wire.begin(FLD_PIN_SDA, FLD_PIN_SCL); //increase speed to run display
+      Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+
       if (type == NONE) return;
       if (!pinManager.allocatePin(sclPin)) { sclPin = -1; type = NONE; return;}
       if (!pinManager.allocatePin(sdaPin)) { pinManager.deallocatePin(sclPin); sclPin = sdaPin = -1; type = NONE; return; }
@@ -211,10 +222,10 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || strip.isUpdating()) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (strip.isUpdating() && !checkChanged() && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
       lastUpdate = millis();
-      //DEBUG_PRINTLN("Redraw..");
       redraw(false);
+      wokeUp = false; //WLEDSR: wokeUp handled
     }
 
     /**
@@ -258,6 +269,20 @@ class FourLineDisplayUsermod : public Usermod {
       (static_cast<U8X8*>(u8x8))->setPowerSave(save);
     }
 
+    //WLEDSR: move check to function to reuse code
+    bool checkChanged() {
+      return (((apActive) ? String(apSSID) : WiFi.SSID()) != knownSsid) ||
+          (knownIp != (apActive ? IPAddress(4, 3, 2, 1) : Network.localIP())) ||
+          (knownBrightness != bri) ||
+          (knownEffectSpeed != effectSpeed) ||
+          (knownEffectIntensity != effectIntensity) ||
+          (knownEffectFFT1 != effectFFT1) ||
+          (knownEffectFFT2 != effectFFT2) ||
+          (knownEffectFFT3 != effectFFT3) ||
+          (knownMode != strip.getMode()) ||
+          (knownPalette != strip.getSegment(0).palette);
+    }
+
     /**
      * Redraw the screen (but only if things have changed
      * or if forceRedraw).
@@ -280,14 +305,7 @@ class FourLineDisplayUsermod : public Usermod {
       }
 
       // Check if values which are shown on display changed from the last time.
-      if (forceRedraw ||
-          (((apActive) ? String(apSSID) : WiFi.SSID()) != knownSsid) ||
-          (knownIp != (apActive ? IPAddress(4, 3, 2, 1) : Network.localIP())) ||
-          (knownBrightness != bri) ||
-          (knownEffectSpeed != effectSpeed) ||
-          (knownEffectIntensity != effectIntensity) ||
-          (knownMode != strip.getMode()) ||
-          (knownPalette != strip.getSegment(0).palette)) {
+      if (forceRedraw || checkChanged()) {
         knownHour = 99; // force time update
         clear();
       } else if (sleepMode && !displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) {
@@ -325,6 +343,21 @@ class FourLineDisplayUsermod : public Usermod {
             lineType = FLD_LINE_MODE;
             break;
         }
+
+        //WLEDSR: Skip slider if not used
+        if (lineType == FLD_LINE_EFFECT_SPEED && strlen_P(sliderNames[0]) == 0) //slidername empty
+          lineType = FLD_LINE_EFFECT_INTENSITY;
+        if (lineType == FLD_LINE_EFFECT_INTENSITY && strlen_P(sliderNames[1]) == 0)
+          lineType = FLD_LINE_EFFECT_FFT1;
+        if (lineType == FLD_LINE_EFFECT_FFT1 && strlen_P(sliderNames[2]) == 0)
+          lineType = FLD_LINE_EFFECT_FFT2;
+        if (lineType == FLD_LINE_EFFECT_FFT2 && strlen_P(sliderNames[3]) == 0)
+          lineType = FLD_LINE_EFFECT_FFT3;
+        if (lineType == FLD_LINE_EFFECT_FFT3 && strlen_P(sliderNames[4]) == 0)
+          lineType = FLD_LINE_PRESET;
+        if (lineType == FLD_LINE_PRESET && currentPreset == -1)
+          lineType = FLD_LINE_PALETTE;
+
         knownHour = 99; // force time update
       } else {
         // Nothing to change.
@@ -354,6 +387,9 @@ class FourLineDisplayUsermod : public Usermod {
       knownPalette = strip.getSegment(0).palette;
       knownEffectSpeed = effectSpeed;
       knownEffectIntensity = effectIntensity;
+      knownEffectFFT1 = effectFFT1; //WLEDSR
+      knownEffectFFT2 = effectFFT2; //WLEDSR
+      knownEffectFFT3 = effectFFT3; //WLEDSR
 
       // Do the actual drawing
 
@@ -385,10 +421,48 @@ class FourLineDisplayUsermod : public Usermod {
       drawLine(2, clockMode ? lineType : FLD_LINE_MODE);
       drawLine(3, clockMode ? FLD_LINE_TIME : lineType);
 
-      drawGlyph(0, 2*lineHeight, 66 + (bri > 0 ? 3 : 0), u8x8_font_open_iconic_weather_2x2); // sun/moon icon
+      //WLEDSR: Show icon per variable
+      if (clockMode)
+        drawGlyph(0, 3*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); // clock icon
+      //else done in showCurrentEffectOrPalette
+
+      switch (lineType) {
+        case FLD_LINE_BRIGHTNESS:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 66 + (bri > 0 ? 3 : 0), u8x8_font_open_iconic_weather_1x1); // sun/moon icon
+          break;
+        case FLD_LINE_MODE: //nothing displayed as this is done in showCurrentEffectOrPalette
+          break;
+        case FLD_LINE_PALETTE: //nothing displayed as this is done in showCurrentEffectOrPalette
+          break;
+        case FLD_LINE_EFFECT_SPEED:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 72, u8x8_font_open_iconic_play_1x1); // fast forward icon
+          break;
+        case FLD_LINE_EFFECT_INTENSITY:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 78, u8x8_font_open_iconic_thing_1x1); // kind of fire icon
+          break;
+        case FLD_LINE_EFFECT_FFT1:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
+          break;
+        case FLD_LINE_EFFECT_FFT2:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
+          break;
+        case FLD_LINE_EFFECT_FFT3:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
+          break;
+        case FLD_LINE_PRESET:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 88, u8x8_font_open_iconic_arrow_1x1); // circle like icon
+          break;
+        case FLD_LINE_TIME:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); //  clock icon
+          break;
+        // default:
+        //   drawGlyph(0, (clockMode?2:3)*lineHeight, 72, u8x8_font_open_iconic_play_1x1); //  icon
+        //   break;
+      }
       //if (markLineNum>1) drawGlyph(2, markLineNum*lineHeight, 66, u8x8_font_open_iconic_arrow_1x1); // arrow icon
     }
 
+    //WLEDSR: Use custom slidernames
     void drawLine(uint8_t line, Line4Type lineType) {
       char lineBuffer[LINE_BUFFER_SIZE];
       switch(lineType) {
@@ -397,27 +471,27 @@ class FourLineDisplayUsermod : public Usermod {
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_SPEED:
-          sprintf_P(lineBuffer, PSTR("FX Speed   %3d"), effectSpeed);
+          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[0], effectSpeed);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_INTENSITY:
-          sprintf_P(lineBuffer, PSTR("FX Intens. %3d"), effectIntensity);
+          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[1], effectIntensity);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT1: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("FX Custom1 %3d"), effectFFT1);
+          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[2], effectFFT1);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT2: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("FX Custom2 %3d"), effectFFT2);
+          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[3], effectFFT2);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT3: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("FX Custom3 %3d"), effectFFT3);
+          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[4], effectFFT3);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_PRESET:
-          sprintf_P(lineBuffer, PSTR("FX Preset %3d"), currentPreset);
+          sprintf_P(lineBuffer, PSTR("FX Preset  %3d"), currentPreset);
           drawString(2, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_MODE:
@@ -439,38 +513,115 @@ class FourLineDisplayUsermod : public Usermod {
      */
     void showCurrentEffectOrPalette(int knownMode, const char *qstring, uint8_t row) {
       char lineBuffer[LINE_BUFFER_SIZE];
-      uint8_t qComma = 0;
-      bool insideQuotes = false;
       uint8_t printedChars = 0;
       char singleJsonSymbol;
 
+      //WLEDSR
+      bool insideQuotes = false;
+      uint8_t qComma = 0;
+      bool insideSliders = false;
+      uint8_t printedCharsSliders = 0;
+      uint8_t sliderCounter = 0;
+      bool noteFound = false;
+      bool atSignFound = false;
+      bool isEffect = strlen_P(qstring) > 2000; //currently 777 vs 4451
+
       // Find the mode name in JSON
+      //WLEDSR: check for dynamic sliders
       DEBUG_PRINTLN("Display new effect started");
       for (size_t i = 0; i < strlen_P(qstring); i++) {
         singleJsonSymbol = pgm_read_byte_near(qstring + i);
-        if ((singleJsonSymbol == '@') && (qComma == knownMode)) break;       //WLEDSR(HarryB): Stop reading, we've got all we want
+        if ((singleJsonSymbol == ']') && (qComma == knownMode)) break;       //WLEDSR(HarryB): Stop reading, we've got all we want
         if (singleJsonSymbol == '\0') break;
         switch (singleJsonSymbol) {
           case '"':
+            if (!insideQuotes) { //begin of string
+              noteFound = false;
+              sliderCounter = 0; //start counting sliders
+              atSignFound = false;
+            }
             insideQuotes = !insideQuotes;
             break;
           case '[':
-          case ']':
+            break;
+          case 226: //WLEDSR: first byte of the 3 byte note character is for ♪ and ♫ 226
+            noteFound = true;
+            break;
+          case '@':
+            printedCharsSliders = 0; //set char counter to 0
+            insideSliders = true;
+            atSignFound = true;
+            break;
+          case '!':
+            if (insideSliders) {
+              sprintf_P(sliderNames[sliderCounter], sliderDefaults[sliderCounter]);
+              printedCharsSliders = strlen_P(sliderNames[sliderCounter]); //set char counter to 0
+            }
             break;
           case ',':
-            if (!insideQuotes) {       //WLEDSR(HarryB) added condition to differentiate between comma in mode name or as seperator
+            if (!insideQuotes)       //WLEDSR(HarryB) added condition to differentiate between comma in mode name or as seperator
               qComma++;
+            if (insideSliders) { //WLEDSR: if still in slider parsing, comma is end of string
+              sliderNames[sliderCounter][printedCharsSliders] = 0; //end of string
+              sliderCounter++; //go to next slider
+              printedCharsSliders = 0; //set char counter to 0
             }
+            break;
+          case ';':
+            if (insideSliders) { //if still parsing sliders
+              sliderNames[sliderCounter][printedCharsSliders] = 0; //end of string
+              sliderCounter++; //go to next slider
+              insideSliders = false; //end of sliders
+            }
+            break;
+          case ']':
+            break;
           default:
-            if (!insideQuotes || (qComma != knownMode)) break;
-            lineBuffer[printedChars++] = singleJsonSymbol;
+            if (!insideQuotes || (qComma != knownMode)) break; //if not current mode, do nothing
+            if ((!( (printedChars >= getCols()-2) || printedChars >= sizeof(lineBuffer)-2)) && !atSignFound)
+              lineBuffer[printedChars++] = singleJsonSymbol;
+            if (insideSliders && sliderCounter < 5 && printedCharsSliders < LINE_BUFFER_SIZE && insideSliders) {
+              sliderNames[sliderCounter][printedCharsSliders++] = singleJsonSymbol;
+            }
         }
-        if ((qComma > knownMode) || (printedChars >= getCols()-2) || printedChars >= sizeof(lineBuffer)-2) break;
+        if ((qComma > knownMode)) break;
       }
-      for (;printedChars < getCols()-2 && printedChars < sizeof(lineBuffer)-2; printedChars++) lineBuffer[printedChars]=' ';
-      lineBuffer[printedChars] = 0;
-      DEBUG_PRINTLN(lineBuffer);
-      drawString(2, row*lineHeight, lineBuffer);
+      //if no atsign add 2 default
+      if (isEffect && !atSignFound) {
+        sprintf_P(sliderNames[sliderCounter++], sliderDefaults[0]);
+        sprintf_P(sliderNames[sliderCounter++], sliderDefaults[1]);
+      }
+      //else if no slidernames then nothing
+
+      for (;printedChars < getCols()-2 && printedChars < sizeof(lineBuffer)-2; printedChars++) lineBuffer[printedChars]=' '; //add spaces
+      lineBuffer[printedChars] = 0; //end of string
+      char* lineBufferPtr = lineBuffer;
+
+      if (isEffect) {
+        if (noteFound)
+          lineBufferPtr = lineBuffer + 4; //WLEDSR: remove 2 spaces and the 2 of the 3 byte note characters (1 is skipped in the switch)
+        for (uint8_t i = 0; i < sliderCounter; i++) {
+          if (strlen_P(sliderNames[i]) > 0) {
+            for (printedCharsSliders = strlen_P(sliderNames[i]);printedCharsSliders < getCols()-2 && printedCharsSliders < sizeof(sliderNames[i])-2; printedCharsSliders++) sliderNames[i][printedCharsSliders]=' '; //add spaces
+            sliderNames[i][printedCharsSliders] = 0; //end of string
+          }
+          DEBUG_PRINT(i);
+          DEBUG_PRINTLN(sliderNames[i]);
+        }
+      }
+      DEBUG_PRINTLN(lineBufferPtr);
+      drawString(2, row*lineHeight, lineBufferPtr);
+
+      //WLEDSR: Add effect or palette icon
+      if (isEffect) {
+        if (noteFound)
+          drawGlyph(0, row*lineHeight, 77, u8x8_font_open_iconic_play_1x1); // note effect
+        else
+          drawGlyph(0, row*lineHeight, 70, u8x8_font_open_iconic_thing_1x1); // normal effect
+      }
+      else {
+        drawGlyph(0, row*lineHeight, 72, u8x8_font_open_iconic_thing_1x1); // pallette
+      }
     }
 
     /**
@@ -481,6 +632,7 @@ class FourLineDisplayUsermod : public Usermod {
      */
     bool wakeDisplay() {
       knownHour = 99;
+      wokeUp = true; //WLEDSR: to force screen refresh
       if (displayTurnedOff) {
         // Turn the display back on
         sleepOrClock(false);

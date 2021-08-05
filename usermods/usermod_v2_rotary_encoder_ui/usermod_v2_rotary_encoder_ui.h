@@ -10,18 +10,18 @@
 // v2 usermod that provides a rotary encoder-based UI.
 //
 // This usermod allows you to control:
-// 
+//
 // * Brightness
 // * Selected Effect
 // * Effect Speed
 // * Effect Intensity
 // * Palette
-// 
+//
 // Change between modes by pressing a button.
 //
 // Dependencies
 // * This usermod REQURES the ModeSortUsermod
-// * This Usermod works best coupled with 
+// * This Usermod works best coupled with
 //   FourLineDisplayUsermod.
 //
 
@@ -62,14 +62,14 @@ private:
   int fadeAmount = 10;             // Amount to change every step (brightness)
   unsigned long currentTime;
   unsigned long loopTime;
-  //  -D ENCODER_DT_PIN=26 -D ENCODER_CLK_PIN=27 -D ENCODER_SW_PIN=33  
+  //  -D ENCODER_DT_PIN=26 -D ENCODER_CLK_PIN=27 -D ENCODER_SW_PIN=33
   int8_t pinA = ENCODER_DT_PIN;       // DT from encoder
   int8_t pinB = ENCODER_CLK_PIN;      // CLK from encoder
   int8_t pinC = ENCODER_SW_PIN;       // SW from encoder
-  unsigned char select_state = 0;      // 0: brightness, 1: effect, 2: effect speed
+  unsigned char select_state = 0;     // 0: brightness, 1: effect, 2: effect speed
   unsigned char button_state = HIGH;
   unsigned char prev_button_state = HIGH;
-  
+
 #ifdef USERMOD_FOUR_LINE_DISPLAY
   FourLineDisplayUsermod *display;
 #else
@@ -120,7 +120,7 @@ public:
     modes_alpha_indexes = modeSortUsermod->getModesAlphaIndexes();
     palettes_alpha_indexes = modeSortUsermod->getPalettesAlphaIndexes();
 
-#ifdef USERMOD_FOUR_LINE_DISPLAY    
+#ifdef USERMOD_FOUR_LINE_DISPLAY
     // This Usermod uses FourLineDisplayUsermod for the best experience.
     // But it's optional. But you want it.
     display = (FourLineDisplayUsermod*) usermods.lookup(USERMOD_ID_FOUR_LINE_DISP);
@@ -144,11 +144,11 @@ public:
 
   /*
      * loop() is called continuously. Here you can check for events, read sensors, etc.
-     * 
+     *
      * Tips:
      * 1. You can use "if (WLED_CONNECTED)" to check for a successful network connection.
      *    Additionally, "if (WLED_MQTT_CONNECTED)" is available to check for a connection to an MQTT broker.
-     * 
+     *
      * 2. Try to avoid using the delay() function. NEVER use delays longer than 10 milliseconds.
      *    Instead, use a timer check as shown here.
      */
@@ -189,7 +189,7 @@ public:
             newState++;
 
           if (newState > LAST_UI_STATE) newState = 0;
-          
+
           bool changedState = true;
           if (display != nullptr) {
             switch(newState) {

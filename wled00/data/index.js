@@ -27,8 +27,16 @@ var ws;
 var fxlist = d.getElementById('fxlist'), pallist = d.getElementById('pallist');
 var cfg = {
   theme:{base:"dark", bg:{url:""}, alpha:{bg:0.6,tab:0.8}, color:{bg:""}},
-  comp :{colors:{picker: true, rgb: false, quick: true, hex: false}, labels:true, pcmbot:false, pid:true}
+  comp :{colors:{picker: true, rgb: false, quick: true, hex: false},
+          labels:true, pcmbot:false, pid:true, seglen:false, css:true, hdays:false}
 };
+var hol = [
+  [0,11,24,4,"https://aircoookie.github.io/xmas.png"], // christmas
+  [0,2,17,1,"https://images.alphacoders.com/491/491123.jpg"], // st. Patrick's day
+  [2022,3,17,2,"https://aircoookie.github.io/easter.png"],
+  [2023,3,9,2,"https://aircoookie.github.io/easter.png"],
+  [2024,2,31,2,"https://aircoookie.github.io/easter.png"]
+];
 
 var cpick = new iro.ColorPicker("#picker", {
   width: 260,
@@ -159,13 +167,6 @@ function loadBg(iUrl) {
   img.src = iUrl;
   if (iUrl == "") {
     var today = new Date();
-    var hol = [
-      [0,11,24,4,"https://aircoookie.github.io/xmas.png"], // christmas
-      [0,2,17,1,"https://images.alphacoders.com/491/491123.jpg"], // st. Patrick's day
-      [2022,3,17,2,"https://aircoookie.github.io/easter.png"],
-      [2023,3,9,2,"https://aircoookie.github.io/easter.png"],
-      [2024,2,31,2,"https://aircoookie.github.io/easter.png"]
-    ];
     for (var i=0; i<hol.length; i++) {
       var yr = hol[i][0]==0 ? today.getFullYear() : hol[i][0];
       var hs = new Date(yr,hol[i][1],hol[i][2]);
@@ -181,6 +182,21 @@ function loadBg(iUrl) {
     bg.style.backgroundImage = `url(${img.src})`;
     img = null;
   });
+}
+
+function loadSkinCSS(cId)
+{
+  if (!d.getElementById(cId))	// check if element exists
+  {
+    var h  = document.getElementsByTagName('head')[0];
+    var l  = document.createElement('link');
+    l.id   = cId;
+    l.rel  = 'stylesheet';
+    l.type = 'text/css';
+    l.href = (loc?`http://${locip}`:'.') + '/skin.css';
+    l.media = 'all';
+    h.appendChild(l);
+  }
 }
 
 function onLoad() {
@@ -199,7 +215,27 @@ function onLoad() {
   resetPUtil();
 
   applyCfg();
-  loadBg(cfg.theme.bg.url);
+  if (cfg.comp.hdays) { //load custom holiday list
+    fetch((loc?`http://${locip}`:'.') + "/holidays.json", {	// may be loaded from external source
+      method: 'get'
+    })
+    .then(res => {
+      //if (!res.ok) showErrorToast();
+      return res.json();
+    })
+    .then(json => {
+      if (Array.isArray(json)) hol = json;
+      //TODO: do some parsing first
+    })
+    .catch(function (error) {
+      console.log("holidays.json does not contain array of holidays. Defaults loaded.");
+    })
+    .finally(function(){
+      loadBg(cfg.theme.bg.url);
+    });
+  } else
+    loadBg(cfg.theme.bg.url);
+  if (cfg.comp.css) loadSkinCSS('skinCss');
 
   var cd = d.getElementById('csl').children;
   for (var i = 0; i < cd.length; i++) {
@@ -212,7 +248,7 @@ function onLoad() {
     setColor(1);
   });
   pmtLS = localStorage.getItem('wledPmt');
-  setTimeout(function(){requestJson(null, false);}, 25);
+  setTimeout(function(){requestJson(null, false);}, 50);
   d.addEventListener("visibilitychange", handleVisibilityChange, false);
   size();
   d.getElementById("cv").style.opacity=0;
@@ -537,7 +573,7 @@ function populateSegments(s)
     if (i == lowestUnused) lowestUnused = i+1;
     if (i > lSeg) lSeg = i;
 
-    cn += `<div title="Fx${inst.fx}: ${inst.start}x${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
+    cn += `<div class="seg">
       <label class="check schkl">
         &nbsp;
         <input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
@@ -558,12 +594,12 @@ function populateSegments(s)
         <table class="infot">
           <tr>
             <td class="segtd">Start LED</td>
-            <td class="segtd">Stop LED</td>
+            <td class="segtd">${cfg.comp.seglen?"Length":"Stop LED"}</td>
             <td class="segtd">Offset</td>
           </tr>
           <tr>
             <td class="segtd"><input class="noslide segn" id="seg${i}s" type="number" min="0" max="${ledCount-1}" value="${inst.start}" oninput="updateLen(${i})"></td>
-            <td class="segtd"><input class="noslide segn" id="seg${i}e" type="number" min="0" max="${ledCount}" value="${inst.stop}" oninput="updateLen(${i})"></td>
+            <td class="segtd"><input class="noslide segn" id="seg${i}e" type="number" min="0" max="${ledCount-(cfg.comp.seglen?inst.start:0)}" value="${inst.stop-(cfg.comp.seglen?inst.start:0)}" oninput="updateLen(${i})"></td>
             <td class="segtd"><input class="noslide segn" id="seg${i}of" type="number" value="${inst.of}" oninput="updateLen(${i})"></td>
           </tr>
         </table>
@@ -582,23 +618,13 @@ function populateSegments(s)
         <div class="h" id="seg${i}len"></div>
         <button class="btn btn-i btn-xs del" id="segd${i}" onclick="delSeg(${i})"><i class="icons btn-icon">&#xe037;</i></button>
         <label class="check revchkl">
-          Mirror effect
-          <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
-          <span class="checkmark schk"></span>
-        </label>
-        <label class="check revchkl">
-          Reverse direction X
+          Reverse direction
           <input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
           <span class="checkmark schk"></span>
         </label>
         <label class="check revchkl">
-          Reverse direction Y
-          <input type="checkbox" id="seg${i}rev2D" onchange="setrev2D(${i})" ${inst.rev2D ? "checked":""}>
-          <span class="checkmark schk"></span>
-        </label>
-        <label class="check revchkl">
-          Rotation
-          <input type="checkbox" id="seg${i}rot2D" onchange="setRot2D(${i})" ${inst.rot2D ? "checked":""}>
+          Mirror effect
+          <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
           <span class="checkmark schk"></span>
         </label>
       </div>
@@ -682,15 +708,13 @@ function populatePalettes(palettes)
   var html = `<div class="searchbar"><input type="text" class="search" placeholder="Search" oninput="search(this)" />
   <i class="icons search-cancel-icon" onclick="cancelSearch(this)">&#xe38f;</i></div>`;
   for (let i = 0; i < palettes.length; i++) {
-    let previewCss = genPalPrevCss(palettes[i].id);
     html += generateListItemHtml(
       'palette',
         palettes[i].id,
             palettes[i].name,
             'setPalette',
-      `<div class="lstIprev" style="${previewCss}"></div>`,
+      `<div class="lstIprev" style="${genPalPrevCss(palettes[i].id)}"></div>`,
       palettes[i].class,
-      ''
         );
   }
 
@@ -715,7 +739,6 @@ function genPalPrevCss(id)
     return;
   }
   var paletteData = palettesData[id];
-  var previewCss = "";
 
   if (!paletteData) {
     return 'display: none';
@@ -763,8 +786,7 @@ function genPalPrevCss(id)
   return `background: linear-gradient(to right,${gradient.join()});`;
 }
 
-// WLEDSR: add extraPar for slider and color control
-function generateListItemHtml(listName, id, name, clickAction, extraHtml = '', extraClass = '', extraPar = '')
+function generateListItemHtml(listName, id, name, clickAction, extraHtml = '', extraClass = '')
 {
     return `<div id="${listName}${id}" class="lstI btn fxbtn ${extraClass}" data-id="${id}" onClick="${clickAction}(${id}, '${extraPar}')">
       <label class="radio fxchkl">
@@ -878,7 +900,7 @@ function updateLen(s)
   if (!d.getElementById(`seg${s}s`)) return;
   var start = parseInt(d.getElementById(`seg${s}s`).value);
   var stop	= parseInt(d.getElementById(`seg${s}e`).value);
-  var len = stop - start;
+  var len = stop - (cfg.comp.seglen?0:start);
   var out = "(delete)";
   if (len > 1) {
     out = `${len} LEDs`;
@@ -1012,7 +1034,7 @@ function readState(s,command=false) {
     if (isRgbw) whites[e] = parseInt(i.col[e][3]);
     selectSlot(csel);
   }
-  d.getElementById('sliderSpeed').value = whites[csel];
+  d.getElementById('sliderW').value = whites[csel];
 
   d.getElementById('sliderSpeed').value = i.sx;
   d.getElementById('sliderIntensity').value = i.ix;
@@ -1397,7 +1419,7 @@ function toggleNodes() {
 function makeSeg() {
   var ns = 0;
   if (lowestUnused > 0) {
-    var pend = d.getElementById(`seg${lowestUnused -1}e`).value;
+    var pend = parseInt(d.getElementById(`seg${lowestUnused -1}e`).value,10) + (cfg.comp.seglen?parseInt(d.getElementById(`seg${lowestUnused -1}s`).value,10):0);
     if (pend < ledCount) ns = pend;
   }
   var cn = `<div class="seg">
@@ -1409,11 +1431,11 @@ function makeSeg() {
         <table class="segt">
           <tr>
             <td class="segtd">Start LED</td>
-            <td class="segtd">Stop LED</td>
+            <td class="segtd">${cfg.comp.seglen?"Length":"Stop LED"}</td>
           </tr>
           <tr>
             <td class="segtd"><input class="noslide segn" id="seg${lowestUnused}s" type="number" min="0" max="${ledCount-1}" value="${ns}" oninput="updateLen(${lowestUnused})"></td>
-            <td class="segtd"><input class="noslide segn" id="seg${lowestUnused}e" type="number" min="0" max="${ledCount}" value="${ledCount}" oninput="updateLen(${lowestUnused})"></td>
+            <td class="segtd"><input class="noslide segn" id="seg${lowestUnused}e" type="number" min="0" max="${ledCount-(cfg.comp.seglen?ns:0)}" value="${ledCount-(cfg.comp.seglen?ns:0)}" oninput="updateLen(${lowestUnused})"></td>
           </tr>
         </table>
         <div class="h" id="seg${lowestUnused}len">${ledCount - ns} LED${ledCount - ns >1 ? "s":""}</div>
@@ -1646,7 +1668,7 @@ function setSeg(s){
   var start = parseInt(d.getElementById(`seg${s}s`).value);
   var stop	= parseInt(d.getElementById(`seg${s}e`).value);
   if (stop <= start) {delSeg(s); return;}
-  var obj = {"seg": {"id": s, "start": start, "stop": stop}};
+  var obj = {"seg": {"id": s, "start": start, "stop": (cfg.comp.seglen?start:0)+stop}};
   if (d.getElementById(`seg${s}grp`))
   {
     var grp = parseInt(d.getElementById(`seg${s}grp`).value);

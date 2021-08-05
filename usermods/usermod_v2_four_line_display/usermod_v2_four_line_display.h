@@ -148,6 +148,7 @@ class FourLineDisplayUsermod : public Usermod {
       if (type == NONE) return;
       if (!pinManager.allocatePin(sclPin)) { sclPin = -1; type = NONE; return;}
       if (!pinManager.allocatePin(sdaPin)) { pinManager.deallocatePin(sclPin); sclPin = sdaPin = -1; type = NONE; return; }
+      DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
         case SSD1306:
           #ifdef ESP8266

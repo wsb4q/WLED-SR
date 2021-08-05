@@ -97,6 +97,7 @@ class FourLineDisplayUsermod : public Usermod {
     uint32_t screenTimeout = SCREEN_TIMEOUT_MS;       // in ms
     bool sleepMode = true;          // allow screen sleep?
     bool clockMode = false;         // display clock
+    bool forceRotate = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
     bool wokeUp = false; //WLEDSR
 
     // Next variables hold the previous known values to determine if redraw is
@@ -130,6 +131,7 @@ class FourLineDisplayUsermod : public Usermod {
     static const char _flip[];
     static const char _sleepMode[];
     static const char _clockMode[];
+    static const char _forceRotate[]; //WLEDSR
 
     // If display does not work or looks corrupted check the
     // constructor reference:
@@ -223,7 +225,7 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (strip.isUpdating() && !checkChanged() && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (!forceRotate && strip.isUpdating() && !checkChanged() && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
       lastUpdate = millis();
       redraw(false);
       wokeUp = false; //WLEDSR: wokeUp handled
@@ -309,7 +311,7 @@ class FourLineDisplayUsermod : public Usermod {
       if (forceRedraw || checkChanged()) {
         knownHour = 99; // force time update
         clear();
-      } else if (sleepMode && !displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) {
+      } else if (!displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) { //WLEDSR: remove if sleepMode, as rotating should take place independent of sleepmode
         // change line every 5s
         showName = !showName;
         switch (lineType) {
@@ -468,32 +470,32 @@ class FourLineDisplayUsermod : public Usermod {
       char lineBuffer[LINE_BUFFER_SIZE];
       switch(lineType) {
         case FLD_LINE_BRIGHTNESS:
-          sprintf_P(lineBuffer, PSTR("Brightness %3d"), bri);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("Brightness  %3d"), bri);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_SPEED:
-          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[0], effectSpeed);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[0], effectSpeed);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_INTENSITY:
-          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[1], effectIntensity);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[1], effectIntensity);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT1: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[2], effectFFT1);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[2], effectFFT1);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT2: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[3], effectFFT2);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[3], effectFFT2);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_EFFECT_FFT3: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.10s %3d"), sliderNames[4], effectFFT3);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[4], effectFFT3);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_PRESET:
-          sprintf_P(lineBuffer, PSTR("FX Preset  %3d"), currentPreset);
-          drawString(2, line*lineHeight, lineBuffer);
+          sprintf_P(lineBuffer, PSTR("FX Preset   %3d"), currentPreset);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_MODE:
           showCurrentEffectOrPalette(knownMode, JSON_mode_names, line);
@@ -579,7 +581,7 @@ class FourLineDisplayUsermod : public Usermod {
             break;
           default:
             if (!insideQuotes || (qComma != knownMode)) break; //if not current mode, do nothing
-            if ((!( (printedChars >= getCols()-2) || printedChars >= sizeof(lineBuffer)-2)) && !atSignFound)
+            if ((!( (printedChars >= getCols()-1) || printedChars >= sizeof(lineBuffer)-1)) && !atSignFound)
               lineBuffer[printedChars++] = singleJsonSymbol;
             if (insideSliders && sliderCounter < 5 && printedCharsSliders < LINE_BUFFER_SIZE && insideSliders) {
               sliderNames[sliderCounter][printedCharsSliders++] = singleJsonSymbol;
@@ -594,7 +596,7 @@ class FourLineDisplayUsermod : public Usermod {
       }
       //else if no slidernames then nothing
 
-      for (;printedChars < getCols()-2 && printedChars < sizeof(lineBuffer)-2; printedChars++) lineBuffer[printedChars]=' '; //add spaces
+      for (;printedChars < getCols()-1 && printedChars < sizeof(lineBuffer)-1; printedChars++) lineBuffer[printedChars]=' '; //add spaces
       lineBuffer[printedChars] = 0; //end of string
       char* lineBufferPtr = lineBuffer;
 
@@ -603,7 +605,7 @@ class FourLineDisplayUsermod : public Usermod {
           lineBufferPtr = lineBuffer + 4; //WLEDSR: remove 2 spaces and the 2 of the 3 byte note characters (1 is skipped in the switch)
         for (uint8_t i = 0; i < sliderCounter; i++) {
           if (strlen_P(sliderNames[i]) > 0) {
-            for (printedCharsSliders = strlen_P(sliderNames[i]);printedCharsSliders < getCols()-2 && printedCharsSliders < sizeof(sliderNames[i])-2; printedCharsSliders++) sliderNames[i][printedCharsSliders]=' '; //add spaces
+            for (printedCharsSliders = strlen_P(sliderNames[i]);printedCharsSliders < getCols()-1 && printedCharsSliders < sizeof(sliderNames[i])-1; printedCharsSliders++) sliderNames[i][printedCharsSliders]=' '; //add spaces
             sliderNames[i][printedCharsSliders] = 0; //end of string
           }
           DEBUG_PRINT(i);
@@ -611,7 +613,7 @@ class FourLineDisplayUsermod : public Usermod {
         }
       }
       DEBUG_PRINTLN(lineBufferPtr);
-      drawString(2, row*lineHeight, lineBufferPtr);
+      drawString(1, row*lineHeight, lineBufferPtr);
 
       //WLEDSR: Add effect or palette icon
       if (isEffect) {
@@ -720,7 +722,7 @@ class FourLineDisplayUsermod : public Usermod {
       if (fullScreen)
         draw2x2String(DATE_INDENT, lineHeight==1 ? 0 : lineHeight, lineBuffer); // adjust for 8 line displays
       else
-        drawString(2, lineHeight*3, lineBuffer);
+        drawString(1, lineHeight*3, lineBuffer);
 
       byte showHour = hourCurrent;
       boolean isAM = false;
@@ -805,6 +807,7 @@ class FourLineDisplayUsermod : public Usermod {
       top[FPSTR(_screenTimeOut)] = screenTimeout/1000;
       top[FPSTR(_sleepMode)]     = (bool) sleepMode;
       top[FPSTR(_clockMode)]     = (bool) clockMode;
+      top[FPSTR(_forceRotate)]     = (bool) forceRotate;
       DEBUG_PRINTLN(F("4 Line Display config saved."));
     }
 
@@ -838,6 +841,7 @@ class FourLineDisplayUsermod : public Usermod {
       screenTimeout = (top[FPSTR(_screenTimeOut)] | screenTimeout/1000) * 1000;
       sleepMode     = top[FPSTR(_sleepMode)] | sleepMode;
       clockMode     = top[FPSTR(_clockMode)] | clockMode;
+      forceRotate     = top[FPSTR(_forceRotate)] | forceRotate;
 
       DEBUG_PRINT(FPSTR(_name));
       if (!initDone) {
@@ -867,7 +871,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (needsRedraw && !wakeDisplay()) redraw(true);
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
-      return true;
+      return !top["forceRotate"].isNull();;
     }
 
     /*
@@ -887,3 +891,4 @@ const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec"
 const char FourLineDisplayUsermod::_flip[]          PROGMEM = "flip";
 const char FourLineDisplayUsermod::_sleepMode[]     PROGMEM = "sleepMode";
 const char FourLineDisplayUsermod::_clockMode[]     PROGMEM = "clockMode";
+const char FourLineDisplayUsermod::_forceRotate[]     PROGMEM = "forceRotate";

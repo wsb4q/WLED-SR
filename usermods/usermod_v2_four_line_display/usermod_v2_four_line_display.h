@@ -64,7 +64,9 @@ typedef enum {
   FLD_LINE_MODE,
   FLD_LINE_PALETTE,
   FLD_LINE_PRESET, //WLEDSR
-  FLD_LINE_TIME
+  FLD_LINE_TIME,
+  FLD_LINE_OTHER, //WLEDSR: no Line4Type
+  FLD_LINE_NULL //WLEDSR: no Line4Type
 } Line4Type;
 
 typedef enum {
@@ -225,7 +227,7 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (!forceRotate && strip.isUpdating() && !checkChanged() && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (!forceRotate && strip.isUpdating() && checkChangedType() != FLD_LINE_NULL && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
       lastUpdate = millis();
       redraw(false);
       wokeUp = false; //WLEDSR: wokeUp handled
@@ -273,17 +275,29 @@ class FourLineDisplayUsermod : public Usermod {
     }
 
     //WLEDSR: move check to function to reuse code
-    bool checkChanged() {
-      return (((apActive) ? String(apSSID) : WiFi.SSID()) != knownSsid) ||
-          (knownIp != (apActive ? IPAddress(4, 3, 2, 1) : Network.localIP())) ||
-          (knownBrightness != bri) ||
-          (knownEffectSpeed != effectSpeed) ||
-          (knownEffectIntensity != effectIntensity) ||
-          (knownEffectFFT1 != effectFFT1) ||
-          (knownEffectFFT2 != effectFFT2) ||
-          (knownEffectFFT3 != effectFFT3) ||
-          (knownMode != strip.getMode()) ||
-          (knownPalette != strip.getSegment(0).palette);
+    Line4Type checkChangedType() {
+      if (((apActive) ? String(apSSID) : WiFi.SSID()) != knownSsid)
+        return FLD_LINE_OTHER;
+      else if (knownIp != (apActive ? IPAddress(4, 3, 2, 1) : Network.localIP()))
+        return FLD_LINE_OTHER;
+      else if (knownBrightness != bri)
+        return FLD_LINE_BRIGHTNESS;
+      else if (knownEffectSpeed != effectSpeed)
+        return FLD_LINE_EFFECT_SPEED;
+      else if (knownEffectIntensity != effectIntensity)
+        return FLD_LINE_EFFECT_INTENSITY;
+      else if (knownEffectFFT1 != effectFFT1)
+        return FLD_LINE_EFFECT_FFT1;
+      else if (knownEffectFFT2 != effectFFT2)
+        return FLD_LINE_EFFECT_FFT2;
+      else if (knownEffectFFT3 != effectFFT3)
+        return FLD_LINE_EFFECT_FFT3;
+      else if (knownMode != strip.getMode())
+        return FLD_LINE_MODE;
+      else if (knownPalette != strip.getSegment(0).palette)
+        return FLD_LINE_PALETTE;
+      else
+        return FLD_LINE_NULL;
     }
 
     /**
@@ -308,8 +322,11 @@ class FourLineDisplayUsermod : public Usermod {
       }
 
       // Check if values which are shown on display changed from the last time.
-      if (forceRedraw || checkChanged()) {
+      Line4Type changed = checkChangedType();
+      if (forceRedraw || changed != FLD_LINE_NULL) {
         knownHour = 99; // force time update
+        if (changed != FLD_LINE_OTHER) //not  ip or ssid
+          lineType = changed; //WLEDSR: Always show last changed value
         clear();
       } else if (!displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) { //WLEDSR: remove if sleepMode, as rotating should take place independent of sleepmode
         // change line every 5s
@@ -458,9 +475,9 @@ class FourLineDisplayUsermod : public Usermod {
         case FLD_LINE_TIME:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); //  clock icon
           break;
-        // default:
+        default:
         //   drawGlyph(0, (clockMode?2:3)*lineHeight, 72, u8x8_font_open_iconic_play_1x1); //  icon
-        //   break;
+          break;
       }
       //if (markLineNum>1) drawGlyph(2, markLineNum*lineHeight, 66, u8x8_font_open_iconic_arrow_1x1); // arrow icon
     }

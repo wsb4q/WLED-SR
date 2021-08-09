@@ -573,7 +573,8 @@ function populateSegments(s)
     if (i == lowestUnused) lowestUnused = i+1;
     if (i > lSeg) lSeg = i;
 
-    cn += `<div class="seg">
+    //WLEDSR: add tooltip (title) and add reverse direction X / Y and rotation parameters
+    cn += `<div title="Fx${inst.fx}: ${inst.start}x${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
       <label class="check schkl">
         &nbsp;
         <input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
@@ -618,13 +619,23 @@ function populateSegments(s)
         <div class="h" id="seg${i}len"></div>
         <button class="btn btn-i btn-xs del" id="segd${i}" onclick="delSeg(${i})"><i class="icons btn-icon">&#xe037;</i></button>
         <label class="check revchkl">
-          Reverse direction
+          Mirror effect
+          <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>
+        <label class="check revchkl">
+          Reverse direction X
           <input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
           <span class="checkmark schk"></span>
         </label>
         <label class="check revchkl">
-          Mirror effect
-          <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+          Reverse direction Y
+          <input type="checkbox" id="seg${i}rev2D" onchange="setrev2D(${i})" ${inst.rev2D ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>
+        <label class="check revchkl">
+            Rotation
+          <input type="checkbox" id="seg${i}rot2D" onchange="setRot2D(${i})" ${inst.rot2D ? "checked":""}>
           <span class="checkmark schk"></span>
         </label>
       </div>
@@ -786,6 +797,7 @@ function genPalPrevCss(id)
   return `background: linear-gradient(to right,${gradient.join()});`;
 }
 
+// WLEDSR: add extraPar for slider and color control
 function generateListItemHtml(listName, id, name, clickAction, extraHtml = '', extraClass = '', extraPar = '')
 {
     return `<div id="${listName}${id}" class="lstI btn fxbtn ${extraClass}" data-id="${id}" onClick="${clickAction}(${id}, '${extraPar}')">

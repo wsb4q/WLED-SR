@@ -341,8 +341,8 @@ class WS2812FX {
       uint8_t grouping, spacing;
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
-      uint8_t width;    // WLEDSRewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
-      uint8_t height;   // WLEDSR
+      uint16_t width;   // WLEDSRewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
+      uint16_t height;  // WLEDSR
       uint16_t startX;  // WLEDSR
       uint16_t startY;  // WLEDSR
       uint16_t stopX;   // WLEDSR

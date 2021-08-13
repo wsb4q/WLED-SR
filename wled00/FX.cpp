@@ -4266,7 +4266,7 @@ void WS2812FX::blur1d( CRGB* leds, fract8 blur_amount)
     uint8_t keep = 255 - blur_amount;
     uint8_t seep = blur_amount >> 1;
     CRGB carryover = CRGB::Black;
-    for (uint8_t x = 0; x <= SEGMENT.width; x++) for (uint8_t y = 0; y <= SEGMENT.height; y++) { // ewowi20210629: <= to blur all pixels
+    for (uint16_t x = 0; x <= SEGMENT.width; x++) for (uint16_t y = 0; y <= SEGMENT.height; y++) { // ewowi20210629: <= to blur all pixels
         CRGB cur = leds[XY(x,y)];
         CRGB part = cur;
         part.nscale8( seep);
@@ -4303,9 +4303,9 @@ void WS2812FX::blurColumns(CRGB* leds, fract8 blur_amount)
     // blur columns
     uint8_t keep = 255 - blur_amount;
     uint8_t seep = blur_amount >> 1;
-    for( uint8_t col = 0; col < SEGMENT.width; col++) {
+    for( uint16_t col = 0; col < SEGMENT.width; col++) {
         CRGB carryover = CRGB::Black;
-        for( uint8_t i = 0; i < SEGMENT.height; i++) {
+        for( uint16_t i = 0; i < SEGMENT.height; i++) {
             CRGB cur = leds[XY(col,i)];
             CRGB part = cur;
             part.nscale8( seep);
@@ -4322,7 +4322,7 @@ void WS2812FX::blurColumns(CRGB* leds, fract8 blur_amount)
 
 void WS2812FX::fill_solid( struct CRGB * leds, const struct CRGB& color)
 {
-    for (uint8_t x = 0; x <= SEGMENT.width; x++) for(uint8_t y = 0; y <= SEGMENT.height; y++) {
+    for (uint16_t x = 0; x <= SEGMENT.width; x++) for(uint16_t y = 0; y <= SEGMENT.height; y++) {
         leds[XY(x,y)] = color;
     }
 }
@@ -4334,7 +4334,7 @@ void  WS2812FX::fadeToBlackBy( CRGB* leds, uint8_t fadeBy)
 
 void  WS2812FX::nscale8( CRGB* leds, uint8_t scale)
 {
-    for (uint8_t x = 0; x <= SEGMENT.width; x++) for(uint8_t y = 0; y <= SEGMENT.height; y++) {
+    for (uint16_t x = 0; x <= SEGMENT.width; x++) for(uint16_t y = 0; y <= SEGMENT.height; y++) {
         leds[XY(x,y)].nscale8( scale);
     }
 }
@@ -4357,7 +4357,7 @@ uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi2021
 
   if (x >= matrixWidth || y >= matrixHeight)
     return SEGLEN+1;                                  // Off the charts, so it's only useable by routines that use leds[x]!!!!
-  uint8_t major, minor, sz_major, sz_minor;
+  uint16_t major, minor, sz_major, sz_minor;
 
   //Width, Height and Size of panel. Same as matrixWidth and Height if only one panel
   uint16_t panelWidth = (matrixPanels && matrixHorizontalPanels)?(matrixWidth / matrixHorizontalPanels):matrixWidth;

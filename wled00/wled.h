@@ -8,7 +8,7 @@
  */
 
 // version code in format yymmddb (b = daily build)
-#define VERSION 2107230
+#define VERSION 2108250
 
 //uncomment this if you have a "my_config.h" file you'd like to use
 //#define WLED_USE_MY_CONFIG
@@ -331,7 +331,12 @@ WLED_GLOBAL byte irEnabled      _INIT(0);     // Infrared receiver
 WLED_GLOBAL uint16_t udpPort    _INIT(21324); // WLED notifier default port
 WLED_GLOBAL uint16_t udpPort2   _INIT(65506); // WLED notifier supplemental port
 WLED_GLOBAL uint16_t udpRgbPort _INIT(19446); // Hyperion port
+WLED_GLOBAL bool liveHSVCorrection _INIT(false);
+WLED_GLOBAL uint16_t liveHSVSaturation _INIT(13);
+WLED_GLOBAL uint16_t liveHSVValue _INIT(10);
 
+WLED_GLOBAL uint8_t syncGroups    _INIT(0x01);                    // sync groups this instance syncs (bit mapped)
+WLED_GLOBAL uint8_t receiveGroups _INIT(0x01);                    // sync receive groups this instance belongs to (bit mapped)
 WLED_GLOBAL bool receiveNotificationBrightness _INIT(true);       // apply brightness from incoming notifications
 WLED_GLOBAL bool receiveNotificationColor      _INIT(true);       // apply color
 WLED_GLOBAL bool receiveNotificationEffects    _INIT(true);       // apply effects setup
@@ -638,13 +643,6 @@ WLED_GLOBAL UsermodManager usermods _INIT(UsermodManager());
 
 WLED_GLOBAL TaskHandle_t FFT_Task; //WLEDSR: Moved from audio_reactive.h to global as OTA updates sets it to idle
 
-// Status LED
-#if STATUSLED
-  WLED_GLOBAL unsigned long ledStatusLastMillis _INIT(0);
-  WLED_GLOBAL unsigned short ledStatusType _INIT(0); // current status type - corresponds to number of blinks per second
-  WLED_GLOBAL bool ledStatusState _INIT(0); // the current LED state
-#endif
-
 // enable additional debug output
 #ifdef WLED_DEBUG
   #ifndef ESP8266
@@ -707,6 +705,7 @@ public:
 
   void beginStrip();
   void handleConnection();
+  bool initEthernet(); // result is informational
   void initAP(bool resetAP = false);
   void initConnection();
   void initInterfaces();

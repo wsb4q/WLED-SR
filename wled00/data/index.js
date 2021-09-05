@@ -1276,7 +1276,7 @@ function requestJson(command, rinfo = true) {
     command.v = true; // get complete API response
     command.time = Math.floor(Date.now() / 1000);
     var t = d.getElementById('tt');
-    if (t.validity.valid) {
+    if (t.validity.valid && command.transition===undefined) {
       var tn = parseInt(t.value*10);
       if (tn != tr) command.transition = tn;
     }
@@ -1510,7 +1510,7 @@ function addPl(p,i) {
 }
 
 function delPl(p,i) {
-  if (plJson[p].ps.length < 2) {if (p == 0) resetPUtil(); return;}
+  if (plJson[p].ps.length < 2) return;
   plJson[p].ps.splice(i,1);
   plJson[p].dur.splice(i,1);
   plJson[p].transition.splice(i,1);

@@ -13,7 +13,7 @@
 //
 // Dependencies
 // * This usermod REQURES the ModeSortUsermod
-// * This Usermod works best, by far, when coupled 
+// * This Usermod works best, by far, when coupled
 //   with RotaryEncoderUIUsermod.
 //
 // Make sure to enable NTP and set your time zone in WLED Config | Time.
@@ -24,7 +24,7 @@
 // REQUIREMENT: *  Wire
 //
 
-//The SCL and SDA pins are defined here. 
+//The SCL and SDA pins are defined here.
 #ifdef ARDUINO_ARCH_ESP32
   #ifndef FLD_PIN_SCL
     #define FLD_PIN_SCL 22
@@ -32,12 +32,42 @@
   #ifndef FLD_PIN_SDA
     #define FLD_PIN_SDA 21
   #endif
+  #ifndef FLD_PIN_CLOCKSPI
+    #define FLD_PIN_CLOCKSPI 18
+  #endif
+   #ifndef FLD_PIN_DATASPI
+    #define FLD_PIN_DATASPI 23
+  #endif
+  #ifndef FLD_PIN_DC
+    #define FLD_PIN_DC 19
+  #endif
+  #ifndef FLD_PIN_CS
+    #define FLD_PIN_CS 5
+  #endif
+  #ifndef FLD_PIN_RESET
+    #define FLD_PIN_RESET 26
+  #endif
 #else
   #ifndef FLD_PIN_SCL
     #define FLD_PIN_SCL 5
   #endif
   #ifndef FLD_PIN_SDA
     #define FLD_PIN_SDA 4
+  #endif
+  #ifndef FLD_PIN_CLOCKSPI
+    #define FLD_PIN_CLOCKSPI 14
+  #endif
+   #ifndef FLD_PIN_DATASPI
+    #define FLD_PIN_DATASPI 13
+  #endif
+  #ifndef FLD_PIN_DC
+    #define FLD_PIN_DC 12
+  #endif
+    #ifndef FLD_PIN_CS
+    #define FLD_PIN_CS 15
+  #endif
+  #ifndef FLD_PIN_RESET
+    #define FLD_PIN_RESET 16
   #endif
 #endif
 
@@ -71,11 +101,13 @@ typedef enum {
 
 typedef enum {
   NONE = 0,
-  SSD1306,    // U8X8_SSD1306_128X32_UNIVISION_HW_I2C
-  SH1106,     // U8X8_SH1106_128X64_WINSTAR_HW_I2C
-  SSD1306_64, // U8X8_SSD1306_128X64_NONAME_HW_I2C
-  SSD1305,    // U8X8_SSD1305_128X32_ADAFRUIT_HW_I2C
-  SSD1305_64  // U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C
+  SSD1306,      // U8X8_SSD1306_128X32_UNIVISION_HW_I2C
+  SH1106,       // U8X8_SH1106_128X64_WINSTAR_HW_I2C
+  SSD1306_64,   // U8X8_SSD1306_128X64_NONAME_HW_I2C
+  SSD1305,      // U8X8_SSD1305_128X32_ADAFRUIT_HW_I2C
+  SSD1305_64,   // U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C
+  SSD1306_SPI,  // U8X8_SSD1306_128X32_NONAME_HW_SPI
+  SSD1306_SPI64 // U8X8_SSD1306_128X64_NONAME_HW_SPI
 } DisplayType;
 
     char sliderNames[5][LINE_BUFFER_SIZE*2]; //WLEDSR
@@ -90,8 +122,13 @@ class FourLineDisplayUsermod : public Usermod {
 
     // HW interface & configuration
     U8X8 *u8x8 = nullptr;           // pointer to U8X8 display object
-    int8_t sclPin=FLD_PIN_SCL, sdaPin=FLD_PIN_SDA;    // I2C pins for interfacing, get initialised in readFromConfig()
+    #ifndef FLD_SPI_DEFAULT
+    int8_t ioPin[5] = {FLD_PIN_SCL, FLD_PIN_SDA, -1, -1, -1};        // I2C pins: SCL, SDA
     DisplayType type = SSD1306;     // display type
+    #else
+    int8_t ioPin[5] = {FLD_PIN_CLOCKSPI, FLD_PIN_DATASPI, FLD_PIN_CS, FLD_PIN_DC, FLD_PIN_RESET}; // SPI pins: CLK, MOSI, CS, DC, RST
+    DisplayType type = SSD1306_SPI; // display type
+    #endif
     bool flip = false;              // flip display 180°
     uint8_t contrast = 10;          // screen contrast
     uint8_t lineHeight = 1;         // 1 row or 2 rows
@@ -150,69 +187,91 @@ class FourLineDisplayUsermod : public Usermod {
       Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
       if (type == NONE) return;
-      if (!pinManager.allocatePin(sclPin)) { sclPin = -1; type = NONE; return;}
-      if (!pinManager.allocatePin(sdaPin)) { pinManager.deallocatePin(sclPin); sclPin = sdaPin = -1; type = NONE; return; }
+      byte i;
+      if (type == SSD1306_SPI || type == SSD1306_SPI64) {
+        PinManagerPinType pins[5] = { { ioPin[0], true }, { ioPin[1], true}, { ioPin[2], true }, { ioPin[3], true}, { ioPin[4], true }};
+        if (!pinManager.allocateMultiplePins(pins, 5, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
+      } else {
+        PinManagerPinType pins[2] = { { ioPin[0], true }, { ioPin[1], true} };
+        if (!pinManager.allocateMultiplePins(pins, 2, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
+      }
       DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
         case SSD1306:
           #ifdef ESP8266
-          if (!(sclPin==5 && sdaPin==4))
-            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_SW_I2C(sclPin, sdaPin); // SCL, SDA, reset
+          if (!(ioPin[0]==5 && ioPin[1]==4))
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_SW_I2C(ioPin[0], ioPin[1]); // SCL, SDA, reset
           else
           #endif
-            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_HW_I2C(U8X8_PIN_NONE, sclPin, sdaPin); // Pins are Reset, SCL, SDA
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_HW_I2C(U8X8_PIN_NONE, ioPin[0], ioPin[1]); // Pins are Reset, SCL, SDA
           lineHeight = 1;
           break;
         case SH1106:
           #ifdef ESP8266
-          if (!(sclPin==5 && sdaPin==4))
-            u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_SW_I2C(sclPin, sdaPin); // SCL, SDA, reset
+          if (!(ioPin[0]==5 && ioPin[1]==4))
+            u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_SW_I2C(ioPin[0], ioPin[1]); // SCL, SDA, reset
           else
           #endif
-            u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_HW_I2C(U8X8_PIN_NONE, sclPin, sdaPin); // Pins are Reset, SCL, SDA
+            u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_HW_I2C(U8X8_PIN_NONE, ioPin[0], ioPin[1]); // Pins are Reset, SCL, SDA
           lineHeight = 2;
           break;
         case SSD1306_64:
           #ifdef ESP8266
-          if (!(sclPin==5 && sdaPin==4))
-            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_SW_I2C(sclPin, sdaPin); // SCL, SDA, reset
+          if (!(ioPin[0]==5 && ioPin[1]==4))
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_SW_I2C(ioPin[0], ioPin[1]); // SCL, SDA, reset
           else
           #endif
-            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_HW_I2C(U8X8_PIN_NONE, sclPin, sdaPin); // Pins are Reset, SCL, SDA
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_HW_I2C(U8X8_PIN_NONE, ioPin[0], ioPin[1]); // Pins are Reset, SCL, SDA
           lineHeight = 2;
           break;
         case SSD1305:
           #ifdef ESP8266
-          if (!(sclPin==5 && sdaPin==4))
-            u8x8 = (U8X8 *) new U8X8_SSD1305_128X32_NONAME_SW_I2C(sclPin, sdaPin); // SCL, SDA, reset
+          if (!(ioPin[0]==5 && ioPin[1]==4))
+            u8x8 = (U8X8 *) new U8X8_SSD1305_128X32_NONAME_SW_I2C(ioPin[0], ioPin[1]); // SCL, SDA, reset
           else
           #endif
-            u8x8 = (U8X8 *) new U8X8_SSD1305_128X32_ADAFRUIT_HW_I2C(U8X8_PIN_NONE, sclPin, sdaPin); // Pins are Reset, SCL, SDA
+            u8x8 = (U8X8 *) new U8X8_SSD1305_128X32_ADAFRUIT_HW_I2C(U8X8_PIN_NONE, ioPin[0], ioPin[1]); // Pins are Reset, SCL, SDA
           lineHeight = 1;
           break;
         case SSD1305_64:
           #ifdef ESP8266
-          if (!(sclPin==5 && sdaPin==4))
-            u8x8 = (U8X8 *) new U8X8_SSD1305_128X64_ADAFRUIT_SW_I2C(sclPin, sdaPin); // SCL, SDA, reset
+          if (!(ioPin[0]==5 && ioPin[1]==4))
+            u8x8 = (U8X8 *) new U8X8_SSD1305_128X64_ADAFRUIT_SW_I2C(ioPin[0], ioPin[1]); // SCL, SDA, reset
           else
           #endif
-            u8x8 = (U8X8 *) new U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C(U8X8_PIN_NONE, sclPin, sdaPin); // Pins are Reset, SCL, SDA
+            u8x8 = (U8X8 *) new U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C(U8X8_PIN_NONE, ioPin[0], ioPin[1]); // Pins are Reset, SCL, SDA
+          lineHeight = 2;
+          break;
+        case SSD1306_SPI:
+          if (!(ioPin[0]==FLD_PIN_CLOCKSPI && ioPin[1]==FLD_PIN_DATASPI)) // if not overridden these sould be HW accellerated
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_4W_SW_SPI(ioPin[0], ioPin[1], ioPin[2], ioPin[3], ioPin[4]);
+          else
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X32_UNIVISION_4W_HW_SPI(ioPin[2], ioPin[3], ioPin[4]); // Pins are cs, dc, reset
+          lineHeight = 1;
+          break;
+        case SSD1306_SPI64:
+          if (!(ioPin[0]==FLD_PIN_CLOCKSPI && ioPin[1]==FLD_PIN_DATASPI)) // if not overridden these sould be HW accellerated
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_4W_SW_SPI(ioPin[0], ioPin[1], ioPin[2], ioPin[3], ioPin[4]);
+          else
+            u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_4W_HW_SPI(ioPin[2], ioPin[3], ioPin[4]); // Pins are cs, dc, reset
           lineHeight = 2;
           break;
         default:
           u8x8 = nullptr;
+      }
+      if (nullptr == u8x8) {
+          DEBUG_PRINTLN(F("Display init failed."));
+          pinManager.deallocatePin(sclPin, PinOwner::UM_FourLineDisplay);
+          pinManager.deallocatePin(sdaPin, PinOwner::UM_FourLineDisplay);
+          sclPin = -1;
+          sdaPin = -1;
           type = NONE;
           return;
       }
+
       initDone = true;
-      if (u8x8 != nullptr) {
-        DEBUG_PRINTLN(F("Starting display."));
-        (static_cast<U8X8*>(u8x8))->begin();
-      } else {
-        DEBUG_PRINTLN(F("Display init failed."));
-        type = NONE;
-        return;
-      }
+      DEBUG_PRINTLN(F("Starting display."));
+      (static_cast<U8X8*>(u8x8))->begin(); // why a static cast here?  variable is of this type...
       setFlipMode(flip);
       setContrast(contrast); //Contrast setup will help to preserve OLED lifetime. In case OLED need to be brighter increase number up to 255
       setPowerSave(0);
@@ -395,7 +454,7 @@ class FourLineDisplayUsermod : public Usermod {
 
       // do not update lastRedraw marker if just switching row contenet
       if (((now - lastRedraw)/1000)%5 != 0) lastRedraw = now;
-      
+
       // Turn the display back on
       if (displayTurnedOff) sleepOrClock(false);
 
@@ -412,13 +471,14 @@ class FourLineDisplayUsermod : public Usermod {
       knownEffectFFT3 = effectFFT3; //WLEDSR
 
       // Do the actual drawing
-
+      String line;
       // First row with Wifi name
       drawGlyph(0, 0, 80, u8x8_font_open_iconic_embedded_1x1); // home icon
-      String ssidString = knownSsid.substring(0, getCols() > 1 ? getCols() - 2 : 0);
-      drawString(1, 0, ssidString.c_str());
+      line = knownSsid.substring(0, getCols() > 1 ? getCols() - 2 : 0);
+      center(line, getCols()-2);
+      drawString(1, 0, line.c_str());
       // Print `~` char to indicate that SSID is longer, than our display
-      if (knownSsid.length() > getCols()) {
+      if (knownSsid.length() > getCols()-1) {
         drawString(getCols() - 1, 0, "~");
       }
 
@@ -429,12 +489,12 @@ class FourLineDisplayUsermod : public Usermod {
         drawString(1, lineHeight, apPass);
       } else {
         // alternate IP address and server name
-        String secondLine = knownIp.toString();
+        line = knownIp.toString();
         if (showName && strcmp(serverDescription, "WLED") != 0) {
-          secondLine = serverDescription;
+          line = serverDescription;
         }
-        for (uint8_t i=secondLine.length(); i<getCols()-1; i++) secondLine += ' ';
-        drawString(1, lineHeight, secondLine.c_str());
+        center(line, getCols()-1);
+        drawString(1, lineHeight, line.c_str());
       }
 
       // draw third and fourth row
@@ -528,7 +588,7 @@ class FourLineDisplayUsermod : public Usermod {
     }
 
     /**
-     * Display the current effect or palette (desiredEntry) 
+     * Display the current effect or palette (desiredEntry)
      * on the appropriate line (row).
      */
     void showCurrentEffectOrPalette(int knownMode, const char *qstring, uint8_t row) {
@@ -747,7 +807,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (showHour == 0) {
           showHour = 12;
           isAM = true;
-        } 
+        }
         else if (showHour > 12) {
           showHour -= 12;
           isAM = false;
@@ -802,21 +862,21 @@ class FourLineDisplayUsermod : public Usermod {
      * addToConfig() can be used to add custom persistent settings to the cfg.json file in the "um" (usermod) object.
      * It will be called by WLED when settings are actually saved (for example, LED settings are saved)
      * If you want to force saving the current state, use serializeConfig() in your loop().
-     * 
+     *
      * CAUTION: serializeConfig() will initiate a filesystem write operation.
      * It might cause the LEDs to stutter and will cause flash wear if called too often.
      * Use it sparingly and always in the loop, never in network callbacks!
-     * 
+     *
      * addToConfig() will also not yet add your setting to one of the settings pages automatically.
      * To make that work you still have to add the setting to the HTML, xml.cpp and set.cpp manually.
-     * 
+     *
      * I highly recommend checking out the basics of ArduinoJson serialization and deserialization in order to use custom settings!
      */
     void addToConfig(JsonObject& root) {
-      JsonObject top    = root.createNestedObject(FPSTR(_name));
-      JsonArray i2c_pin = top.createNestedArray("pin");
-      i2c_pin.add(sclPin);
-      i2c_pin.add(sdaPin);
+      JsonObject top   = root.createNestedObject(FPSTR(_name));
+      JsonArray io_pin = top.createNestedArray("pin");
+      for (byte i=0; i<5; i++) io_pin.add(ioPin[i]);
+      top["help4PinTypes"]       = F("Clk,Data,CS,DC,RST"); // help for Settings page
       top["type"]                = type;
       top[FPSTR(_flip)]          = (bool) flip;
       top[FPSTR(_contrast)]      = contrast;
@@ -831,7 +891,7 @@ class FourLineDisplayUsermod : public Usermod {
     /*
      * readFromConfig() can be used to read back the custom settings you added with addToConfig().
      * This is called by WLED when settings are loaded (currently this only happens once immediately after boot)
-     * 
+     *
      * readFromConfig() is called BEFORE setup(). This means you can use your persistent values in setup() (e.g. pin assignments, buffer sizes),
      * but also that if you want to write persistent values to a dynamic buffer, you'd need to allocate it here instead of in setup.
      * If you don't know what that is, don't fret. It most likely doesn't affect your use case :)
@@ -839,8 +899,7 @@ class FourLineDisplayUsermod : public Usermod {
     bool readFromConfig(JsonObject& root) {
       bool needsRedraw    = false;
       DisplayType newType = type;
-      int8_t newScl       = sclPin;
-      int8_t newSda       = sdaPin;
+      int8_t newPin[5]; for (byte i=0; i<5; i++) newPin[i] = ioPin[i];
 
       JsonObject top = root[FPSTR(_name)];
       if (top.isNull()) {
@@ -849,9 +908,8 @@ class FourLineDisplayUsermod : public Usermod {
         return false;
       }
 
-      newScl        = top["pin"][0] | newScl;
-      newSda        = top["pin"][1] | newSda;
       newType       = top["type"] | newType;
+      for (byte i=0; i<5; i++) newPin[i] = top["pin"][i] | ioPin[i];
       flip          = top[FPSTR(_flip)] | flip;
       contrast      = top[FPSTR(_contrast)] | contrast;
       refreshRate   = (top[FPSTR(_refreshRate)] | refreshRate/1000) * 1000;
@@ -863,25 +921,28 @@ class FourLineDisplayUsermod : public Usermod {
       DEBUG_PRINT(FPSTR(_name));
       if (!initDone) {
         // first run: reading from cfg.json
-        sclPin = newScl;
-        sdaPin = newSda;
+        for (byte i=0; i<5; i++) ioPin[i] = newPin[i];
         type = newType;
         DEBUG_PRINTLN(F(" config loaded."));
       } else {
         DEBUG_PRINTLN(F(" config (re)loaded."));
         // changing parameters from settings page
-        if (sclPin!=newScl || sdaPin!=newSda || type!=newType) {
+        bool pinsChanged = false;
+        for (byte i=0; i<5; i++) if (ioPin[i] != newPin[i]) { pinsChanged = true; break; }
+        if (pinsChanged || type!=newType) {
           if (type != NONE) delete (static_cast<U8X8*>(u8x8));
-          pinManager.deallocatePin(sclPin);
-          pinManager.deallocatePin(sdaPin);
-          sclPin = newScl;
-          sdaPin = newSda;
-          if (newScl<0 || newSda<0) {
+          for (byte i=0; i<5; i++) {
+            if (ioPin[i]>=0) pinManager.deallocatePin(ioPin[i], PinOwner::UM_FourLineDisplay);
+            ioPin[i] = newPin[i];
+          }
+          if (ioPin[0]<0 || ioPin[1]<0) { // data & clock must be > -1
             type = NONE;
             return true;
           } else type = newType;
           setup();
-          needsRedraw |= true;
+          if (sclPin >= 0 && sdaPin >= 0) {
+            needsRedraw |= true;
+          }
         }
         setContrast(contrast);
         setFlipMode(flip);

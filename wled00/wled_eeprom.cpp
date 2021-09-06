@@ -370,8 +370,8 @@ void loadSettingsFromEEPROM()
     effectFFT2 = EEPROM.read(EEP_AUDIO+5);
     effectFFT3 = EEPROM.read(EEP_AUDIO+6);
 
-    strip.matrixWidth = EEPROM.read(EEP_AUDIO+7) + ((EEPROM.read(EEP_AUDIO+8) << 8) & 0xFF00); if (strip.matrixWidth == 0) strip.matrixWidth = 1;
-    strip.matrixHeight = EEPROM.read(EEP_AUDIO+9) + ((EEPROM.read(EEP_AUDIO+10) << 10) & 0xFF00); if (strip.matrixHeight == 0) strip.matrixHeight = ledCount;
+    strip.matrixWidth = EEPROM.read(EEP_AUDIO+7) + ((EEPROM.read(EEP_AUDIO+8) << 8) & 0xFF00); if (strip.matrixWidth == 0) strip.matrixWidth = ledCount;
+    strip.matrixHeight = EEPROM.read(EEP_AUDIO+9) + ((EEPROM.read(EEP_AUDIO+10) << 10) & 0xFF00); if (strip.matrixHeight == 0) strip.matrixHeight = 1;
 
     strip.matrixPanels = EEPROM.read(EEP_AUDIO+11);
     strip.matrixHorizontalPanels = EEPROM.read(EEP_AUDIO+12);

@@ -2,7 +2,6 @@
 
 #include "wled.h"
 #include <U8x8lib.h> // from https://github.com/olikraus/u8g2/
-#include "Wire.h"
 
 //
 // Insired by the v1 usermod: ssd1306_i2c_oled_u8g2
@@ -13,7 +12,7 @@
 //
 // Dependencies
 // * This usermod REQURES the ModeSortUsermod
-// * This Usermod works best, by far, when coupled
+// * This Usermod works best, by far, when coupled 
 //   with RotaryEncoderUIUsermod.
 //
 // Make sure to enable NTP and set your time zone in WLED Config | Time.
@@ -24,7 +23,7 @@
 // REQUIREMENT: *  Wire
 //
 
-//The SCL and SDA pins are defined here.
+//The SCL and SDA pins are defined here. 
 #ifdef ARDUINO_ARCH_ESP32
   #ifndef FLD_PIN_SCL
     #define FLD_PIN_SCL 22
@@ -37,7 +36,7 @@
   #endif
    #ifndef FLD_PIN_DATASPI
     #define FLD_PIN_DATASPI 23
-  #endif
+  #endif   
   #ifndef FLD_PIN_DC
     #define FLD_PIN_DC 19
   #endif
@@ -59,7 +58,7 @@
   #endif
    #ifndef FLD_PIN_DATASPI
     #define FLD_PIN_DATASPI 13
-  #endif
+  #endif   
   #ifndef FLD_PIN_DC
     #define FLD_PIN_DC 12
   #endif
@@ -93,8 +92,8 @@ typedef enum {
   FLD_LINE_EFFECT_FFT3, //WLEDSR
   FLD_LINE_MODE,
   FLD_LINE_PALETTE,
-  FLD_LINE_PRESET, //WLEDSR
   FLD_LINE_TIME,
+  FLD_LINE_PRESET, //WLEDSR
   FLD_LINE_OTHER, //WLEDSR: no Line4Type
   FLD_LINE_NULL //WLEDSR: no Line4Type
 } Line4Type;
@@ -107,7 +106,8 @@ typedef enum {
   SSD1305,      // U8X8_SSD1305_128X32_ADAFRUIT_HW_I2C
   SSD1305_64,   // U8X8_SSD1305_128X64_ADAFRUIT_HW_I2C
   SSD1306_SPI,  // U8X8_SSD1306_128X32_NONAME_HW_SPI
-  SSD1306_SPI64 // U8X8_SSD1306_128X64_NONAME_HW_SPI
+  SSD1306_SPI64,// U8X8_SSD1306_128X64_NONAME_HW_SPI
+  SH1106_SPI    // U8X8_SH1106_128X64_WINSTAR_HW_SPI  
 } DisplayType;
 
     char sliderNames[5][LINE_BUFFER_SIZE*2]; //WLEDSR
@@ -183,17 +183,15 @@ class FourLineDisplayUsermod : public Usermod {
     // gets called once at boot. Do all initialization that doesn't depend on
     // network here
     void setup() {
-      Wire.begin(FLD_PIN_SDA, FLD_PIN_SCL); //increase speed to run display
-      Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-
       if (type == NONE) return;
+      bool allocated = false;
       byte i;
-      if (type == SSD1306_SPI || type == SSD1306_SPI64) {
-        PinManagerPinType pins[5] = { { ioPin[0], true }, { ioPin[1], true}, { ioPin[2], true }, { ioPin[3], true}, { ioPin[4], true }};
-        if (!pinManager.allocateMultiplePins(pins, 5, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
+      if (type == SSD1306_SPI || type == SSD1306_SPI64 || type == SH1106_SPI) {
+        for (i=0; i<5; i++) if (!pinManager.allocatePin(ioPin[i])) { allocated=true; break; }
+        if (i<5 && allocated) { for (byte i=0; i<5; i++) pinManager.deallocatePin(ioPin[i]); type=NONE; return; }
       } else {
-        PinManagerPinType pins[2] = { { ioPin[0], true }, { ioPin[1], true} };
-        if (!pinManager.allocateMultiplePins(pins, 2, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
+        for (i=0; i<2; i++) if (!pinManager.allocatePin(ioPin[i])) { allocated=true; break; }
+        if (i<2 && allocated) { for (byte i=0; i<5; i++) pinManager.deallocatePin(ioPin[i]); type=NONE; return; }
       }
       DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
@@ -256,22 +254,27 @@ class FourLineDisplayUsermod : public Usermod {
             u8x8 = (U8X8 *) new U8X8_SSD1306_128X64_NONAME_4W_HW_SPI(ioPin[2], ioPin[3], ioPin[4]); // Pins are cs, dc, reset
           lineHeight = 2;
           break;
+        case SH1106_SPI:
+          if (!(ioPin[0]==FLD_PIN_CLOCKSPI && ioPin[1]==FLD_PIN_DATASPI)) // if not overridden these sould be HW accellerated
+            u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_4W_SW_SPI(ioPin[0], ioPin[1], ioPin[2], ioPin[3], ioPin[4]);
+          else
+                 u8x8 = (U8X8 *) new U8X8_SH1106_128X64_WINSTAR_4W_HW_SPI(ioPin[2], ioPin[3], ioPin[4]); // Pins are cs, dc, reset
+          lineHeight = 2;
+          break;
         default:
           u8x8 = nullptr;
-      }
-      if (nullptr == u8x8) {
-          DEBUG_PRINTLN(F("Display init failed."));
-          pinManager.deallocatePin(sclPin, PinOwner::UM_FourLineDisplay);
-          pinManager.deallocatePin(sdaPin, PinOwner::UM_FourLineDisplay);
-          sclPin = -1;
-          sdaPin = -1;
           type = NONE;
           return;
       }
-
       initDone = true;
-      DEBUG_PRINTLN(F("Starting display."));
-      (static_cast<U8X8*>(u8x8))->begin(); // why a static cast here?  variable is of this type...
+      if (u8x8 != nullptr) {
+        DEBUG_PRINTLN(F("Starting display."));
+        (static_cast<U8X8*>(u8x8))->begin();
+      } else {
+        DEBUG_PRINTLN(F("Display init failed."));
+        type = NONE;
+        return;
+      }
       setFlipMode(flip);
       setContrast(contrast); //Contrast setup will help to preserve OLED lifetime. In case OLED need to be brighter increase number up to 255
       setPowerSave(0);
@@ -454,12 +457,16 @@ class FourLineDisplayUsermod : public Usermod {
 
       // do not update lastRedraw marker if just switching row contenet
       if (((now - lastRedraw)/1000)%5 != 0) lastRedraw = now;
-
+      
       // Turn the display back on
       if (displayTurnedOff) sleepOrClock(false);
 
       // Update last known values.
-      knownSsid = apActive ? WiFi.softAPSSID() : WiFi.SSID();
+      #if defined(ESP8266)
+        knownSsid = apActive ? WiFi.softAPSSID() : WiFi.SSID();
+      #else
+        knownSsid = WiFi.SSID();
+      #endif
       knownIp = apActive ? IPAddress(4, 3, 2, 1) : Network.localIP();
       knownBrightness = bri;
       knownMode = strip.getMode();
@@ -471,14 +478,13 @@ class FourLineDisplayUsermod : public Usermod {
       knownEffectFFT3 = effectFFT3; //WLEDSR
 
       // Do the actual drawing
-      String line;
+
       // First row with Wifi name
       drawGlyph(0, 0, 80, u8x8_font_open_iconic_embedded_1x1); // home icon
-      line = knownSsid.substring(0, getCols() > 1 ? getCols() - 2 : 0);
-      center(line, getCols()-2);
-      drawString(1, 0, line.c_str());
+      String ssidString = knownSsid.substring(0, getCols() > 1 ? getCols() - 2 : 0);
+      drawString(1, 0, ssidString.c_str());
       // Print `~` char to indicate that SSID is longer, than our display
-      if (knownSsid.length() > getCols()-1) {
+      if (knownSsid.length() > getCols()) {
         drawString(getCols() - 1, 0, "~");
       }
 
@@ -489,12 +495,12 @@ class FourLineDisplayUsermod : public Usermod {
         drawString(1, lineHeight, apPass);
       } else {
         // alternate IP address and server name
-        line = knownIp.toString();
+        String secondLine = knownIp.toString();
         if (showName && strcmp(serverDescription, "WLED") != 0) {
-          line = serverDescription;
+          secondLine = serverDescription;
         }
-        center(line, getCols()-1);
-        drawString(1, lineHeight, line.c_str());
+        for (uint8_t i=secondLine.length(); i<getCols()-1; i++) secondLine += ' ';
+        drawString(1, lineHeight, secondLine.c_str());
       }
 
       // draw third and fourth row
@@ -588,7 +594,7 @@ class FourLineDisplayUsermod : public Usermod {
     }
 
     /**
-     * Display the current effect or palette (desiredEntry)
+     * Display the current effect or palette (desiredEntry) 
      * on the appropriate line (row).
      */
     void showCurrentEffectOrPalette(int knownMode, const char *qstring, uint8_t row) {
@@ -807,7 +813,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (showHour == 0) {
           showHour = 12;
           isAM = true;
-        }
+        } 
         else if (showHour > 12) {
           showHour -= 12;
           isAM = false;
@@ -862,14 +868,14 @@ class FourLineDisplayUsermod : public Usermod {
      * addToConfig() can be used to add custom persistent settings to the cfg.json file in the "um" (usermod) object.
      * It will be called by WLED when settings are actually saved (for example, LED settings are saved)
      * If you want to force saving the current state, use serializeConfig() in your loop().
-     *
+     * 
      * CAUTION: serializeConfig() will initiate a filesystem write operation.
      * It might cause the LEDs to stutter and will cause flash wear if called too often.
      * Use it sparingly and always in the loop, never in network callbacks!
-     *
+     * 
      * addToConfig() will also not yet add your setting to one of the settings pages automatically.
      * To make that work you still have to add the setting to the HTML, xml.cpp and set.cpp manually.
-     *
+     * 
      * I highly recommend checking out the basics of ArduinoJson serialization and deserialization in order to use custom settings!
      */
     void addToConfig(JsonObject& root) {
@@ -891,7 +897,7 @@ class FourLineDisplayUsermod : public Usermod {
     /*
      * readFromConfig() can be used to read back the custom settings you added with addToConfig().
      * This is called by WLED when settings are loaded (currently this only happens once immediately after boot)
-     *
+     * 
      * readFromConfig() is called BEFORE setup(). This means you can use your persistent values in setup() (e.g. pin assignments, buffer sizes),
      * but also that if you want to write persistent values to a dynamic buffer, you'd need to allocate it here instead of in setup.
      * If you don't know what that is, don't fret. It most likely doesn't affect your use case :)
@@ -932,7 +938,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (pinsChanged || type!=newType) {
           if (type != NONE) delete (static_cast<U8X8*>(u8x8));
           for (byte i=0; i<5; i++) {
-            if (ioPin[i]>=0) pinManager.deallocatePin(ioPin[i], PinOwner::UM_FourLineDisplay);
+            if (ioPin[i]>=0) pinManager.deallocatePin(ioPin[i]);
             ioPin[i] = newPin[i];
           }
           if (ioPin[0]<0 || ioPin[1]<0) { // data & clock must be > -1
@@ -940,16 +946,14 @@ class FourLineDisplayUsermod : public Usermod {
             return true;
           } else type = newType;
           setup();
-          if (sclPin >= 0 && sdaPin >= 0) {
-            needsRedraw |= true;
-          }
+          needsRedraw |= true;
         }
         setContrast(contrast);
         setFlipMode(flip);
         if (needsRedraw && !wakeDisplay()) redraw(true);
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
-      return !top["forceRotate"].isNull();;
+      return true;
     }
 
     /*
@@ -969,4 +973,4 @@ const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec"
 const char FourLineDisplayUsermod::_flip[]          PROGMEM = "flip";
 const char FourLineDisplayUsermod::_sleepMode[]     PROGMEM = "sleepMode";
 const char FourLineDisplayUsermod::_clockMode[]     PROGMEM = "clockMode";
-const char FourLineDisplayUsermod::_forceRotate[]     PROGMEM = "forceRotate";
+const char FourLineDisplayUsermod::_forceRotate[]   PROGMEM = "forceRotate";

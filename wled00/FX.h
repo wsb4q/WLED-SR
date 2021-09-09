@@ -1344,7 +1344,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Solid Glitter",
 "Sunrise",
 "Phased",
-"Twinkleup",
+"Twinkleup@Speed,Intensity,Min;,!;!",
 "Noise Pal",
 "Sine",
 "Phased Noise",

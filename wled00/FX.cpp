@@ -3516,8 +3516,16 @@ uint16_t WS2812FX::mode_twinkleup(void) {                 // A very short twinkl
   random16_set_seed(535);                                 // The randomizer needs to be re-set each time through the loop in order for the same 'random' numbers to be the same each time through.
 
   for (int i = 0; i<SEGLEN; i++) {
-    uint8_t ranstart = random8();                         // The starting value (aka brightness) for each pixel. Must be consistent each time through the loop for this to work.
-    uint8_t pixBri = beatsin8(SEGMENT.speed/2+random8()/4,SEGMENT.fft1,255,0,ranstart);    // Every pixel gets a different timebase.
+    uint8_t pixBri = beatsin8(SEGMENT.speed/2+random8()/4,SEGMENT.fft1,255,0,random8());    // Every pixel gets a different timebase.
+
+/*
+    if (i < SEGLEN/3) {                                 // You can use this to shape a 1D candle, where it's brightest at 1/3rd of SEGLEN and dull at both ends.
+      pixBri = pixBri*i/(SEGLEN/3);
+    } else {
+      pixBri = pixBri*(SEGLEN-i)/SEGLEN;
+    }    
+*/
+
     if (random8() > SEGMENT.intensity) pixBri = 0;
     setPixelColor(i, color_blend(SEGCOLOR(1), color_from_palette(random8()+now/100, false, PALETTE_SOLID_WRAP, 0), pixBri));
   }

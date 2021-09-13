@@ -359,7 +359,7 @@ void loadSettingsFromEEPROM()
   //2944 - 3071 reserved for Usermods (need to increase EEPSIZE to 3072 in const.h)
 
 
-// Audio Reactive specific read settings
+// WLEDSR / Audio Reactive specific read settings
 
   if (lastEEPROMversion > 20) {                                   // Version sanity checking
     soundSquelch =  EEPROM.read(EEP_AUDIO);
@@ -370,21 +370,24 @@ void loadSettingsFromEEPROM()
     effectFFT2 = EEPROM.read(EEP_AUDIO+5);
     effectFFT3 = EEPROM.read(EEP_AUDIO+6);
 
-    strip.matrixWidth = EEPROM.read(EEP_AUDIO+7) + ((EEPROM.read(EEP_AUDIO+8) << 8) & 0xFF00); if (strip.matrixWidth == 0) strip.matrixWidth = ledCount;
-    strip.matrixHeight = EEPROM.read(EEP_AUDIO+9) + ((EEPROM.read(EEP_AUDIO+10) << 10) & 0xFF00); if (strip.matrixHeight == 0) strip.matrixHeight = 1;
+    strip.stripOrMatrixPanel = EEPROM.read(EEP_AUDIO+7);
+    strip.matrixWidth = EEPROM.read(EEP_AUDIO+8) + ((EEPROM.read(EEP_AUDIO+9) << 8) & 0xFF00); //if (strip.matrixWidth == 0) strip.matrixWidth = ledCount;
+    strip.matrixHeight = EEPROM.read(EEP_AUDIO+10) + ((EEPROM.read(EEP_AUDIO+11) << 8) & 0xFF00); //if (strip.matrixHeight == 0) strip.matrixHeight = 1;
 
-    strip.matrixPanels = EEPROM.read(EEP_AUDIO+11);
-    strip.matrixHorizontalPanels = EEPROM.read(EEP_AUDIO+12);
-    strip.matrixVerticalPanels = EEPROM.read(EEP_AUDIO+13);
+    strip.setStripOrPanelWidthAndHeight();
 
-    strip.panelFirstLedTopBottom = EEPROM.read(EEP_AUDIO+14); // > 0;
-    strip.panelFirstLedLeftRight = EEPROM.read(EEP_AUDIO+15); // > 0;
-    strip.panelOrientationHorVert = EEPROM.read(EEP_AUDIO+16); // > 0;
-    strip.panelSerpentine = EEPROM.read(EEP_AUDIO+17); // > 0;
-    strip.panelTranspose = EEPROM.read(EEP_AUDIO+18); // > 0;
+    strip.matrixPanels = EEPROM.read(EEP_AUDIO+12);
+    strip.matrixHorizontalPanels = EEPROM.read(EEP_AUDIO+13);
+    strip.matrixVerticalPanels = EEPROM.read(EEP_AUDIO+14);
 
-    sampleGain = EEPROM.read(EEP_AUDIO+19);
-    soundAgc = EEPROM.read(EEP_AUDIO+20); 
+    strip.panelFirstLedTopBottom = EEPROM.read(EEP_AUDIO+15); // > 0;
+    strip.panelFirstLedLeftRight = EEPROM.read(EEP_AUDIO+16); // > 0;
+    strip.panelOrientationHorVert = EEPROM.read(EEP_AUDIO+17); // > 0;
+    strip.panelSerpentine = EEPROM.read(EEP_AUDIO+18); // > 0;
+    strip.panelTranspose = EEPROM.read(EEP_AUDIO+19); // > 0;
+
+    sampleGain = EEPROM.read(EEP_AUDIO+20);
+    soundAgc = EEPROM.read(EEP_AUDIO+21); 
   }
 
 // FFT Slider Data Preset Protocol 5 bytes, 25 "slots"

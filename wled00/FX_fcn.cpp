@@ -169,8 +169,7 @@ void WS2812FX::service() {
         for (uint8_t c = 0; c < 3; c++) _colors_t[c] = gamma32(_colors_t[c]);
         handle_palette();
         //WLEDSR: swap width and height if rotated
-        if (IS_ROTATED2D && matrixHeight > 1)
-        {
+        if (IS_ROTATED2D && stripOrMatrixPanel == 1) {//matrix
           SEGMENT.height = SEGMENT.stopX - SEGMENT.startX + 1;
           SEGMENT.width = SEGMENT.stopY - SEGMENT.startY + 1;
         }
@@ -211,7 +210,7 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
 
   /* reverse just an individual segment */
   int16_t realIndex = iGroup;
-  if (IS_REVERSE && matrixHeight < 2) { // in case of 1D
+  if (IS_REVERSE && stripOrMatrixPanel == 0) { // in case of 1D
     if (IS_MIRROR) {
       realIndex = (SEGMENT.length() -1) / 2 - iGroup;  // only need to index half the pixels
     } else {
@@ -232,7 +231,7 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
   uint16_t newX=x;
   uint16_t newY=y;
 
-  if (matrixHeight > 1) // in case of 2D
+  if (stripOrMatrixPanel == 1) // in case of 2D
   {
     if (!IS_ROTATED2D) {
       if (!IS_REVERSE && !IS_REVERSE2D) { newX = x; newY = y; }                                               // 000      -       -           -         (rotate 0)
@@ -301,6 +300,7 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
           if (indexMir >= SEGMENT.stop) indexMir -= len;
 
           if (indexMir < customMappingSize) indexMir = customMappingTable[indexMir];
+          busses.setPixelColor(logicalToPhysical(indexSet), col);
           busses.setPixelColor(logicalToPhysical(indexMir), col); // ewowi20210624: logicalToPhysical: Maps logical led index to physical led index.
         }
         /* offset/phase */
@@ -310,8 +310,7 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
         if (indexSet < customMappingSize) indexSet = customMappingTable[indexSet]; // This line is also on L292
         busses.setPixelColor(logicalToPhysical(indexSet), col);
       }
-      // }
-    } else { //live data, etc.
+  } else { //live data, etc.
     if (i < customMappingSize) i = customMappingTable[i];
 
     uint32_t col = ((w << 24) | (r << 16) | (g << 8) | (b));
@@ -630,7 +629,7 @@ void WS2812FX::setColorOrder(uint8_t co) {
   //bus->SetColorOrder(co);
 }
 
-// ewowi20210624: calculate 2D segment variables using start/stop of segment using the x/y coordinnates of start and stop to determine topleft (startX/Y) and bottomright (stopXY) of the segment
+// WLEDSR: calculate 2D segment variables using start/stop of segment using the x/y coordinnates of start and stop to determine topleft (startX/Y) and bottomright (stopXY) of the segment
 void WS2812FX::set2DSegment(uint8_t n) {
   Segment& seg = _segments[n];
 
@@ -642,6 +641,51 @@ void WS2812FX::set2DSegment(uint8_t n) {
   seg.startY= MIN(startY, stopY);
   seg.stopX = MAX(startX, stopX);
   seg.stopY= MAX(startY, stopY);
+}
+
+//WLEDSR, for strips we need ledCountx1 dimension
+void WS2812FX::setStripOrPanelWidthAndHeight() {
+  if (stripOrMatrixPanel == 0) { //strip
+    matrixWidth = ledCount;
+    matrixHeight = 1;
+
+    //following code commented, in case we need it in the future
+    // uint8_t deltaLedCount = 0;
+    // bool found = false;
+    // while (!found && deltaLedCount < 10) {
+    //   uint16_t width = ledCount;
+    //   uint16_t height = 1;
+    //   // matrixWidth = width;
+    //   // matrixHeight = height;
+    //   uint16_t deltaHeightWidth = -1;
+    //   // Serial.printf("A lc=%d: %d x %d = %d (deltaHW %d, deltaLC %d)", ledCount, width, height, width * height, deltaHeightWidth, deltaLedCount); Serial.println();
+    //   while (width > 0 && abs(width - height) < deltaHeightWidth) { // as long as there are width/heights smaller then the current smallest deltaHW
+    //     height = (ledCount + deltaLedCount) / width;
+    //     if (width * height == ledCount + deltaLedCount) { // if width*height 
+    //       if (abs(width - height) < deltaHeightWidth) {
+    //         deltaHeightWidth = abs(width - height);
+    //         if ((ledCount < 16 || (width >= 4 && height >= 4)) && width <= 256 && height <= 256) {
+    //           // Serial.printf("B lc=%d: %d x %d = %d (deltaHW %d, deltaLC %d)", ledCount, width, height, width * height, deltaHeightWidth, deltaLedCount); Serial.println();
+    //           found = true;
+    //           matrixWidth = width;
+    //           matrixHeight = height;
+    //         }
+    //       }
+    //     }
+    //     width--;
+    //   }
+    //   deltaLedCount ++;
+    // }
+    // Serial.printf("C lc=%d: %d x %d = %d (deltaHW %d, deltaLC %d)", ledCount, matrixWidth, matrixHeight, matrixWidth * matrixHeight, abs(matrixWidth - matrixHeight), matrixWidth * matrixHeight - ledCount); Serial.println();
+    
+    // panelFirstLedLeftRight = 0; //left
+    // panelFirstLedTopBottom = 0; //top
+    // panelOrientationHorVert = 0; //horizontal
+    // panelSerpentine = 1; //serpentine on
+    // panelTranspose = 0; //
+
+  }
+  // Serial.printf("setStripOrPanelWidthAndHeight %d %d %d", strip.stripOrMatrixPanel, strip.matrixWidth, strip.matrixHeight);Serial.println();
 }
 
 void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping, uint8_t spacing) {

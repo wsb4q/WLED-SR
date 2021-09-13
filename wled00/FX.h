@@ -780,11 +780,6 @@ class WS2812FX {
      _mode[FX_MODE_2DGAMEOFLIFE]             = &WS2812FX::mode_2Dgameoflife;
 #endif
 
-      // matrixWidth = 30;
-      // matrixHeight = 1;
-      // matrixVerticalPanels = 1;
-      // matrixHorizontalPanels = 1;
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1020,6 +1015,7 @@ class WS2812FX {
     void
       fade2black(uint8_t r),
       set2DSegment(uint8_t n),
+      setStripOrPanelWidthAndHeight(),
       noise8_help(uint8_t),
       mapNoiseToLEDsUsingPalette(),
       blur1d( CRGB* leds, fract8 blur_amount),
@@ -1035,8 +1031,8 @@ class WS2812FX {
       segmentsAreIdentical(Segment* a, Segment* b);
 
     uint16_t
-      XY(int,int),            // ewowi20210624: new XY: segmentToLogical: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
-      logicalToPhysical(int); // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
+      XY(uint16_t, uint16_t),            // ewowi20210624: new XY: segmentToLogical: Maps XY in 2D segment to logical index. Works for 1D strips and 2D panels
+      logicalToPhysical(uint16_t); // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
 
     uint16_t
       matrixWidth = 30,
@@ -1045,7 +1041,8 @@ class WS2812FX {
     uint8_t
       matrixPanels,
       matrixHorizontalPanels = 1,
-      matrixVerticalPanels = 1;
+      matrixVerticalPanels = 1,
+      stripOrMatrixPanel = 0;
 
     uint8_t
       panelFirstLedTopBottom,

@@ -56,7 +56,7 @@
       if (bquot > 100) {var msg = "Too many LEDs for me to handle!"; if (maxM < 10000) msg += "\n\rConsider using an ESP32."; alert(msg);}
       if (d.Sf.checkValidity()) d.Sf.submit(); //https://stackoverflow.com/q/37323914
     }
-    function S(){GetV();setABL();Ps();} //WLED: add Ps for panel selection
+    function S(){GetV();setABL();Ps();MPDiv()} //WLED: add Ps for panel selection, add MPDiv for 1D or 2D selection
     function enABL()
     {
       var en = gId('able').checked;
@@ -217,9 +217,10 @@
       gId("json").style.display = d.Sf.IT.value==8 ? "" : "none";
 
       // 2D Matrix Settings
+      var SOMP = parseInt(d.Sf.SOMP.value, 10);
       var MXW = parseInt(d.Sf.MXW.value, 10);
       var MXH = parseInt(d.Sf.MXH.value, 10);
-      if (!isNaN(MXW) && !isNaN(MXH) && (MXW > 0 || MXH > 0) && MXW * MXH > parseInt(sLC, 10)) {
+      if (!isNaN(MXW) && !isNaN(MXH) && (MXW > 0 || MXH > 0) && MXW * MXH > parseInt(sLC, 10) && SOMP == 1) {
       gId('2dwarning').style.display = 'inline';
       for (let s of d.Sf.querySelectorAll('button[type="submit"]')) s.disabled = true;
       } else {
@@ -319,6 +320,9 @@ Reverse (rotated 180°): <input type="checkbox" name="CV${i}">
     function Ps() { //WLEDSR enable/disable panel
       d.getElementById("mphv").style.display=(d.getElementById("mxp").checked)?"block":"none";
     }
+    function MPDiv() { //WLEDSR enable/disable 2D stuff
+      d.getElementById("mpdiv").style.display=(d.getElementById("somp").value == 1)?"block":"none";
+    }
     function uploadFile(name) {
       var req = new XMLHttpRequest();
       req.addEventListener('load', function(){showToast(this.responseText)});
@@ -350,9 +354,14 @@ Reverse (rotated 180°): <input type="checkbox" name="CV${i}">
     <b><span id="psu">?</span></b><br>
     <span id="psu2"><br></span>
     <!-- 2D Matrix Settings - BROKEN BY MULTI-PIN -->
+    <br>Strip or panel: <select id="somp" name="SOMP" onchange="MPDiv()" >
+      <option value="0" selected>1D Strip</option>
+      <option value="1">2D Matrix panel</option>
+    </select><br>
+    <div id="mpdiv">
     <h3>2D Matrix</h3>
-    Width <input name="MXW" type="number" min="1" max="1500" oninput="UI()"> x
-    Height <input name="MXH" type="number" min="1" max="1500" oninput="UI()"><br>
+    Width <input id="mxw" name="MXW" type="number" min="1" max="1500" oninput="UI()"> x
+    Height <input id="mxh" name="MXH" type="number" min="1" max="1500" oninput="UI()"><br>
     <div id="2dwarning" style="color: orange; display: inline;">
       &#9888; width x height should match LED count!<br>
     </div>
@@ -378,6 +387,7 @@ Reverse (rotated 180°): <input type="checkbox" name="CV${i}">
     Serpentine: <input type="checkbox" name="PNLS" checked><br>
     Transpose: <input type="checkbox" name="PNLT" checked><br>
     <br>
+    </div><!-- mpdiv  -->
     <br>
     Enable automatic brightness limiter: <input type="checkbox" name="ABen" onchange="enABL()" id="able"><br>
     <div id="abl">

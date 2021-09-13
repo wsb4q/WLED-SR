@@ -4133,7 +4133,7 @@ uint16_t WS2812FX::mode_aurora(void) {
 
 // FastLED array, so we can refer to leds[i] instead of getPixel() and setPixel()
 CRGB leds[MAX_LEDS+1];                          // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
-uint32_t dataStore[4096];                       // We are declaring a storage area or 64 x 64 (4096) words.
+// uint32_t dataStore[4096];                       // We are declaring a storage area or 64 x 64 (4096) words.
 
 
 // Sound reactive external variables.
@@ -4349,15 +4349,15 @@ void  WS2812FX::nscale8( CRGB* leds, uint8_t scale)
 
 
 
-uint16_t WS2812FX::XY( int x, int y) {                              // ewowi20210703: new XY: segmentToReal: Maps XY in 2D segment to to rotated and mirrored logical index. Works for 1D strips and 2D panels
-  return realPixelIndex(x + y * SEGMENT.width);
+uint16_t WS2812FX::XY(uint16_t x, uint16_t y) {                              // ewowi20210703: new XY: segmentToReal: Maps XY in 2D segment to to rotated and mirrored logical index. Works for 1D strips and 2D panels
+    return realPixelIndex(x%SEGMENT.width + y%SEGMENT.height * SEGMENT.width);
 }
 
 //Use https://wokwi.com/arduino/projects/300565972972995085 to create layout examples
 #define RIGHT 1
 #define BOTTOM 1
 #define HORIZONTAL 0
-uint16_t WS2812FX::logicalToPhysical(int i) {                       // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
+uint16_t WS2812FX::logicalToPhysical(uint16_t i) {                       // ewowi20210624: previous XY. Maps logical led index to physical led index. Works for 1D strips and 2D panels
                                                                     // By Sutaburosu (major and minor flip) and Ewoud Wijma (panels)
 
   int x = i % matrixWidth;
@@ -4563,29 +4563,38 @@ uint16_t WS2812FX::mode_2Dfire2012(void) {                // Fire2012 by Mark Kr
 
   if (millis() - SEGENV.step >= ((256-SEGMENT.speed) >>2)) {
     SEGENV.step = millis();
-    static byte *heat = (byte *)dataStore;
+    // static byte *heat = (uint16_t *)dataStore;
 
-    for (int mw = 0; mw < SEGMENT.width; mw++) {            // Move along the width of the flame
+    if (!SEGENV.allocateData(sizeof(byte) * 4096)) return mode_static(); //allocation failed
+    byte *heat = reinterpret_cast<byte*>(SEGENV.data);
 
+
+    for (uint16_t mw = 0; mw < SEGMENT.width; mw++) {            // Move along the width of the flame
+
+      uint16_t cell;
       // Step 1.  Cool down every cell a little
-      for (int mh = 0; mh < SEGMENT.height; mh++) {
-        heat[mw*SEGMENT.width+mh] = qsub8( heat[mw*SEGMENT.width+mh],  random16(0, ((COOLING * 10) / SEGMENT.height) + 2));
+      for (uint16_t mh = 0; mh < SEGMENT.height; mh++) {
+        cell = (mw*SEGMENT.width+mh)%4096;
+        heat[cell] = qsub8( heat[cell],  random16(0, ((COOLING * 10) / SEGMENT.height) + 2));
       }
 
       // Step 2.  Heat from each cell drifts 'up' and diffuses a little
-      for (int mh = SEGMENT.height - 1; mh >= 2; mh--) {
-        heat[mw*SEGMENT.width+mh] = (heat[mw*SEGMENT.width+mh - 1] + heat[mw*SEGMENT.width+mh - 2] + heat[mw*SEGMENT.width+mh - 2] ) / 3;
+      for (uint16_t mh = SEGMENT.height - 1; mh >= 2; mh--) {
+        cell = (mw*SEGMENT.width+mh)%4096;
+        heat[cell] = (heat[cell - 1] + heat[cell - 2] + heat[cell - 2] ) / 3;
       }
 
       // Step 3.  Randomly ignite new 'sparks' of heat near the bottom
       if (random8(0,255) < SPARKING ) {
-        int mh = random8(3);
-        heat[mw*SEGMENT.width+mh] = qadd8( heat[mw*SEGMENT.width+mh], random8(160,255) );
+        uint8_t mh = random8(3);
+        cell = (mw*SEGMENT.width+mh)%4096;
+        heat[cell] = qadd8( heat[cell], random8(160,255) );
       }
 
       // Step 4.  Map from heat cells to LED colors
-      for (int mh = 0; mh < SEGMENT.height; mh++) {
-        byte colorindex = scale8( heat[mw*SEGMENT.width+mh], 240);
+      for (uint16_t mh = 0; mh < SEGMENT.height; mh++) {
+        cell = (mw*SEGMENT.width+mh)%4096;
+        byte colorindex = scale8( heat[cell], 240);
         uint16_t pixelnumber = (SEGMENT.height-1) - mh;                                  // Flip it upside down.
         leds[XY(mw,pixelnumber)] = ColorFromPalette(currentPalette, colorindex, 255);  // Otherwise, it was leds[XY(mw,mh)] = . . .
       } // for mh
@@ -5011,14 +5020,14 @@ uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Ca
   uint8_t x1 = beatsin8(23 * speed, 0, 15);
   uint8_t y1 = beatsin8(28 * speed, 0, 15);
 
-  for (uint8_t y = 0; y < SEGMENT.height; y++) {
-    for (uint8_t x = 0; x < SEGMENT.width; x++) {
+  for (uint16_t y = 0; y < SEGMENT.height; y++) {
+    for (uint16_t x = 0; x < SEGMENT.width; x++) {
 
       // calculate distances of the 3 points from actual pixel
       // and add them together with weightening
-      uint8_t  dx =  abs(x - x1);
-      uint8_t  dy =  abs(y - y1);
-      uint8_t dist = 2 * sqrt((dx * dx) + (dy * dy));
+      uint16_t  dx =  abs(x - x1);
+      uint16_t  dy =  abs(y - y1);
+      uint16_t dist = 2 * sqrt((dx * dx) + (dy * dy));
 
       dx =  abs(x - x2);
       dy =  abs(y - y2);
@@ -5029,7 +5038,7 @@ uint16_t WS2812FX::mode_2Dmetaballs(void) {   // Metaballs by Stefan Petrick. Ca
       dist += sqrt((dx * dx) + (dy * dy));
 
       // inverse result
-      byte color = 1000 / dist;
+      byte color = 1000 / dist;//dist=0?1000: 1000 / dist;
 
       // map color between thresholds
       if (color > 0 and color < 60) {
@@ -5058,8 +5067,8 @@ uint16_t WS2812FX::mode_2Dnoise(void) {                  // By Andrew Tuline
 
   uint8_t scale = SEGMENT.intensity+2;
 
-  for (byte y = 0; y < SEGMENT.height; y++) {
-    for (byte x = 0; x < SEGMENT.width; x++) {
+  for (uint16_t y = 0; y < SEGMENT.height; y++) {
+    for (uint16_t x = 0; x < SEGMENT.width; x++) {
       uint8_t pixelHue8 = inoise8(x * scale, y * scale, millis() / (16 - SEGMENT.speed/16));
       leds[XY(x, y)] = ColorFromPalette(currentPalette, pixelHue8);
     }
@@ -5078,16 +5087,16 @@ uint16_t WS2812FX::mode_2DPlasmaball(void) {                   // By: Stepko htt
 
   fadeToBlackBy(leds, 64);
   double t = millis() / (33 - SEGMENT.speed/8);
-  for (byte i = 0; i < SEGMENT.width; i++) {
-    byte thisVal = inoise8(i * 30, t, t);
-    byte thisMax = map(thisVal, 0, 255, 0, SEGMENT.width);
-    for (byte j = 0; j < SEGMENT.height; j++) {
-      byte thisVal_ = inoise8(t, j * 30, t);
-      byte thisMax_ = map(thisVal_, 0, 255, 0, SEGMENT.height);
-      byte x = (i + thisMax_ - (SEGMENT.width * 2 - SEGMENT.width) / 2);
-      byte y = (j + thisMax - (SEGMENT.width * 2 - SEGMENT.width) / 2);
-      byte cx = (i + thisMax_);
-      byte cy = (j + thisMax);
+  for (uint16_t i = 0; i < SEGMENT.width; i++) {
+    uint16_t thisVal = inoise8(i * 30, t, t);
+    uint16_t thisMax = map(thisVal, 0, 255, 0, SEGMENT.width);
+    for (uint16_t j = 0; j < SEGMENT.height; j++) {
+      uint16_t thisVal_ = inoise8(t, j * 30, t);
+      uint16_t thisMax_ = map(thisVal_, 0, 255, 0, SEGMENT.height);
+      uint16_t x = (i + thisMax_ - (SEGMENT.width * 2 - SEGMENT.width) / 2);
+      uint16_t y = (j + thisMax - (SEGMENT.width * 2 - SEGMENT.width) / 2);
+      uint16_t cx = (i + thisMax_);
+      uint16_t cy = (j + thisMax);
 
       leds[XY(i, j)] += ((x - y > -2) && (x - y < 2)) ||
                         ((SEGMENT.width - 1 - x - y) > -2 && (SEGMENT.width - 1 - x - y < 2)) ||
@@ -5141,8 +5150,8 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
   uint16_t _scale = map(SEGMENT.intensity, 1, 255, 30, adjScale);
   byte _speed = map(SEGMENT.speed, 1, 255, 128, 16);
 
-  for (byte x = 0; x < SEGMENT.width; x++) {
-    for (byte y = 0; y < SEGMENT.height; y++) {
+  for (uint16_t x = 0; x < SEGMENT.width; x++) {
+    for (uint16_t y = 0; y < SEGMENT.height; y++) {
       timer++;
       leds[XY(x, y)] = ColorFromPalette(currentPalette,
                        qsub8(
@@ -5255,19 +5264,19 @@ uint16_t WS2812FX::mode_2DSunradiation(void) {                   // By: ldirko h
   int t = millis() / 4;
   int index = 0;
   uint8_t someVal = SEGMENT.speed/4;             // Was 25.
-  for (byte j = 0; j < (SEGMENT.height + 2); j++) {
-    for (byte i = 0; i < (SEGMENT.width + 2); i++) {
+  for (uint16_t j = 0; j < (SEGMENT.height + 2); j++) {
+    for (uint16_t i = 0; i < (SEGMENT.width + 2); i++) {
       byte col = (inoise8_raw(i * someVal, j * someVal, t)) / 2;
       bump[index++] = col;
     }
   }
 
   int yindex = SEGMENT.width + 3;
-  int8_t vly = -(SEGMENT.height / 2 + 1);
-  for (byte y = 0; y < SEGMENT.height; y++) {
+  int16_t vly = -(SEGMENT.height / 2 + 1);
+  for (uint16_t y = 0; y < SEGMENT.height; y++) {
     ++vly;
-    int8_t vlx = -(SEGMENT.width / 2 + 1);
-    for (byte x = 0; x < SEGMENT.width; x++) {
+    int16_t vlx = -(SEGMENT.width / 2 + 1);
+    for (uint16_t x = 0; x < SEGMENT.width; x++) {
       ++vlx;
       int8_t nx = bump[x + yindex + 1] - bump[x + yindex - 1];
       int8_t ny = bump[x + yindex + (SEGMENT.width + 2)] - bump[x + yindex - (SEGMENT.width + 2)];
@@ -5326,8 +5335,8 @@ uint16_t WS2812FX::mode_2Dtartan() {          // By: Elliott Kember  https://edi
   int offsetX = beatsin16(3, -360, 360);
   int offsetY = beatsin16(2, -360, 360);
 
-  for (uint8_t x = 0; x < SEGMENT.width; x++) {
-    for (uint8_t y = 0; y < SEGMENT.height; y++) {
+  for (uint16_t x = 0; x < SEGMENT.width; x++) {
+    for (uint16_t y = 0; y < SEGMENT.height; y++) {
       uint16_t index = XY(x, y);
       hue = x * beatsin16(10, 1, 10) + offsetY;
       leds[index] = ColorFromPalette(currentPalette, hue, sin8(x * SEGMENT.speed + offsetX) * sin8(x * SEGMENT.speed + offsetX) / 255, LINEARBLEND);
@@ -5350,16 +5359,16 @@ uint16_t WS2812FX::mode_2DWaverly(void) {                                       
   fadeToBlackBy(leds, SEGMENT.speed);
 
   long t = millis() / 2;
-  for (byte i = 0; i < SEGMENT.width; i++) {
+  for (uint16_t i = 0; i < SEGMENT.width; i++) {
   //  byte thisVal = inoise8(i * 45 , t , t);
   // byte thisMax = map(thisVal, 0, 255, 0, SEGMENT.height);
 
     uint8_t tmpSound = (soundAgc) ? sampleAgc : sampleAvg;
 
     uint16_t thisVal = tmpSound*SEGMENT.intensity/64 * inoise8(i * 45 , t , t)/64;
-    byte thisMax = map(thisVal, 0, 512, 0, SEGMENT.height);
+    uint16_t thisMax = map(thisVal, 0, 512, 0, SEGMENT.height);
 
-    for (byte j = 0; j < thisMax; j++) {
+    for (uint16_t j = 0; j < thisMax; j++) {
       leds[XY(i, j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);
       leds[XY((SEGMENT.width - 1) - i, (SEGMENT.height - 1) - j)] += ColorFromPalette(currentPalette, map(j, 0, thisMax, 250, 0), 255, LINEARBLEND);
     }

@@ -88,8 +88,11 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   CJSON(strip.rgbwMode, hw_led[F("rgbwm")]);
 
   // 2D Matrix Settings
+  CJSON(strip.stripOrMatrixPanel, hw_led[F("somp")]);
   CJSON(strip.matrixWidth, hw_led[F("mxw")]);
   CJSON(strip.matrixHeight, hw_led[F("mxh")]);
+
+  strip.setStripOrPanelWidthAndHeight();
 
   CJSON(strip.matrixPanels, hw_led[F("mxp")]);
   CJSON(strip.matrixHorizontalPanels, hw_led[F("mph")]);
@@ -587,6 +590,7 @@ void serializeConfig() {
   hw_led[F("rgbwm")] = strip.rgbwMode;
 
   // 2D Matrix Settings
+  hw_led[F("somp")] = strip.stripOrMatrixPanel;
   hw_led[F("mxw")] = strip.matrixWidth;
   hw_led[F("mxh")] = strip.matrixHeight;
 

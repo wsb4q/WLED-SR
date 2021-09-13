@@ -194,8 +194,11 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     if (t > 0) briMultiplier = t;
 
     // 2D Matrix Settings - BROKEN BY MULTI-PIN
+    strip.stripOrMatrixPanel = request->arg(F("SOMP")).toInt();
     strip.matrixWidth = request->arg(F("MXW")).toInt();
     strip.matrixHeight = request->arg(F("MXH")).toInt();
+
+    strip.setStripOrPanelWidthAndHeight();
 
     strip.matrixPanels = request->hasArg(F("MXP"));
     strip.matrixHorizontalPanels = request->arg(F("MPH")).toInt();

@@ -2,6 +2,7 @@
 
 #include "wled.h"
 #include <U8x8lib.h> // from https://github.com/olikraus/u8g2/
+#include "Wire.h"
 
 //
 // Insired by the v1 usermod: ssd1306_i2c_oled_u8g2
@@ -12,7 +13,7 @@
 //
 // Dependencies
 // * This usermod REQURES the ModeSortUsermod
-// * This Usermod works best, by far, when coupled 
+// * This Usermod works best, by far, when coupled
 //   with RotaryEncoderUIUsermod.
 //
 // Make sure to enable NTP and set your time zone in WLED Config | Time.
@@ -23,7 +24,7 @@
 // REQUIREMENT: *  Wire
 //
 
-//The SCL and SDA pins are defined here. 
+//The SCL and SDA pins are defined here.
 #ifdef ARDUINO_ARCH_ESP32
   #ifndef FLD_PIN_SCL
     #define FLD_PIN_SCL 22
@@ -36,7 +37,7 @@
   #endif
    #ifndef FLD_PIN_DATASPI
     #define FLD_PIN_DATASPI 23
-  #endif   
+  #endif
   #ifndef FLD_PIN_DC
     #define FLD_PIN_DC 19
   #endif
@@ -58,7 +59,7 @@
   #endif
    #ifndef FLD_PIN_DATASPI
     #define FLD_PIN_DATASPI 13
-  #endif   
+  #endif
   #ifndef FLD_PIN_DC
     #define FLD_PIN_DC 12
   #endif
@@ -92,8 +93,8 @@ typedef enum {
   FLD_LINE_EFFECT_FFT3, //WLEDSR
   FLD_LINE_MODE,
   FLD_LINE_PALETTE,
-  FLD_LINE_TIME,
   FLD_LINE_PRESET, //WLEDSR
+  FLD_LINE_TIME,
   FLD_LINE_OTHER, //WLEDSR: no Line4Type
   FLD_LINE_NULL //WLEDSR: no Line4Type
 } Line4Type;
@@ -136,8 +137,8 @@ class FourLineDisplayUsermod : public Usermod {
     uint32_t screenTimeout = SCREEN_TIMEOUT_MS;       // in ms
     bool sleepMode = true;          // allow screen sleep?
     bool clockMode = false;         // display clock
-    bool forceRotate = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
-    bool wokeUp = false; //WLEDSR
+    bool forceAutoRotate = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
+    bool noAutoRotate = false;         // WLEDSR: never do auto rotate, only when variable changes or rotary is pressed (in case redraw causes stutter on leds, should not be needed with spi displays)
 
     // Next variables hold the previous known values to determine if redraw is
     // required.
@@ -153,6 +154,8 @@ class FourLineDisplayUsermod : public Usermod {
     uint8_t knownPalette = 0;
     uint8_t knownMinute = 99;
     uint8_t knownHour = 99;
+
+    uint8_t knownClockMode = 0;
 
     bool displayTurnedOff = false;
     unsigned long lastUpdate = 0;
@@ -170,7 +173,8 @@ class FourLineDisplayUsermod : public Usermod {
     static const char _flip[];
     static const char _sleepMode[];
     static const char _clockMode[];
-    static const char _forceRotate[]; //WLEDSR
+    static const char _forceAutoRotate[]; //WLEDSR
+    static const char _noAutoRotate[]; //WLEDSR
 
     // If display does not work or looks corrupted check the
     // constructor reference:
@@ -183,15 +187,16 @@ class FourLineDisplayUsermod : public Usermod {
     // gets called once at boot. Do all initialization that doesn't depend on
     // network here
     void setup() {
+      Wire.begin(FLD_PIN_SDA, FLD_PIN_SCL); //increase speed to run display
+      Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+
       if (type == NONE) return;
-      bool allocated = false;
-      byte i;
       if (type == SSD1306_SPI || type == SSD1306_SPI64 || type == SH1106_SPI) {
-        for (i=0; i<5; i++) if (!pinManager.allocatePin(ioPin[i])) { allocated=true; break; }
-        if (i<5 && allocated) { for (byte i=0; i<5; i++) pinManager.deallocatePin(ioPin[i]); type=NONE; return; }
+        PinManagerPinType pins[5] = { { ioPin[0], true }, { ioPin[1], true}, { ioPin[2], true }, { ioPin[3], true}, { ioPin[4], true }};
+        if (!pinManager.allocateMultiplePins(pins, 5, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
       } else {
-        for (i=0; i<2; i++) if (!pinManager.allocatePin(ioPin[i])) { allocated=true; break; }
-        if (i<2 && allocated) { for (byte i=0; i<5; i++) pinManager.deallocatePin(ioPin[i]); type=NONE; return; }
+        PinManagerPinType pins[2] = { { ioPin[0], true }, { ioPin[1], true} };
+        if (!pinManager.allocateMultiplePins(pins, 2, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
       }
       DEBUG_PRINTLN(F("Allocating display."));
       switch (type) {
@@ -263,18 +268,17 @@ class FourLineDisplayUsermod : public Usermod {
           break;
         default:
           u8x8 = nullptr;
+      }
+      if (nullptr == u8x8) {
+          DEBUG_PRINTLN(F("Display init failed."));
+          for (byte i=0; i<5 && ioPin[i]>=0; i++) pinManager.deallocatePin(ioPin[i], PinOwner::UM_FourLineDisplay);
           type = NONE;
           return;
       }
+
       initDone = true;
-      if (u8x8 != nullptr) {
-        DEBUG_PRINTLN(F("Starting display."));
-        (static_cast<U8X8*>(u8x8))->begin();
-      } else {
-        DEBUG_PRINTLN(F("Display init failed."));
-        type = NONE;
-        return;
-      }
+      DEBUG_PRINTLN(F("Starting display."));
+      (static_cast<U8X8*>(u8x8))->begin(); // why a static cast here?  variable is of this type...
       setFlipMode(flip);
       setContrast(contrast); //Contrast setup will help to preserve OLED lifetime. In case OLED need to be brighter increase number up to 255
       setPowerSave(0);
@@ -289,10 +293,15 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
-      if (millis() - lastUpdate < (clockMode?1000:refreshRate) || (!forceRotate && strip.isUpdating() && checkChangedType() != FLD_LINE_NULL && !wokeUp )) return; //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
-      lastUpdate = millis();
-      redraw(false);
-      wokeUp = false; //WLEDSR: wokeUp handled
+      // WWLEDSR: redraw if 
+      //      -- timer and (forcedAutoUpdate or strip idle) and autorotate 
+      //   OR
+      //      -- any variable updated (including clockmode, hours and minutes)
+      // Note wakeDispay (used by rotaty) triggers its own redraw
+      if ((millis() - lastUpdate >= (clockMode?1000:refreshRate) && (forceAutoRotate || !strip.isUpdating()) && !noAutoRotate) || millis() - lastRedraw > screenTimeout || checkChangedType() != FLD_LINE_NULL) { //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+        lastUpdate = millis();
+        redraw(false);
+      }
     }
 
     /**
@@ -358,8 +367,21 @@ class FourLineDisplayUsermod : public Usermod {
         return FLD_LINE_MODE;
       else if (knownPalette != strip.getSegment(0).palette)
         return FLD_LINE_PALETTE;
+      else if (knownClockMode != clockMode || (clockMode && (knownHour != hour(localTime) || knownMinute != minute(localTime))))
+        return FLD_LINE_OTHER;
       else
         return FLD_LINE_NULL;
+    }
+
+    void center(String &line, uint8_t width) {
+      bool tooLong = line.length()>width;
+      line = line.substring(0, width);
+      int len = line.length();
+      if (len<width) for (byte i=(width-len)/2; i>0; i--) line = ' ' + line;
+      for (byte i=line.length(); i<width; i++) line += ' ';
+      // Print `~` char to indicate that SSID is longer, than our display
+      if (tooLong) 
+         line[len-1] = '~';
     }
 
     /**
@@ -457,16 +479,12 @@ class FourLineDisplayUsermod : public Usermod {
 
       // do not update lastRedraw marker if just switching row contenet
       if (((now - lastRedraw)/1000)%5 != 0) lastRedraw = now;
-      
+
       // Turn the display back on
       if (displayTurnedOff) sleepOrClock(false);
 
       // Update last known values.
-      #if defined(ESP8266)
-        knownSsid = apActive ? WiFi.softAPSSID() : WiFi.SSID();
-      #else
-        knownSsid = WiFi.SSID();
-      #endif
+      knownSsid = apActive ? WiFi.softAPSSID() : WiFi.SSID();
       knownIp = apActive ? IPAddress(4, 3, 2, 1) : Network.localIP();
       knownBrightness = bri;
       knownMode = strip.getMode();
@@ -477,16 +495,18 @@ class FourLineDisplayUsermod : public Usermod {
       knownEffectFFT2 = effectFFT2; //WLEDSR
       knownEffectFFT3 = effectFFT3; //WLEDSR
 
-      // Do the actual drawing
+      knownClockMode = clockMode;
 
+      // Do the actual drawing
+      String line;
       // First row with Wifi name
       drawGlyph(0, 0, 80, u8x8_font_open_iconic_embedded_1x1); // home icon
-      String ssidString = knownSsid.substring(0, getCols() > 1 ? getCols() - 2 : 0);
-      drawString(1, 0, ssidString.c_str());
-      // Print `~` char to indicate that SSID is longer, than our display
-      if (knownSsid.length() > getCols()) {
-        drawString(getCols() - 1, 0, "~");
-      }
+      line = knownSsid;
+      center(line, getCols()-1);
+      drawString(1, 0, line.c_str());
+      // if (knownSsid.length() > getCols()-1) {
+      //   drawString(getCols() - 1, 0, "~");
+      // }
 
       // Second row with IP or Psssword
       drawGlyph(0, lineHeight, 68, u8x8_font_open_iconic_embedded_1x1); // wifi icon
@@ -495,12 +515,12 @@ class FourLineDisplayUsermod : public Usermod {
         drawString(1, lineHeight, apPass);
       } else {
         // alternate IP address and server name
-        String secondLine = knownIp.toString();
+        line = knownIp.toString();
         if (showName && strcmp(serverDescription, "WLED") != 0) {
-          secondLine = serverDescription;
+          line = serverDescription;
         }
-        for (uint8_t i=secondLine.length(); i<getCols()-1; i++) secondLine += ' ';
-        drawString(1, lineHeight, secondLine.c_str());
+        center(line, getCols()-1);
+        drawString(1, lineHeight, line.c_str());
       }
 
       // draw third and fourth row
@@ -594,7 +614,7 @@ class FourLineDisplayUsermod : public Usermod {
     }
 
     /**
-     * Display the current effect or palette (desiredEntry) 
+     * Display the current effect or palette (desiredEntry)
      * on the appropriate line (row).
      */
     void showCurrentEffectOrPalette(int knownMode, const char *qstring, uint8_t row) {
@@ -718,14 +738,16 @@ class FourLineDisplayUsermod : public Usermod {
      */
     bool wakeDisplay() {
       knownHour = 99;
-      wokeUp = true; //WLEDSR: to force screen refresh
       if (displayTurnedOff) {
         // Turn the display back on
         sleepOrClock(false);
         redraw(true);
         return true;
       }
-      return false;
+      else {
+        redraw(false); //WLEDSR: not always done in loop
+        return false;
+      }
     }
 
     /**
@@ -813,7 +835,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (showHour == 0) {
           showHour = 12;
           isAM = true;
-        } 
+        }
         else if (showHour > 12) {
           showHour -= 12;
           isAM = false;
@@ -868,14 +890,14 @@ class FourLineDisplayUsermod : public Usermod {
      * addToConfig() can be used to add custom persistent settings to the cfg.json file in the "um" (usermod) object.
      * It will be called by WLED when settings are actually saved (for example, LED settings are saved)
      * If you want to force saving the current state, use serializeConfig() in your loop().
-     * 
+     *
      * CAUTION: serializeConfig() will initiate a filesystem write operation.
      * It might cause the LEDs to stutter and will cause flash wear if called too often.
      * Use it sparingly and always in the loop, never in network callbacks!
-     * 
+     *
      * addToConfig() will also not yet add your setting to one of the settings pages automatically.
      * To make that work you still have to add the setting to the HTML, xml.cpp and set.cpp manually.
-     * 
+     *
      * I highly recommend checking out the basics of ArduinoJson serialization and deserialization in order to use custom settings!
      */
     void addToConfig(JsonObject& root) {
@@ -890,14 +912,15 @@ class FourLineDisplayUsermod : public Usermod {
       top[FPSTR(_screenTimeOut)] = screenTimeout/1000;
       top[FPSTR(_sleepMode)]     = (bool) sleepMode;
       top[FPSTR(_clockMode)]     = (bool) clockMode;
-      top[FPSTR(_forceRotate)]     = (bool) forceRotate;
+      top[FPSTR(_forceAutoRotate)]   = (bool) forceAutoRotate;
+      top[FPSTR(_noAutoRotate)]      = (bool) noAutoRotate;
       DEBUG_PRINTLN(F("4 Line Display config saved."));
     }
 
     /*
      * readFromConfig() can be used to read back the custom settings you added with addToConfig().
      * This is called by WLED when settings are loaded (currently this only happens once immediately after boot)
-     * 
+     *
      * readFromConfig() is called BEFORE setup(). This means you can use your persistent values in setup() (e.g. pin assignments, buffer sizes),
      * but also that if you want to write persistent values to a dynamic buffer, you'd need to allocate it here instead of in setup.
      * If you don't know what that is, don't fret. It most likely doesn't affect your use case :)
@@ -922,7 +945,8 @@ class FourLineDisplayUsermod : public Usermod {
       screenTimeout = (top[FPSTR(_screenTimeOut)] | screenTimeout/1000) * 1000;
       sleepMode     = top[FPSTR(_sleepMode)] | sleepMode;
       clockMode     = top[FPSTR(_clockMode)] | clockMode;
-      forceRotate     = top[FPSTR(_forceRotate)] | forceRotate;
+      forceAutoRotate   = top[FPSTR(_forceAutoRotate)] | forceAutoRotate;
+      noAutoRotate      = top[FPSTR(_noAutoRotate)] | noAutoRotate;
 
       DEBUG_PRINT(FPSTR(_name));
       if (!initDone) {
@@ -938,7 +962,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (pinsChanged || type!=newType) {
           if (type != NONE) delete (static_cast<U8X8*>(u8x8));
           for (byte i=0; i<5; i++) {
-            if (ioPin[i]>=0) pinManager.deallocatePin(ioPin[i]);
+            if (ioPin[i]>=0) pinManager.deallocatePin(ioPin[i], PinOwner::UM_FourLineDisplay);
             ioPin[i] = newPin[i];
           }
           if (ioPin[0]<0 || ioPin[1]<0) { // data & clock must be > -1
@@ -946,14 +970,14 @@ class FourLineDisplayUsermod : public Usermod {
             return true;
           } else type = newType;
           setup();
-          needsRedraw |= true;
+          needsRedraw |= true; 
         }
         setContrast(contrast);
         setFlipMode(flip);
         if (needsRedraw && !wakeDisplay()) redraw(true);
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
-      return true;
+      return !top["noAutoRotate"].isNull();
     }
 
     /*
@@ -973,4 +997,5 @@ const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec"
 const char FourLineDisplayUsermod::_flip[]          PROGMEM = "flip";
 const char FourLineDisplayUsermod::_sleepMode[]     PROGMEM = "sleepMode";
 const char FourLineDisplayUsermod::_clockMode[]     PROGMEM = "clockMode";
-const char FourLineDisplayUsermod::_forceRotate[]   PROGMEM = "forceRotate";
+const char FourLineDisplayUsermod::_forceAutoRotate[]   PROGMEM = "forceAutoRotate (spi)";
+const char FourLineDisplayUsermod::_noAutoRotate[]      PROGMEM = "noAutoRotate (i2c)";

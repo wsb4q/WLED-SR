@@ -137,8 +137,8 @@ class FourLineDisplayUsermod : public Usermod {
     uint32_t screenTimeout = SCREEN_TIMEOUT_MS;       // in ms
     bool sleepMode = true;          // allow screen sleep?
     bool clockMode = false;         // display clock
-    bool forceAutoRotate = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
-    bool noAutoRotate = false;         // WLEDSR: never do auto rotate, only when variable changes or rotary is pressed (in case redraw causes stutter on leds, should not be needed with spi displays)
+    bool forceAutoRedraw = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
+    bool noAutoRedraw = false;         // WLEDSR: never do auto Redraw, only when variable changes or rotary is pressed (in case redraw causes stutter on leds, should not be needed with spi displays)
 
     // Next variables hold the previous known values to determine if redraw is
     // required.
@@ -173,8 +173,8 @@ class FourLineDisplayUsermod : public Usermod {
     static const char _flip[];
     static const char _sleepMode[];
     static const char _clockMode[];
-    static const char _forceAutoRotate[]; //WLEDSR
-    static const char _noAutoRotate[]; //WLEDSR
+    static const char _forceAutoRedraw[]; //WLEDSR
+    static const char _noAutoRedraw[]; //WLEDSR
 
     // If display does not work or looks corrupted check the
     // constructor reference:
@@ -294,13 +294,16 @@ class FourLineDisplayUsermod : public Usermod {
      */
     void loop() {
       // WWLEDSR: redraw if 
-      //      -- timer and (forcedAutoUpdate or strip idle) and autorotate 
+      //      -- timer and (forcedAutoUpdate or strip idle) and autoRedraw 
       //   OR
       //      -- any variable updated (including clockmode, hours and minutes)
+      //   OR
+      //      -- sleepmode and screentimeout
       // Note wakeDispay (used by rotaty) triggers its own redraw
-      if ((millis() - lastUpdate >= (clockMode?1000:refreshRate) && (forceAutoRotate || !strip.isUpdating()) && !noAutoRotate) || millis() - lastRedraw > screenTimeout || checkChangedType() != FLD_LINE_NULL) { //WLEDSR(Harry B 210730): prevented display from updating within reasonable time on certain effects from SR-fork
+      if (millis() - lastUpdate >= (clockMode?1000:refreshRate)) {
         lastUpdate = millis();
-        redraw(false);
+        if ( ((forceAutoRedraw || !strip.isUpdating()) && !noAutoRedraw) || checkChangedType() != FLD_LINE_NULL || sleepMode && (millis() - lastRedraw > screenTimeout))
+          redraw(false);
       }
     }
 
@@ -379,7 +382,7 @@ class FourLineDisplayUsermod : public Usermod {
       int len = line.length();
       if (len<width) for (byte i=(width-len)/2; i>0; i--) line = ' ' + line;
       for (byte i=line.length(); i<width; i++) line += ' ';
-      // Print `~` char to indicate that SSID is longer, than our display
+      // Print `~` char to indicate that line is longer, than our display
       if (tooLong) 
          line[len-1] = '~';
     }
@@ -393,6 +396,7 @@ class FourLineDisplayUsermod : public Usermod {
       unsigned long now = millis();
 
       if (type==NONE) return;
+
       if (overlayUntil > 0) {
         if (now >= overlayUntil) {
           // Time to display the overlay has elapsed.
@@ -412,7 +416,8 @@ class FourLineDisplayUsermod : public Usermod {
         if (changed != FLD_LINE_OTHER) //not  ip or ssid
           lineType = changed; //WLEDSR: Always show last changed value
         clear();
-      } else if (!displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) { //WLEDSR: remove if sleepMode, as rotating should take place independent of sleepmode
+      } 
+      else if (!displayTurnedOff && ((now - lastRedraw)/1000)%5 == 0) { //WLEDSR: remove if sleepMode, as rotating should take place independent of sleepmode
         // change line every 5s
         showName = !showName;
         switch (lineType) {
@@ -463,15 +468,17 @@ class FourLineDisplayUsermod : public Usermod {
           lineType = FLD_LINE_PALETTE;
 
         knownHour = 99; // force time update
-      } else {
+      } 
+      else {
         // Nothing to change.
         // Turn off display after 3 minutes with no change.
-        if(sleepMode && !displayTurnedOff && (millis() - lastRedraw > screenTimeout)) {
+        if (sleepMode && !displayTurnedOff && (millis() - lastRedraw > screenTimeout)) {
           // We will still check if there is a change in redraw()
           // and turn it back on if it changed.
           clear(); // force screen clear
           sleepOrClock(true);
-        } else if (displayTurnedOff && clockMode) {
+        } 
+        else if (displayTurnedOff && clockMode) {
           showTime();
         }
         return;
@@ -504,9 +511,6 @@ class FourLineDisplayUsermod : public Usermod {
       line = knownSsid;
       center(line, getCols()-1);
       drawString(1, 0, line.c_str());
-      // if (knownSsid.length() > getCols()-1) {
-      //   drawString(getCols() - 1, 0, "~");
-      // }
 
       // Second row with IP or Psssword
       drawGlyph(0, lineHeight, 68, u8x8_font_open_iconic_embedded_1x1); // wifi icon
@@ -912,8 +916,8 @@ class FourLineDisplayUsermod : public Usermod {
       top[FPSTR(_screenTimeOut)] = screenTimeout/1000;
       top[FPSTR(_sleepMode)]     = (bool) sleepMode;
       top[FPSTR(_clockMode)]     = (bool) clockMode;
-      top[FPSTR(_forceAutoRotate)]   = (bool) forceAutoRotate;
-      top[FPSTR(_noAutoRotate)]      = (bool) noAutoRotate;
+      top[FPSTR(_forceAutoRedraw)]   = (bool) forceAutoRedraw;
+      top[FPSTR(_noAutoRedraw)]      = (bool) noAutoRedraw;
       DEBUG_PRINTLN(F("4 Line Display config saved."));
     }
 
@@ -945,8 +949,8 @@ class FourLineDisplayUsermod : public Usermod {
       screenTimeout = (top[FPSTR(_screenTimeOut)] | screenTimeout/1000) * 1000;
       sleepMode     = top[FPSTR(_sleepMode)] | sleepMode;
       clockMode     = top[FPSTR(_clockMode)] | clockMode;
-      forceAutoRotate   = top[FPSTR(_forceAutoRotate)] | forceAutoRotate;
-      noAutoRotate      = top[FPSTR(_noAutoRotate)] | noAutoRotate;
+      forceAutoRedraw   = top[FPSTR(_forceAutoRedraw)] | forceAutoRedraw;
+      noAutoRedraw      = top[FPSTR(_noAutoRedraw)] | noAutoRedraw;
 
       DEBUG_PRINT(FPSTR(_name));
       if (!initDone) {
@@ -977,7 +981,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (needsRedraw && !wakeDisplay()) redraw(true);
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
-      return !top["noAutoRotate"].isNull();
+      return !top["noAutoRedraw"].isNull();
     }
 
     /*
@@ -997,5 +1001,5 @@ const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec"
 const char FourLineDisplayUsermod::_flip[]          PROGMEM = "flip";
 const char FourLineDisplayUsermod::_sleepMode[]     PROGMEM = "sleepMode";
 const char FourLineDisplayUsermod::_clockMode[]     PROGMEM = "clockMode";
-const char FourLineDisplayUsermod::_forceAutoRotate[]   PROGMEM = "forceAutoRotate (spi)";
-const char FourLineDisplayUsermod::_noAutoRotate[]      PROGMEM = "noAutoRotate (i2c)";
+const char FourLineDisplayUsermod::_forceAutoRedraw[]   PROGMEM = "forceAutoRedraw (spi)";
+const char FourLineDisplayUsermod::_noAutoRedraw[]      PROGMEM = "noAutoRedraw (i2c)";

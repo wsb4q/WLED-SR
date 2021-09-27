@@ -127,7 +127,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
       uint16_t length = elm[F("len")] | 1;
       uint8_t colorOrder = (int)elm[F("order")];
       uint8_t skipFirst = elm[F("skip")];
-      uint16_t start = elm[F("start")] | 0;
+      uint16_t start = elm["start"] | 0;
       uint8_t ledType = elm["type"] | TYPE_WS2812_RGB;
       bool reversed = elm["rev"];
 
@@ -259,6 +259,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   JsonObject light = doc[F("light")];
   CJSON(briMultiplier, light[F("scale-bri")]);
   CJSON(strip.paletteBlend, light[F("pal-mode")]);
+  CJSON(autoSegments, light[F("aseg")]);
 
   float light_gc_bri = light["gc"]["bri"];
   float light_gc_col = light["gc"]["col"]; // 2.8
@@ -333,10 +334,6 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   CJSON(arlsForceMaxBri, if_live[F("maxbri")]);
   CJSON(arlsDisableGammaCorrection, if_live[F("no-gc")]); // false
   CJSON(arlsOffset, if_live[F("offset")]); // 0
-
-  CJSON(liveHSVCorrection, if_live[F("corr")]);
-  CJSON(liveHSVSaturation, if_live[F("hsvsat")]);
-  CJSON(liveHSVValue, if_live[F("hsvval")]);
 
   CJSON(alexaEnabled, interfaces["va"][F("alexa")]); // false
 
@@ -460,7 +457,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   JsonObject dmx = doc["dmx"];
   CJSON(DMXChannels, dmx[F("chan")]);
   CJSON(DMXGap,dmx[F("gap")]);
-  CJSON(DMXStart, dmx[F("start")]);
+  CJSON(DMXStart, dmx["start"]);
   CJSON(DMXStartLED,dmx[F("start-led")]);
 
   JsonArray dmx_fixmap = dmx[F("fixmap")];
@@ -612,7 +609,7 @@ void serializeConfig() {
     Bus *bus = busses.getBus(s);
     if (!bus || bus->getLength()==0) break;
     JsonObject ins = hw_led_ins.createNestedObject();
-    ins[F("start")] = bus->getStart();
+    ins["start"] = bus->getStart();
     ins[F("len")] = bus->getLength();
     JsonArray ins_pin = ins.createNestedArray("pin");
     uint8_t pins[5];
@@ -670,6 +667,7 @@ void serializeConfig() {
   JsonObject light = doc.createNestedObject(F("light"));
   light[F("scale-bri")] = briMultiplier;
   light[F("pal-mode")] = strip.paletteBlend;
+  light[F("aseg")] = autoSegments;
 
   JsonObject light_gc = light.createNestedObject("gc");
   light_gc["bri"] = (strip.gammaCorrectBri) ? 2.8 : 1.0;
@@ -731,9 +729,6 @@ void serializeConfig() {
   if_live[F("maxbri")] = arlsForceMaxBri;
   if_live[F("no-gc")] = arlsDisableGammaCorrection;
   if_live[F("offset")] = arlsOffset;
-  if_live[F("corr")] = liveHSVCorrection;
-  if_live[F("hsvsat")] = liveHSVSaturation;
-  if_live[F("hsvval")] = liveHSVValue;
 
   JsonObject if_va = interfaces.createNestedObject("va");
   if_va[F("alexa")] = alexaEnabled;
@@ -829,7 +824,7 @@ void serializeConfig() {
   JsonObject dmx = doc.createNestedObject("dmx");
   dmx[F("chan")] = DMXChannels;
   dmx[F("gap")] = DMXGap;
-  dmx[F("start")] = DMXStart;
+  dmx["start"] = DMXStart;
   dmx[F("start-led")] = DMXStartLED;
 
   JsonArray dmx_fixmap = dmx.createNestedArray(F("fixmap"));

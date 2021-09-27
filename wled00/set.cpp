@@ -95,6 +95,8 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     uint16_t length, start;
     uint8_t pins[5] = {255, 255, 255, 255, 255};
 
+    autoSegments = request->hasArg(F("MS"));
+
     for (uint8_t s = 0; s < WLED_MAX_BUSSES; s++) {
       char lp[4] = "L0"; lp[2] = 48+s; lp[3] = 0; //ascii 0-9 //strip data pin
       char lc[4] = "LC"; lc[2] = 48+s; lc[3] = 0; //strip length
@@ -241,10 +243,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     notifyMacro = request->hasArg(F("SM"));
     notifyTwice = request->hasArg(F("S2"));
 
-    liveHSVCorrection = request->hasArg(F("HX"));
-    liveHSVSaturation = request->arg(F("HS")).toInt();
-    liveHSVValue = request->arg(F("HV")).toInt();
-
     nodeListEnabled = request->hasArg(F("NL"));
     if (!nodeListEnabled) Nodes.clear();
     nodeBroadcastEnabled = request->hasArg(F("NB"));
@@ -365,7 +363,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     analogClockSecondsTrail = request->hasArg(F("OS"));
 
     #ifndef WLED_DISABLE_CRONIXIE
-    strcpy(cronixieDisplay,request->arg(F("CX")).c_str());
+    strlcpy(cronixieDisplay,request->arg(F("CX")).c_str(),7);
     cronixieBacklight = request->hasArg(F("CB"));
     #endif
     countdownMode = request->hasArg(F("CE"));

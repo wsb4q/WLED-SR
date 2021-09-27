@@ -2,6 +2,26 @@
 
 ### Builds after release 0.12.0
 
+#### Build 2109220
+
+-   Version bump to 0.13.0-b3 "Toki"
+-   Added segment names (PR #2184)
+-   Improved Police and other effects (PR #2184)
+-   Reverted PR #1902 (Live color correction - will be implemented as usermod) (PR #2175)
+-   Added transitions for segment on/off
+-   Improved number of sparks/stars in Fireworks effect with low number of segments
+-   Fixed segment name edit pencil disappearing with request
+-   Fixed color transition active even if the segment is off
+-   Disallowed file upload with OTA lock active
+-   Fixed analog invert option missing (PR #2219)
+
+#### Build 2109100
+
+-   Added an auto create segments per bus setting
+-   Added 15 new palettes from SR branch (PR #2134)
+-   Fixed segment runtime not reset on FX change via HTTP API
+-   Changed AsyncTCP dependency to pbolduc fork v1.2.0
+
 #### Build 2108250
 
 -   Added Sync groups (PR #2150)

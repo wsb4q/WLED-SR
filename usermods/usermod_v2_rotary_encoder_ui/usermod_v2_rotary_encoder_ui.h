@@ -47,6 +47,8 @@
 #define FLD_LINE_EFFECT_FFT2      0 //WLEDSR
 #define FLD_LINE_EFFECT_FFT3      0 //WLEDSR
 #define FLD_LINE_PALETTE          0
+#define FLD_LINE_SQUELCH          0 //WLEDSR
+#define FLD_LINE_GAIN             0 //WLEDSR
 
 char sliderNames[5][LINE_BUFFER_SIZE*2] = {"FX Speed", "FX Intens.", "FX Custom1", "FX Custom2", "FX Custom3"}; //WLEDSR
 
@@ -54,7 +56,7 @@ char sliderNames[5][LINE_BUFFER_SIZE*2] = {"FX Speed", "FX Intens.", "FX Custom1
 
 
 // The last UI state
-#define LAST_UI_STATE 7
+#define LAST_UI_STATE 9 //brightness until sample gain
 
 
 class RotaryEncoderUIUsermod : public Usermod {
@@ -66,7 +68,7 @@ private:
   int8_t pinA = ENCODER_DT_PIN;       // DT from encoder
   int8_t pinB = ENCODER_CLK_PIN;      // CLK from encoder
   int8_t pinC = ENCODER_SW_PIN;       // SW from encoder
-  unsigned char select_state = 0;     // 0: brightness, 1: effect, 2: effect speed
+  unsigned char select_state = 0;     // 0: brightness, 1: effect, 2: effect speed, ...
   unsigned char button_state = HIGH;
   unsigned char prev_button_state = HIGH;
 
@@ -225,6 +227,12 @@ public:
               case 7:
                 changedState = changeState("Palette", FLD_LINE_PALETTE, 3);
                 break;
+              case 8:
+                changedState = changeState("Squelch", FLD_LINE_SQUELCH, 3);
+                break;
+              case 9:
+                changedState = changeState("Gain", FLD_LINE_GAIN, 3);
+                break;
             }
           }
           if (changedState) {
@@ -267,6 +275,12 @@ public:
             case 7:
               changePalette(true);
               break;
+            case 8:
+              changeSquelch(true);
+              break;
+            case 9:
+              changeGain(true);
+              break;
           }
         }
         else if (Enc_B == LOW)
@@ -295,6 +309,12 @@ public:
               break;
             case 7:
               changePalette(false);
+              break;
+            case 8:
+              changeSquelch(false);
+              break;
+            case 9:
+              changeGain(false);
               break;
           }
         }
@@ -480,6 +500,38 @@ public:
       effectPaletteIndex = (effectPaletteIndex - 1 < 0) ? (strip.getPaletteCount() - 1) : (effectPaletteIndex - 1);
     }
     effectPalette = palettes_alpha_indexes[effectPaletteIndex];
+    lampUdated();
+  }
+
+  void changeSquelch(bool increase) {
+#ifdef USERMOD_FOUR_LINE_DISPLAY
+    if (display && display->wakeDisplay()) {
+      // Throw away wake up input
+      return;
+    }
+#endif
+    if (increase) {
+      soundSquelch = (soundSquelch + 1 <= 255) ? (soundSquelch + 1) : 255;
+    }
+    else {
+      soundSquelch = (soundSquelch - 1 >= 0) ? (soundSquelch - 1) : 0;
+    }
+    lampUdated();
+  }
+
+  void changeGain(bool increase) {
+#ifdef USERMOD_FOUR_LINE_DISPLAY
+    if (display && display->wakeDisplay()) {
+      // Throw away wake up input
+      return;
+    }
+#endif
+    if (increase) {
+      sampleGain = (sampleGain + 1 <= 255) ? (sampleGain + 1) : 255;
+    }
+    else {
+      sampleGain = (sampleGain - 1 >= 0) ? (sampleGain - 1) : 0;
+    }
     lampUdated();
   }
 

@@ -95,6 +95,8 @@ typedef enum {
   FLD_LINE_PALETTE,
   FLD_LINE_PRESET, //WLEDSR
   FLD_LINE_TIME,
+  FLD_LINE_SQUELCH,
+  FLD_LINE_GAIN,
   FLD_LINE_OTHER, //WLEDSR: no Line4Type
   FLD_LINE_NULL //WLEDSR: no Line4Type
 } Line4Type;
@@ -154,6 +156,8 @@ class FourLineDisplayUsermod : public Usermod {
     uint8_t knownPalette = 0;
     uint8_t knownMinute = 99;
     uint8_t knownHour = 99;
+    uint8_t knownSquelch = 99;
+    uint8_t knownGain = 99;
 
     uint8_t knownClockMode = 0;
 
@@ -302,7 +306,7 @@ class FourLineDisplayUsermod : public Usermod {
       // Note wakeDispay (used by rotaty) triggers its own redraw
       if (millis() - lastUpdate >= (clockMode?1000:refreshRate)) {
         lastUpdate = millis();
-        if ( ((forceAutoRedraw || !strip.isUpdating()) && !noAutoRedraw) || checkChangedType() != FLD_LINE_NULL || sleepMode && (millis() - lastRedraw > screenTimeout))
+        if ( ((forceAutoRedraw || !strip.isUpdating()) && !noAutoRedraw) || checkChangedType() != FLD_LINE_NULL || (sleepMode && (millis() - lastRedraw > screenTimeout)))
           redraw(false);
       }
     }
@@ -370,6 +374,10 @@ class FourLineDisplayUsermod : public Usermod {
         return FLD_LINE_MODE;
       else if (knownPalette != strip.getSegment(0).palette)
         return FLD_LINE_PALETTE;
+      else if (knownSquelch != soundSquelch)
+        return FLD_LINE_SQUELCH;
+      else if (knownGain != sampleGain)
+        return FLD_LINE_GAIN;
       else if (knownClockMode != clockMode || (clockMode && (knownHour != hour(localTime) || knownMinute != minute(localTime))))
         return FLD_LINE_OTHER;
       else
@@ -446,6 +454,12 @@ class FourLineDisplayUsermod : public Usermod {
             lineType = FLD_LINE_PRESET;
             break;
           case FLD_LINE_PRESET:
+            lineType = FLD_LINE_SQUELCH;
+            break;
+          case FLD_LINE_SQUELCH:
+            lineType = FLD_LINE_GAIN;
+            break;
+          case FLD_LINE_GAIN:
             lineType = FLD_LINE_PALETTE;
             break;
           default:
@@ -465,7 +479,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (lineType == FLD_LINE_EFFECT_FFT3 && strlen_P(sliderNames[4]) == 0)
           lineType = FLD_LINE_PRESET;
         if (lineType == FLD_LINE_PRESET && currentPreset == -1)
-          lineType = FLD_LINE_PALETTE;
+          lineType = FLD_LINE_SQUELCH;
 
         knownHour = 99; // force time update
       } // do not update lastRedraw marker if just switching row content
@@ -497,6 +511,8 @@ class FourLineDisplayUsermod : public Usermod {
       knownEffectFFT1 = effectFFT1; //WLEDSR
       knownEffectFFT2 = effectFFT2; //WLEDSR
       knownEffectFFT3 = effectFFT3; //WLEDSR
+      knownSquelch = soundSquelch;
+      knownGain = sampleGain;
 
       knownClockMode = clockMode;
 
@@ -565,6 +581,12 @@ class FourLineDisplayUsermod : public Usermod {
         case FLD_LINE_TIME:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); //  clock icon
           break;
+        case FLD_LINE_SQUELCH:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); //  clock icon
+          break;
+        case FLD_LINE_GAIN:
+          drawGlyph(0, (clockMode?2:3)*lineHeight, 65, u8x8_font_open_iconic_embedded_1x1); //  clock icon
+          break;
         default:
         //   drawGlyph(0, (clockMode?2:3)*lineHeight, 72, u8x8_font_open_iconic_play_1x1); //  icon
           break;
@@ -609,6 +631,14 @@ class FourLineDisplayUsermod : public Usermod {
           break;
         case FLD_LINE_PALETTE:
           showCurrentEffectOrPalette(knownPalette, JSON_palette_names, line);
+          break;
+        case FLD_LINE_SQUELCH:
+          sprintf_P(lineBuffer, PSTR("Squelch     %3d"), soundSquelch);
+          drawString(1, line*lineHeight, lineBuffer);
+          break;
+        case FLD_LINE_GAIN:
+          sprintf_P(lineBuffer, PSTR("Gain        %3d"), sampleGain);
+          drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_TIME:
         default:

@@ -121,6 +121,7 @@ class FourLineDisplayUsermod : public Usermod {
   private:
 
     bool initDone = false;
+    bool enabled = true;
     unsigned long lastTime = 0;
 
     // HW interface & configuration
@@ -171,6 +172,7 @@ class FourLineDisplayUsermod : public Usermod {
 
     // strings to reduce flash memory usage (used more than twice)
     static const char _name[];
+    static const char _enabled[];
     static const char _contrast[];
     static const char _refreshRate[];
     static const char _screenTimeOut[];
@@ -194,7 +196,7 @@ class FourLineDisplayUsermod : public Usermod {
       Wire.begin(FLD_PIN_SDA, FLD_PIN_SCL); //increase speed to run display
       Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
-      if (type == NONE) return;
+      if (type == NONE) {enabled = false; return;}
       if (type == SSD1306_SPI || type == SSD1306_SPI64 || type == SH1106_SPI) {
         PinManagerPinType pins[5] = { { ioPin[0], true }, { ioPin[1], true}, { ioPin[2], true }, { ioPin[3], true}, { ioPin[4], true }};
         if (!pinManager.allocateMultiplePins(pins, 5, PinOwner::UM_FourLineDisplay)) { type=NONE; return; }
@@ -277,6 +279,7 @@ class FourLineDisplayUsermod : public Usermod {
           DEBUG_PRINTLN(F("Display init failed."));
           for (byte i=0; i<5 && ioPin[i]>=0; i++) pinManager.deallocatePin(ioPin[i], PinOwner::UM_FourLineDisplay);
           type = NONE;
+          enabled = false;
           return;
       }
 
@@ -297,6 +300,8 @@ class FourLineDisplayUsermod : public Usermod {
      * Da loop.
      */
     void loop() {
+      if (!enabled) return;
+
       // WWLEDSR: redraw if
       //      -- timer and (forcedAutoUpdate or strip idle) and autoRedraw
       //   OR
@@ -944,6 +949,7 @@ class FourLineDisplayUsermod : public Usermod {
      */
     void addToConfig(JsonObject& root) {
       JsonObject top   = root.createNestedObject(FPSTR(_name));
+      top[FPSTR(_enabled)] = enabled;
       JsonArray io_pin = top.createNestedArray("pin");
       for (byte i=0; i<5; i++) io_pin.add(ioPin[i]);
       top["help4PinTypes"]       = F("Clk,Data,CS,DC,RST"); // help for Settings page
@@ -979,6 +985,7 @@ class FourLineDisplayUsermod : public Usermod {
         return false;
       }
 
+      enabled       = top[FPSTR(_enabled)] | enabled;
       newType       = top["type"] | newType;
       for (byte i=0; i<5; i++) newPin[i] = top["pin"][i] | ioPin[i];
       flip          = top[FPSTR(_flip)] | flip;
@@ -1009,6 +1016,7 @@ class FourLineDisplayUsermod : public Usermod {
           }
           if (ioPin[0]<0 || ioPin[1]<0) { // data & clock must be > -1
             type = NONE;
+            enabled = false;
             return true;
           } else type = newType;
           setup();
@@ -1019,7 +1027,7 @@ class FourLineDisplayUsermod : public Usermod {
         if (needsRedraw && !wakeDisplay()) redraw(true);
       }
       // use "return !top["newestParameter"].isNull();" when updating Usermod with new features
-      return !top["noAutoRedraw"].isNull();
+      return !top[FPSTR(_enabled)].isNull();
     }
 
     /*
@@ -1033,6 +1041,7 @@ class FourLineDisplayUsermod : public Usermod {
 
 // strings to reduce flash memory usage (used more than twice)
 const char FourLineDisplayUsermod::_name[]          PROGMEM = "4LineDisplay";
+const char FourLineDisplayUsermod::_enabled[]       PROGMEM = "enabled";
 const char FourLineDisplayUsermod::_contrast[]      PROGMEM = "contrast";
 const char FourLineDisplayUsermod::_refreshRate[]   PROGMEM = "refreshRateSec";
 const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec";

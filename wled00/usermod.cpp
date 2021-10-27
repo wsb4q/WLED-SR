@@ -56,10 +56,15 @@ void userSetup() {
 float mean = 0.0;
 int32_t samples[BLOCK_SIZE];
 // TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
-int num_bytes_read = i2s_read_bytes(I2S_PORT,
+  size_t num_bytes_read = 0;
+
+  esp_err_t result = i2s_read(I2S_PORT, &samples, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY);
+
+/*int num_bytes_read = i2s_read_bytes(I2S_PORT,
                                     (char *)samples,
                                     BLOCK_SIZE,     // the doc says bytes, but its elements.
                                     portMAX_DELAY); // no timeout
+*/
 
 int samples_read = num_bytes_read / 8;
 if (samples_read > 0) {
@@ -72,7 +77,7 @@ if (samples_read > 0) {
     digitalMic = true;
   } else {
     Serial.println("Digital microphone is NOT present.");
-    analogReadResolution(10);          // Default is 12, which is less linear. We're also only using 10 bits as a result of our ESP8266 history.
+ //   analogReadResolution(10);          // Default is 12, which is less linear. We're also only using 10 bits as a result of our ESP8266 history.
   }
 }
 

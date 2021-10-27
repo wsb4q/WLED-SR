@@ -282,7 +282,7 @@ void FFTcode( void * parameter) {
 
     for(int i=0; i<samples; i++) {
       if ((digitalMic && dmEnabled) == false) {
-        micData = analogRead(audioPin);           // Analog Read
+        micData = analogRead(audioPin) >> 2;           // Analog Read
       } else {
         int32_t digitalSample = 0;
         // TODO: I2S_POP_SAMLE DEPRECATED, FIND ALTERNATE SOLUTION

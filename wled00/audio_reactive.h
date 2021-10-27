@@ -285,11 +285,11 @@ void FFTcode( void * parameter) {
         micData = analogRead(audioPin) >> 2;           // Analog Read
       } else {
         int32_t digitalSample = 0;
-        // TODO: I2S_POP_SAMLE DEPRECATED, FIND ALTERNATE SOLUTION
-        int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
-        if (bytes_read > 0) {
-          micData = abs(digitalSample >> 16);
-        }
+        size_t bytes_read = 0;
+        esp_err_t result = i2s_read(I2S_PORT, &digitalSample, sizeof(digitalSample), &bytes_read, /*portMAX_DELAY*/ 10);
+        //int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
+        if (bytes_read > 0) micData = abs(digitalSample >> 16);
+
       }
       micDataSm = ((micData * 3) + micData)/4;    // We'll be passing smoothed micData to the volume routines as the A/D is a bit twitchy.
       vReal[i] = micData;                         // Store Mic Data in an array

@@ -30,6 +30,7 @@ Timezone* tz;
 #define TZ_AUSTRALIA_SOUTHERN  17
 #define TZ_HAWAII              18
 #define TZ_NOVOSIBIRSK         19
+#define TZ_ANCHORAGE           20
 #define TZ_INIT               255
 
 byte tzCurrent = TZ_INIT; //uninitialized
@@ -133,6 +134,11 @@ void updateTimezone() {
     case TZ_NOVOSIBIRSK : {
       tcrDaylight = {Last, Sun, Mar, 1, 420};     //CST = UTC + 7 hours
       tcrStandard = tcrDaylight;
+      break;
+    }
+    case TZ_ANCHORAGE : {
+      tcrDaylight = {Second, Sun, Mar, 2, -480};  //AKDT = UTC - 8 hours
+      tcrStandard = {First, Sun, Nov, 2, -540};   //AKST = UTC - 9 hours
       break;
     }
   }
@@ -426,7 +432,7 @@ void calculateSunriseAndSunset() {
       // there is a sunrise
       tim_0.tm_hour = minUTC / 60;
       tim_0.tm_min = minUTC % 60;
-      sunrise = tz->toLocal(mktime(&tim_0) - utcOffsetSecs);
+      sunrise = tz->toLocal(mktime(&tim_0) + utcOffsetSecs);
       DEBUG_PRINTF("Sunrise: %02d:%02d\n", hour(sunrise), minute(sunrise));
     } else {
       sunrise = 0;
@@ -437,7 +443,7 @@ void calculateSunriseAndSunset() {
       // there is a sunset
       tim_0.tm_hour = minUTC / 60;
       tim_0.tm_min = minUTC % 60;
-      sunset = tz->toLocal(mktime(&tim_0) - utcOffsetSecs);
+      sunset = tz->toLocal(mktime(&tim_0) + utcOffsetSecs);
       DEBUG_PRINTF("Sunset: %02d:%02d\n", hour(sunset), minute(sunset));
     } else {
       sunset = 0;

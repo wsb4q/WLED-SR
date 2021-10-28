@@ -128,6 +128,7 @@ class FourLineDisplayUsermod : public Usermod {
     U8X8 *u8x8 = nullptr;           // pointer to U8X8 display object
     #ifndef FLD_SPI_DEFAULT
     int8_t ioPin[5] = {FLD_PIN_SCL, FLD_PIN_SDA, -1, -1, -1};        // I2C pins: SCL, SDA
+    uint32_t ioFrequency = 400000;  // in Hz (minimum is 100000, baseline is 400000 and maximum should be 3400000)
     DisplayType type = SSD1306;     // display type
     #else
     int8_t ioPin[5] = {FLD_PIN_CLOCKSPI, FLD_PIN_DATASPI, FLD_PIN_CS, FLD_PIN_DC, FLD_PIN_RESET}; // SPI pins: CLK, MOSI, CS, DC, RST
@@ -181,6 +182,7 @@ class FourLineDisplayUsermod : public Usermod {
     static const char _clockMode[];
     static const char _forceAutoRedraw[]; //WLEDSR
     static const char _noAutoRedraw[]; //WLEDSR
+    static const char _busClkFrequency[];
 
     // If display does not work or looks corrupted check the
     // constructor reference:
@@ -285,6 +287,7 @@ class FourLineDisplayUsermod : public Usermod {
 
       initDone = true;
       DEBUG_PRINTLN(F("Starting display."));
+      if (!(type == SSD1306_SPI || type == SSD1306_SPI64)) u8x8->setBusClock(ioFrequency);  // can be used for SPI too
       u8x8->begin();
       setFlipMode(flip);
       setContrast(contrast); //Contrast setup will help to preserve OLED lifetime. In case OLED need to be brighter increase number up to 255
@@ -962,6 +965,7 @@ class FourLineDisplayUsermod : public Usermod {
       top[FPSTR(_clockMode)]     = (bool) clockMode;
       top[FPSTR(_forceAutoRedraw)]   = (bool) forceAutoRedraw;
       top[FPSTR(_noAutoRedraw)]      = (bool) noAutoRedraw;
+      top[FPSTR(_busClkFrequency)] = ioFrequency/1000;
       DEBUG_PRINTLN(F("4 Line Display config saved."));
     }
 
@@ -996,6 +1000,7 @@ class FourLineDisplayUsermod : public Usermod {
       clockMode     = top[FPSTR(_clockMode)] | clockMode;
       forceAutoRedraw   = top[FPSTR(_forceAutoRedraw)] | forceAutoRedraw;
       noAutoRedraw      = top[FPSTR(_noAutoRedraw)] | noAutoRedraw;
+      ioFrequency   = min(3400, max(100, (int)(top[FPSTR(_busClkFrequency)] | ioFrequency/1000))) * 1000;  // limit frequency
 
       DEBUG_PRINT(FPSTR(_name));
       if (!initDone) {
@@ -1022,6 +1027,7 @@ class FourLineDisplayUsermod : public Usermod {
           setup();
           needsRedraw |= true;
         }
+        if (!(type == SSD1306_SPI || type == SSD1306_SPI64)) u8x8->setBusClock(ioFrequency); // can be used for SPI too
         setContrast(contrast);
         setFlipMode(flip);
         if (needsRedraw && !wakeDisplay()) redraw(true);
@@ -1040,13 +1046,14 @@ class FourLineDisplayUsermod : public Usermod {
 };
 
 // strings to reduce flash memory usage (used more than twice)
-const char FourLineDisplayUsermod::_name[]          PROGMEM = "4LineDisplay";
-const char FourLineDisplayUsermod::_enabled[]       PROGMEM = "enabled";
-const char FourLineDisplayUsermod::_contrast[]      PROGMEM = "contrast";
-const char FourLineDisplayUsermod::_refreshRate[]   PROGMEM = "refreshRateSec";
-const char FourLineDisplayUsermod::_screenTimeOut[] PROGMEM = "screenTimeOutSec";
-const char FourLineDisplayUsermod::_flip[]          PROGMEM = "flip";
-const char FourLineDisplayUsermod::_sleepMode[]     PROGMEM = "sleepMode";
-const char FourLineDisplayUsermod::_clockMode[]     PROGMEM = "clockMode";
-const char FourLineDisplayUsermod::_forceAutoRedraw[]   PROGMEM = "forceAutoRedraw (spi)";
-const char FourLineDisplayUsermod::_noAutoRedraw[]      PROGMEM = "noAutoRedraw (i2c)";
+const char FourLineDisplayUsermod::_name[]            PROGMEM = "4LineDisplay";
+const char FourLineDisplayUsermod::_enabled[]         PROGMEM = "enabled";
+const char FourLineDisplayUsermod::_contrast[]        PROGMEM = "contrast";
+const char FourLineDisplayUsermod::_refreshRate[]     PROGMEM = "refreshRateSec";
+const char FourLineDisplayUsermod::_screenTimeOut[]   PROGMEM = "screenTimeOutSec";
+const char FourLineDisplayUsermod::_flip[]            PROGMEM = "flip";
+const char FourLineDisplayUsermod::_sleepMode[]       PROGMEM = "sleepMode";
+const char FourLineDisplayUsermod::_clockMode[]       PROGMEM = "clockMode";
+const char FourLineDisplayUsermod::_forceAutoRedraw[] PROGMEM = "forceAutoRedraw (spi)";
+const char FourLineDisplayUsermod::_noAutoRedraw[]    PROGMEM = "noAutoRedraw (i2c)";
+const char FourLineDisplayUsermod::_busClkFrequency[] PROGMEM = "i2c-freq-kHz";

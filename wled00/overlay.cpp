@@ -18,6 +18,7 @@ void initCronixie()
 }
 
 
+//handleOverlays is essentially the equivalent of usermods.loop
 void handleOverlays()
 {
   initCronixie();
@@ -127,8 +128,8 @@ void _overlayAnalogCountdown()
   }
 }
 
-
 void handleOverlayDraw() {
+  usermods.handleOverlayDraw();
   if (!overlayCurrent) return;
   switch (overlayCurrent)
   {
@@ -136,7 +137,6 @@ void handleOverlayDraw() {
     case 3: _drawOverlayCronixie(); break;
   }
 }
-
 
 /*
  * Support for the Cronixie clock

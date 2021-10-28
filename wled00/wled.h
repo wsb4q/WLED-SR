@@ -3,12 +3,12 @@
 /*
    Main sketch, global variable declarations
    @title WLED project sketch
-   @version 0.13.0-b3
+   @version 0.13.0-b4
    @author Christian Schwinne
  */
 
 // version code in format yymmddb (b = daily build)
-#define VERSION 2109220
+#define VERSION 2110110
 
 //uncomment this if you have a "my_config.h" file you'd like to use
 //#define WLED_USE_MY_CONFIG
@@ -37,7 +37,9 @@
 #endif
 #define WLED_ENABLE_ADALIGHT       // saves 500b only
 //#define WLED_ENABLE_DMX          // uses 3.5kb (use LEDPIN other than 2)
-//#define WLED_ENABLE_LOXONE       // uses 1.2kb
+#ifndef WLED_DISABLE_LOXONE
+  #define WLED_ENABLE_LOXONE       // uses 1.2kb
+#endif
 #ifndef WLED_DISABLE_WEBSOCKETS
   #define WLED_ENABLE_WEBSOCKETS
 #endif
@@ -90,6 +92,7 @@
 #include <WiFiUdp.h>
 #include <DNSServer.h>
 #ifndef WLED_DISABLE_OTA
+  #define NO_OTA_PORT
   #include <ArduinoOTA.h>
 #endif
 #include <SPIFFSEditor.h>
@@ -229,11 +232,7 @@ WLED_GLOBAL bool rlyMde _INIT(true);
 WLED_GLOBAL bool rlyMde _INIT(RLYMDE);
 #endif
 #ifndef IRPIN
-  #ifdef WLED_DISABLE_INFRARED
-  WLED_GLOBAL int8_t irPin _INIT(-1);
-  #else
-  WLED_GLOBAL int8_t irPin _INIT(4);
-  #endif
+WLED_GLOBAL int8_t irPin _INIT(-1);
 #else
 WLED_GLOBAL int8_t irPin _INIT(IRPIN);
 #endif
@@ -404,7 +403,7 @@ WLED_GLOBAL byte currentTimezone _INIT(0);        // Timezone ID. Refer to timez
 WLED_GLOBAL int utcOffsetSecs _INIT(0);           // Seconds to offset from UTC before timzone calculation
 
 WLED_GLOBAL byte overlayDefault _INIT(0);                               // 0: no overlay 1: analog clock 2: single-digit clock 3: cronixie
-WLED_GLOBAL byte overlayMin _INIT(0), overlayMax _INIT(ledCount - 1);   // boundaries of overlay mode
+WLED_GLOBAL byte overlayMin _INIT(0), overlayMax _INIT(DEFAULT_LED_COUNT - 1);   // boundaries of overlay mode
 
 WLED_GLOBAL byte analogClock12pixel _INIT(0);               // The pixel in your strip where "midnight" would be
 WLED_GLOBAL bool analogClockSecondsTrail _INIT(false);      // Display seconds as trail of LEDs instead of a single pixel
@@ -556,8 +555,7 @@ WLED_GLOBAL bool blynkEnabled _INIT(false);
 WLED_GLOBAL unsigned long presetCycledTime _INIT(0);
 WLED_GLOBAL int16_t currentPlaylist _INIT(-1);
 //still used for "PL=~" HTTP API command
-WLED_GLOBAL byte presetCycleMin _INIT(1), presetCycleMax _INIT(5);
-WLED_GLOBAL byte presetCycCurr _INIT(presetCycleMin);
+WLED_GLOBAL byte presetCycCurr _INIT(0);
 
 // realtime
 WLED_GLOBAL byte realtimeMode _INIT(REALTIME_MODE_INACTIVE);
@@ -609,7 +607,7 @@ WLED_GLOBAL JsonDocument* fileDoc;
 WLED_GLOBAL bool doCloseFile _INIT(false);
 
 // presets
-WLED_GLOBAL int16_t currentPreset _INIT(-1);
+WLED_GLOBAL byte currentPreset _INIT(0);
 
 WLED_GLOBAL byte errorFlag _INIT(0);
 
@@ -632,6 +630,7 @@ WLED_GLOBAL WiFiUDP notifierUdp, rgbUdp, notifier2Udp;
 WLED_GLOBAL WiFiUDP ntpUdp;
 WLED_GLOBAL WiFiUDP fftUdp;
 WLED_GLOBAL ESPAsyncE131 e131 _INIT_N(((handleE131Packet)));
+WLED_GLOBAL ESPAsyncE131 ddp  _INIT_N(((handleE131Packet)));
 WLED_GLOBAL bool e131NewData _INIT(false);
 
 // led fx library object
@@ -674,7 +673,7 @@ WLED_GLOBAL TaskHandle_t FFT_Task; //WLEDSR: Moved from audio_reactive.h to glob
   WLED_GLOBAL unsigned long debugTime _INIT(0);
   WLED_GLOBAL int lastWifiState _INIT(3);
   WLED_GLOBAL unsigned long wifiStateChangedTime _INIT(0);
-  WLED_GLOBAL int loops _INIT(0);
+  WLED_GLOBAL unsigned long loops _INIT(0);
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32

@@ -1436,7 +1436,8 @@ function makeSeg() {
     var pend = parseInt(d.getElementById(`seg${lowestUnused -1}e`).value,10) + (cfg.comp.seglen?parseInt(d.getElementById(`seg${lowestUnused -1}s`).value,10):0);
     if (pend < ledCount) ns = pend;
   }
-  var cn = `<div class="seg">
+    //WLEDSR: table class changed from segt to infot. move Apply text and setSeg(${lowestUnused}) into the <table> instead of below the table and using absolute positions (sounds like improvement for AC as well)
+    var cn = `<div class="seg">
       <div class="segname newseg">
         New segment ${lowestUnused}
         <i class="icons edit-icon expanded" onclick="tglSegn(${lowestUnused})">&#xe2c6;</i>
@@ -1444,18 +1445,19 @@ function makeSeg() {
       <br>
       <div class="segin expanded">
         <input type="text" class="ptxt stxt noslide" id="seg${lowestUnused}t" autocomplete="off" maxlength=32 value="" placeholder="Enter name..."/>
-        <table class="segt">
+        <table class="infot">
           <tr>
             <td class="segtd">Start LED</td>
             <td class="segtd">${cfg.comp.seglen?"Length":"Stop LED"}</td>
+            <td class="segtd">Apply</td>
           </tr>
           <tr>
             <td class="segtd"><input class="noslide segn" id="seg${lowestUnused}s" type="number" min="0" max="${ledCount-1}" value="${ns}" oninput="updateLen(${lowestUnused})"></td>
             <td class="segtd"><input class="noslide segn" id="seg${lowestUnused}e" type="number" min="0" max="${ledCount-(cfg.comp.seglen?ns:0)}" value="${ledCount-(cfg.comp.seglen?ns:0)}" oninput="updateLen(${lowestUnused})"></td>
+            <td class="segtd"><i class="icons e-icon cnf cnf-s" id="segc${lowestUnused}" onclick="setSeg(${lowestUnused}); resetUtil();">&#xe390;</i></td>
           </tr>
         </table>
         <div class="h" id="seg${lowestUnused}len">${ledCount - ns} LED${ledCount - ns >1 ? "s":""}</div>
-        <i class="icons e-icon cnf cnf-s half" id="segc${lowestUnused}" onclick="setSeg(${lowestUnused}); resetUtil();">&#xe390;</i>
       </div>
     </div>`;
   d.getElementById('segutil').innerHTML = cn;

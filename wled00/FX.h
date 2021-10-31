@@ -115,7 +115,7 @@
 #define IS_REVERSE      ((SEGMENT.options & REVERSE     ) == REVERSE     )
 #define IS_SELECTED     ((SEGMENT.options & SELECTED    ) == SELECTED    )
 
-#define MODE_COUNT 187// 255 // WLEDSR: no need to change this value when effects are added / deleted. First 128 for AC, second for SR
+#define MODE_COUNT 188// WLEDSR: First 128 for AC (incl reserved), rest for SR
 
 #define FX_MODE_STATIC                   0
 #define FX_MODE_BLINK                    1
@@ -312,6 +312,7 @@
 #define FX_MODE_WAVESINS               184
 #define FX_MODE_ROCKTAVES              185
 #define FX_MODE_2DAKEMI                186
+#define FX_MODE_CUSTOMEFFECT           187
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -784,6 +785,7 @@ class WS2812FX {
       _mode[FX_MODE_WAVESINS]                = &WS2812FX::mode_wavesins;
       _mode[FX_MODE_ROCKTAVES]               = &WS2812FX::mode_rocktaves;
       _mode[FX_MODE_2DAKEMI]                 = &WS2812FX::mode_2DAkemi;
+      _mode[FX_MODE_CUSTOMEFFECT]            = &WS2812FX::mode_customEffect;
 
 #ifdef WLEDSR_LARGE
     // _mode[FX_MODE_2DPOOLNOISE]              = &WS2812FX::mode_2DPoolnoise; //code not in fx.cpp
@@ -1118,8 +1120,8 @@ class WS2812FX {
       mode_2DWaverly(void),
       mode_2DDrift(void),
       mode_2DColoredBursts(void),
-
-     mode_2DJulia(void);
+      mode_2DJulia(void),
+      mode_customEffect(void);
     //  mode_2DPoolnoise(void),
     //  mode_2DTwister(void);
     //  mode_2DCAElementary(void);
@@ -1429,7 +1431,8 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Black Hole@Outer X frequency,Inner X frequency,Inner Y frequency;;",
 "Wavesins@Speed,Brightness variation,Starting Color,Range of Colors,Color variation;;!",
 " ♫ Rocktaves@;,!;!",
-" ♫ 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth;Face palette"
+" ♫ 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth;Face palette",
+" ⚙️ Custom Effect@;!;!"
 ])=====";
 
 //WLEDSR: second part (not SR specific, but in latest SR, not in AC (Pallettes added in WLEDSR from Retro Clown->END))

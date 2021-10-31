@@ -814,7 +814,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .cnf-s {
-	position: absolute;
+	/* position: absolute; WLEDSR removed as causes segment save button to move out of table */
 	bottom: 100px;
 	right: 23px;
 	padding: 7px 22px;

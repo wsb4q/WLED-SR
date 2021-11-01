@@ -14,6 +14,46 @@
  * Not 100% sure this was done right. There is probably a better way to handle this...
  */
 
+#ifdef USE_ES7243
+// See https://github.com/espressif/esp-adf/blob/master/components/audio_hal/driver/es7243/es7243.c
+
+#include <Wire.h>
+
+#ifndef ES7243_ADDR
+#define ES7243_ADDR 0x13
+#endif
+
+#ifndef ES7243_SDAPIN
+#define ES7243_SDAPIN 18
+#endif
+
+#ifndef ES7243_SCLPIN
+#define ES7243_SCLPIN 23
+#endif
+
+void es7243_i2c_begin()
+{
+  Wire.begin(ES7243_SDAPIN, ES7243_SCLPIN, 100000U);
+}
+void es7243_i2c_write(uint8_t reg, uint8_t val)
+{
+  Wire.beginTransmission(ES7243_ADDR);
+  Wire.write((uint8_t)reg);
+  Wire.write((uint8_t)val);
+  Wire.endTransmission();
+}
+void es7243_i2c_init_adc()
+{
+    es7243_i2c_begin();
+    es7243_i2c_write(0x00, 0x01);
+    es7243_i2c_write(0x06, 0x00);
+    es7243_i2c_write(0x05, 0x1B);
+    es7243_i2c_write(0x01, 0x0C);
+    es7243_i2c_write(0x08, 0x43);
+    es7243_i2c_write(0x05, 0x13);
+}
+
+#endif // USE_ES7243
 
 // This gets called once at boot. Do all initialization that doesn't depend on network here
 void userSetup() {
@@ -21,13 +61,26 @@ void userSetup() {
 
     Serial.println("Attempting to configure digital Microphone.");
     delay(100);                                 // Give that poor microphone some time to setup.
+    
+#ifdef USE_ES7243
+    es7243_i2c_init_adc();
+#endif  // USE_ES7243
+
     // Attempt to configure INMP441 Microphone
     esp_err_t err;
     const i2s_config_t i2s_config = {
       .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
+#ifdef USE_ES7243
+      .sample_rate = SAMPLE_RATE*4,                       // 11025 * 4 (44100) Hz
+#else
       .sample_rate = SAMPLE_RATE*2,                       // 10240 * 2 (20480) Hz
+#endif // USE_ES7243
       .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
+#ifdef USE_ES7243
+      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+#else
       .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // LEFT when pin is tied to ground.
+#endif // USE_ES7243
       .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
       .dma_buf_count = 8,                                 // number of buffers

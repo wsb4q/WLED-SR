@@ -243,9 +243,9 @@ WLED_GLOBAL int8_t audioPin _INIT(36);
 WLED_GLOBAL int8_t audioPin _INIT(AUDIOPIN);
 #endif
 #ifndef DMENABLED // aka DOUT
-WLED_GLOBAL int8_t dmEnabled _INIT(-1);
+WLED_GLOBAL uint8_t dmEnabled _INIT(0);
 #else
-WLED_GLOBAL int8_t dmEnabled _INIT(DMENABLED);
+WLED_GLOBAL uint8_t dmEnabled _INIT(DMENABLED);
 #endif
 #ifndef I2S_SDPIN // aka DOUT
 WLED_GLOBAL int8_t i2ssdPin _INIT(32);
@@ -310,7 +310,6 @@ WLED_GLOBAL byte soundSquelch   _INIT(10);          // default squelch value for
 WLED_GLOBAL byte sampleGain     _INIT(1);           // default sample gain
 WLED_GLOBAL byte soundAgc       _INIT(0);           // default Automagic gain control
 WLED_GLOBAL uint16_t noiseFloor _INIT(100);         // default squelch value for FFT reactive routines
-WLED_GLOBAL bool digitalMic     _INIT(false);       // do we have a digital microphone or not
 
 WLED_GLOBAL byte nightlightTargetBri _INIT(0);      // brightness after nightlight is over
 WLED_GLOBAL byte nightlightDelayMins _INIT(60);

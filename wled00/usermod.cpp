@@ -17,69 +17,72 @@
 
 // This gets called once at boot. Do all initialization that doesn't depend on network here
 void userSetup() {
-  delay(100);                                 // Give that poor microphone some time to setup.
-  // Attempt to configure INMP441 Microphone
-  esp_err_t err;
-  const i2s_config_t i2s_config = {
-    .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
-    .sample_rate = SAMPLE_RATE*2,                       // 10240 * 2 (20480) Hz
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // LEFT when pin is tied to ground.
-    .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
-    .dma_buf_count = 8,                                 // number of buffers
-    .dma_buf_len = BLOCK_SIZE                           // samples per buffer
-  };
-  const i2s_pin_config_t pin_config = {
-    .bck_io_num = i2sckPin,     // BCLK aka SCK
-    .ws_io_num = i2swsPin,      // LRCL aka WS
-    .data_out_num = -1,         // not used (only for speakers)
-    .data_in_num = i2ssdPin     // DOUT aka SD
-  };
-  // Configuring the I2S driver and pins.
-  // This function must be called before any I2S driver read/write operations.
-  err = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
-  if (err != ESP_OK) {
-    Serial.printf("Failed installing driver: %d\n", err);
-    while (true);
-  }
-  err = i2s_set_pin(I2S_PORT, &pin_config);
-  if (err != ESP_OK) {
-    Serial.printf("Failed setting pin: %d\n", err);
-    while (true);
-  }
-  Serial.println("I2S driver installed.");
-  delay(250);
+  if (dmEnabled == 1) {
 
+    Serial.println("Attempting to configure digital Microphone.");
+    delay(100);                                 // Give that poor microphone some time to setup.
+    // Attempt to configure INMP441 Microphone
+    esp_err_t err;
+    const i2s_config_t i2s_config = {
+      .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),  // Receive, not transfer
+      .sample_rate = SAMPLE_RATE*2,                       // 10240 * 2 (20480) Hz
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,       // could only get it to work with 32bits
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,        // LEFT when pin is tied to ground.
+      .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,           // Interrupt level 1
+      .dma_buf_count = 8,                                 // number of buffers
+      .dma_buf_len = BLOCK_SIZE                           // samples per buffer
+    };
+    const i2s_pin_config_t pin_config = {
+      .bck_io_num = i2sckPin,     // BCLK aka SCK
+      .ws_io_num = i2swsPin,      // LRCL aka WS
+      .data_out_num = -1,         // not used (only for speakers)
+      .data_in_num = i2ssdPin     // DOUT aka SD
+    };
+    // Configuring the I2S driver and pins.
+    // This function must be called before any I2S driver read/write operations.
+    err = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+    if (err != ESP_OK) {
+      Serial.printf("Failed installing driver: %d\n", err);
+      while (true);
+    }
+    err = i2s_set_pin(I2S_PORT, &pin_config);
+    if (err != ESP_OK) {
+      Serial.printf("Failed setting pin: %d\n", err);
+      while (true);
+    }
+    Serial.println("I2S driver installed.");
+    delay(250);
+    // Test to see if we have a digital microphone installed or not.
+    float mean = 0.0;
+    int32_t samples[BLOCK_SIZE];
+    // TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
+      size_t num_bytes_read = 0;
 
-// Test to see if we have a digital microphone installed or not.
-float mean = 0.0;
-int32_t samples[BLOCK_SIZE];
-// TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
-  size_t num_bytes_read = 0;
+      esp_err_t result = i2s_read(I2S_PORT, &samples, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY);
 
-  esp_err_t result = i2s_read(I2S_PORT, &samples, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY);
+    /*int num_bytes_read = i2s_read_bytes(I2S_PORT,
+                                        (char *)samples,
+                                        BLOCK_SIZE,     // the doc says bytes, but its elements.
+                                        portMAX_DELAY); // no timeout
+    */
 
-/*int num_bytes_read = i2s_read_bytes(I2S_PORT,
-                                    (char *)samples,
-                                    BLOCK_SIZE,     // the doc says bytes, but its elements.
-                                    portMAX_DELAY); // no timeout
-*/
-
-int samples_read = num_bytes_read / 8;
-if (samples_read > 0) {
-  for (int i = 0; i < samples_read; ++i) {
-    mean += samples[i];
-  }
-  mean = mean/BLOCK_SIZE/16384;
-  if (mean != 0.0) {
-    Serial.println("Digital microphone is present.");
-    digitalMic = true;
+    int samples_read = num_bytes_read / 8;
+    if (samples_read > 0) {
+      for (int i = 0; i < samples_read; ++i) {
+        mean += samples[i];
+      }
+      mean = mean/BLOCK_SIZE/16384;
+      if (mean != 0.0) {
+        Serial.println("Digital microphone is present.");
+      } else {
+        Serial.println("Digital microphone is NOT present.");
+    //    analogReadResolution(10);          // Default is 12, which is less linear. We're also only using 10 bits as a result of our ESP8266 history.
+      }
+    }
   } else {
-    Serial.println("Digital microphone is NOT present.");
-//    analogReadResolution(10);          // Default is 12, which is less linear. We're also only using 10 bits as a result of our ESP8266 history.
+    Serial.println("Using Analog Microphone.");
   }
-}
 
 pinMode(LED_BUILTIN, OUTPUT);
 

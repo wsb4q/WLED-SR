@@ -40,7 +40,11 @@
 const i2s_port_t I2S_PORT = I2S_NUM_0;
 const int BLOCK_SIZE = 64;
 
-const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
+#ifdef USE_ES7243
+  const int SAMPLE_RATE = 11025;                  // Base sample rate in Hz
+#else
+  const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
+#endif // USE_ES7243
 
 //Use userVar0 and userVar1 (API calls &U0=,&U1=, uint16_t)
 

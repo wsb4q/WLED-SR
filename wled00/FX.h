@@ -314,7 +314,8 @@
 #define FX_MODE_2DAKEMI                186
 #define FX_MODE_CUSTOMEFFECT           187
 
-
+//WLEDSR Custom Effects
+#define doubleNullValue -32768
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -329,6 +330,10 @@ class WS2812FX {
 
   // segment parameters
   public:
+
+    // FastLED array, so we can refer to leds[i] instead of getPixel() and setPixel()
+    CRGB leds[MAX_LEDS+1];                          // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
+
     typedef struct Segment { // 29 (32 in memory?) bytes
       uint16_t start;
       uint16_t stop;    //segment invalid if stop == 0
@@ -1134,6 +1139,11 @@ class WS2812FX {
 
     bool
       _skipFirstMode; //private? not in AC (anymore)
+
+    //Custom Effects
+    double arti_wled_functions(const char * function_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
+    double arti_wled_get_variables(const char * variable_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
+    void arti_wled_set_variables(double value, const char * variable_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                //

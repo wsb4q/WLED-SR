@@ -47,6 +47,8 @@ uint16_t circlePixel(double angle) {
 
 void _overlayAnalogClock()
 {
+  return; //WLEDSR: disable temporarely as causes div/0 crash
+
   int overlaySize = overlayMax - overlayMin +1;
   if (countdownMode)
   {

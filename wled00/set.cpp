@@ -571,7 +571,14 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
       audioPin = audioPin;
     }
     // Digital mic mode
-    dmEnabled = (bool)request->hasArg(F("DMM"));
+    uint8_t oldDMEnabled = dmEnabled;
+    dmEnabled = request->arg(F("DMM")).toInt();
+    // If the mic type was changed, reboot! ToDo: we don't need to reboot
+    // we just need to reload the I2S code to set up the proper mic. For
+    // now, a reboot is the simple solution.
+    if (oldDMEnabled != dmEnabled) {
+      doReboot = true;
+    }
     // Digital Mic I2S SD pin
     int hw_i2ssd_pin = request->arg(F("DI")).toInt();
     if (pinManager.allocatePin(hw_i2ssd_pin,false)) {

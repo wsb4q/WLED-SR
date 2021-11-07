@@ -40,7 +40,11 @@
 const i2s_port_t I2S_PORT = I2S_NUM_0;
 const int BLOCK_SIZE = 64;
 
-const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
+#ifdef USE_ES7243
+  const int SAMPLE_RATE = 11025;                  // Base sample rate in Hz
+#else
+  const int SAMPLE_RATE = 10240;                  // Base sample rate in Hz
+#endif // USE_ES7243
 
 //Use userVar0 and userVar1 (API calls &U0=,&U1=, uint16_t)
 
@@ -281,7 +285,7 @@ void FFTcode( void * parameter) {
     //extern double volume;   // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
 
     for(int i=0; i<samples; i++) {
-      if ((digitalMic && dmEnabled) == false) {
+      if (dmEnabled == 0) {
         micData = analogRead(audioPin) >> 2;           // Analog Read
       } else {
         int32_t digitalSample = 0;
@@ -303,7 +307,7 @@ void FFTcode( void * parameter) {
       // DEBUGSR_PRINT(micDataSm);
       // DEBUGSR_PRINT("\n");
 
-      if ((digitalMic && dmEnabled) == false) { while(micros() - microseconds < sampling_period_us){/*empty loop*/} }
+      if (dmEnabled == 0) { while(micros() - microseconds < sampling_period_us){/*empty loop*/} }
 
       microseconds += sampling_period_us;
     }

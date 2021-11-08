@@ -287,7 +287,7 @@ void FFTcode( void * parameter) {
     for(int i=0; i<samples; i++) {
       if (dmEnabled == 0) {
         micData = analogRead(audioPin) >> 2;           // Analog Read
-      } else {
+      } else if (!doReboot) {
         int32_t digitalSample = 0;
         size_t bytes_read = 0;
         esp_err_t result = i2s_read(I2S_PORT, &digitalSample, sizeof(digitalSample), &bytes_read, /*portMAX_DELAY*/ 10);

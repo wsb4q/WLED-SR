@@ -1,7 +1,7 @@
 #pragma once
 
 #if ARTI_PLATFORM == ARTI_ARDUINO && ARTI_DEFINITION == ARTI_WLED
-  #include "fx.h"
+  #include "FX.h"
   extern float sampleAvg;
 #else
   #include <math.h>

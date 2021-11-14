@@ -548,10 +548,10 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
   if (subPage == 9)
   {
 
-    if (audioPin>=0 && pinManager.isPinAllocated(audioPin)) pinManager.deallocatePin(audioPin);
-    if (i2ssdPin>=0 && pinManager.isPinAllocated(i2ssdPin)) pinManager.deallocatePin(i2ssdPin);
-    if (i2swsPin>=0 && pinManager.isPinAllocated(i2swsPin)) pinManager.deallocatePin(i2swsPin);
-    if (i2sckPin>=0 && pinManager.isPinAllocated(i2sckPin)) pinManager.deallocatePin(i2sckPin);
+    if (audioPin>=0 && pinManager.isPinAllocated(audioPin)) pinManager.deallocatePin(audioPin, PinOwner::AnalogMic);
+    if (i2ssdPin>=0 && pinManager.isPinAllocated(i2ssdPin)) pinManager.deallocatePin(i2ssdPin, PinOwner::DigitalMic);
+    if (i2swsPin>=0 && pinManager.isPinAllocated(i2swsPin)) pinManager.deallocatePin(i2swsPin, PinOwner::DigitalMic);
+    if (i2sckPin>=0 && pinManager.isPinAllocated(i2sckPin)) pinManager.deallocatePin(i2sckPin, PinOwner::DigitalMic);
 
     int t = 0;
     t = request->arg(F("SQ")).toInt();
@@ -565,7 +565,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
 
     // Analog mic pin
     int hw_amic_pin = request->arg(F("SI")).toInt();
-    if (pinManager.allocatePin(hw_amic_pin,false)) {
+    if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
       audioPin = hw_amic_pin;
     } else {
       audioPin = audioPin;
@@ -581,21 +581,21 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     dmEnabled = newDMEnabled;
     // Digital Mic I2S SD pin
     int hw_i2ssd_pin = request->arg(F("DI")).toInt();
-    if (pinManager.allocatePin(hw_i2ssd_pin,false)) {
+    if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
       i2ssdPin = hw_i2ssd_pin;
     } else {
       i2ssdPin = i2ssdPin;
     }
     // Digital Mic I2S WS pin
     int hw_i2sws_pin = request->arg(F("LR")).toInt();
-    if (pinManager.allocatePin(hw_i2sws_pin,false)) {
+    if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
       i2swsPin = hw_i2sws_pin;
     } else {
       i2swsPin = i2swsPin;
     }
     // Digital Mic I2S SCK pin
     int hw_i2sck_pin = request->arg(F("CK")).toInt();
-    if (pinManager.allocatePin(hw_i2sck_pin,false)) {
+    if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
       i2sckPin = hw_i2sck_pin;
     } else {
       i2sckPin = i2sckPin;

@@ -290,7 +290,7 @@ void FFTcode( void * parameter) {
       } else if (!doReboot) {
         int32_t digitalSample = 0;
         size_t bytes_read = 0;
-        esp_err_t result = i2s_read(I2S_PORT, &digitalSample, sizeof(digitalSample), &bytes_read, /*portMAX_DELAY*/ 10);
+        i2s_read(I2S_PORT, &digitalSample, sizeof(digitalSample), &bytes_read, /*portMAX_DELAY*/ 10); //esp_err_t result = 
         //int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
         if (bytes_read > 0) micData = abs(digitalSample >> 16);
 

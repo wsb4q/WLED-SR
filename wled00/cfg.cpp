@@ -223,7 +223,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   JsonObject analogmic = hw[F("analogmic")]; // analog mic JsonObject
 
   int hw_amic_pin = analogmic[F("pin")];
-  if (pinManager.allocatePin(hw_amic_pin,false)) {
+  if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
     audioPin = hw_amic_pin;
   } else {
     audioPin = audioPin;
@@ -235,21 +235,21 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   JsonObject hw_dmic_pins = hw_dmic["pins"]; // digital mic pins JsonObject
 
   int hw_i2ssd_pin = hw_dmic_pins[F("i2ssd")];
-  if (pinManager.allocatePin(hw_i2ssd_pin,false)) {
+  if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
     i2ssdPin = hw_i2ssd_pin;
   } else {
     i2ssdPin = i2ssdPin;
   }
 
   int hw_i2sws_pin = hw_dmic_pins[F("i2sws")];
-  if (pinManager.allocatePin(hw_i2sws_pin,false)) {
+  if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
     i2swsPin = hw_i2sws_pin;
   } else {
     i2swsPin = i2swsPin;
   }
 
   int hw_i2sck_pin = hw_dmic_pins[F("i2sck")];
-  if (pinManager.allocatePin(hw_i2sck_pin,false)) {
+  if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
     i2sckPin = hw_i2sck_pin;
   } else {
     i2sckPin = i2sckPin;

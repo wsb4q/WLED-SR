@@ -112,7 +112,7 @@ void userSetup() {
     // TODO: I2S_READ_BYTES DEPRECATED, FIND ALTERNATE SOLUTION
       size_t num_bytes_read = 0;
 
-      esp_err_t result = i2s_read(I2S_PORT, &samples, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY);
+      i2s_read(I2S_PORT, &samples, BLOCK_SIZE, &num_bytes_read, portMAX_DELAY); //esp_err_t result = 
 
     /*int num_bytes_read = i2s_read_bytes(I2S_PORT,
                                         (char *)samples,

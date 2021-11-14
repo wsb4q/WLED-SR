@@ -34,6 +34,8 @@ enum struct PinOwner : uint8_t {
   SPI_RAM       = 0x88,   // 'SpiR' == SPI RAM
   DebugOut      = 0x89,   // 'Dbg'  == debug output always IO1
   DMX           = 0x8A,   // 'DMX'  == hard-coded to IO2
+  AnalogMic     = 0x8B,   // WLEDSR
+  DigitalMic    = 0x8C,   // WLEDSR
   // Use UserMod IDs from const.h here
   UM_Unspecified       = USERMOD_ID_UNSPECIFIED,        // 0x01
   UM_Example           = USERMOD_ID_EXAMPLE,            // 0x02 // Usermod "usermod_v2_example.h"

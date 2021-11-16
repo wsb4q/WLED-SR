@@ -315,7 +315,7 @@
 #define FX_MODE_CUSTOMEFFECT           187
 
 //WLEDSR Custom Effects
-#define doubleNullValue -32768
+#define doubleNull -32768
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1141,9 +1141,9 @@ class WS2812FX {
       _skipFirstMode; //private? not in AC (anymore)
 
     //Custom Effects
-    double arti_wled_functions(const char * function_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
-    double arti_wled_get_variables(const char * variable_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
-    void arti_wled_set_variables(double value, const char * variable_name, double par1 = doubleNullValue, double par2 = doubleNullValue, double par3 = doubleNullValue);
+    double arti_external_function(uint8_t function, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull);
+    double arti_get_external_variable(uint8_t variable, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull);
+    void arti_set_external_variable(double value, uint8_t variable, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                //

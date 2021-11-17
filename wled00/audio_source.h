@@ -1,0 +1,324 @@
+#pragma once
+
+#include <Wire.h>
+#include <wled.h>
+#include <driver/i2s.h>
+
+/* ToDo: remove. ES7243 is controlled via compiler defines
+   Until this configuration is moved to the webinterface
+*/
+
+#ifndef MCLK_PIN
+    int mclkPin = 0;
+#else
+    int mclkPin = MLCK_PIN;
+#endif
+
+#ifndef ES7243_ADDR
+    int addr_ES7243 = 0x13;
+#else
+    int addr_ES7243 =  ES7243_ADDR;
+#endif
+
+#ifndef ES7243_SDAPIN
+    int pin_ES7243_SDA = 18;
+#else
+    int pin_ES7243_SDA =  ES7243_SDA;
+#endif
+
+#ifndef ES7243_SDAPIN
+    int pin_ES7243_SCL = 23;
+#else
+    int pin_ES7243_SCL =  ES7243_SCL;
+#endif
+
+/* Interface class
+   AudioSource serves as base class for all microphone types
+   This enables accessing all microphones with one single interface
+   which simplifies the caller code
+*/
+class AudioSource {
+public:
+    /* All public methods are virtual, so they can be overridden
+       Everything but the destructor is also removed, to make sure each mic
+       Implementation provides its version of this function
+    */
+    virtual ~AudioSource() {};
+
+    /* Initialize
+       This function needs to take care of anything that needs to be done
+       before samples can be obtained from the microphone.
+    */
+    virtual void initialize() = 0;
+
+    /* Deinitialize
+       Release all resources and deactivate any functionality that is used
+       by this microphone
+    */
+    virtual void deinitialize() = 0;
+
+    /* getSamples
+       Read num_samples from the microphone, and store them in the provided
+       buffer
+    */
+    virtual void getSamples(double *buffer, uint16_t num_samples) = 0;
+
+    /* Get an up-to-date sample without DC offset */
+    virtual int getSampleWithoutDCOffset() = 0;
+
+protected:
+    // Private constructor, to make sure it is not callable except from derived classes
+    AudioSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) : _sampleRate(sampleRate), _blockSize(blockSize), _sampleNoDCOffset(0), _dcOffset(0.0f), _shift(lshift), _mask(mask) {};
+
+    int _sampleRate;                /* Microphone sampling rate */
+    int _blockSize;                 /* I2S block size */
+    volatile int _sampleNoDCOffset; /* Up-to-date sample without DCOffset */
+    float _dcOffset;                /* Rolling average DC offset */
+    uint16_t _shift;                /* Shift obtained samples to the right by this amount */
+    uint32_t _mask;                 /* Bitmask for sample data after shifting */
+    i2s_config_t _config;           /* I2S config */
+    i2s_pin_config_t _pinConfig;    /* I2S pin config */
+
+};
+
+/* Basic I2S microphone source
+   All functions are marked virtual, so derived classes can replace them
+*/
+class I2SSource : public AudioSource {
+public:
+    I2SSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        AudioSource(sampleRate, blockSize, lshift, mask) {
+    };
+
+
+    virtual void initialize() {
+        // Make sure config object is "clean" before setting it up
+        memset(&_config, 0, sizeof(_config));
+
+        _config = {
+            .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
+            .sample_rate = _sampleRate,
+            .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+            .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+            .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+            .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+            .dma_buf_count = 8,
+            .dma_buf_len = _blockSize
+        };
+
+        _pinConfig = {
+            .bck_io_num = i2sckPin,
+            .ws_io_num = i2swsPin,
+            .data_out_num = I2S_PIN_NO_CHANGE,
+            .data_in_num = i2ssdPin
+        };
+
+        esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to install i2s driver: %d\n", err);
+            while (true);
+        }
+
+        err = i2s_set_pin(I2S_NUM_0, &_pinConfig);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to set i2s pin config: %d\n", err);
+            while (true);
+        }
+    }
+
+    virtual void deinitialize() {
+        esp_err_t err = i2s_driver_uninstall(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to uninstall i2s driver: %d\n", err);
+            while (true);
+        }
+    }
+
+    virtual void getSamples(double *buffer, uint16_t num_samples) {
+        esp_err_t err;
+        size_t bytes_read = 0;        /* Counter variable to check if we actually got enough data */
+        int32_t samples[num_samples]; /* Intermediary sample storage */
+
+        // Reset dc offset
+        _dcOffset = 0.0f;
+
+        err = i2s_read(I2S_NUM_0, (void *)samples, sizeof(samples), &bytes_read, portMAX_DELAY);
+        if ((err != ESP_OK)){
+            Serial.printf("Failed to get samples: %d\n", err);
+            while(true);
+        }
+
+        // For correct operation, we need to read exactly sizeof(samples) bytes from i2s
+        if(bytes_read != sizeof(samples)) {
+            Serial.printf("Failed to get enough samples: wanted: %d read: %d\n", sizeof(samples), bytes_read);
+            return;
+        }
+
+        // Store samples in sample buffer and update DC offset
+        for (int i = 0; i < num_samples; i++) {
+            // From the old code.
+            double sample = (double)abs((samples[i] >> _shift));
+            buffer[i] = sample;
+            _dcOffset = ((_dcOffset * 31) + sample) / 32;
+        }
+
+        // Update no-DC sample
+        _sampleNoDCOffset = abs(buffer[num_samples - 1] - _dcOffset);
+    }
+
+    virtual int getSampleWithoutDCOffset() {
+        return _sampleNoDCOffset;
+    }
+};
+
+/* I2S microphone with master clock
+   Our version of the IDF does not support setting master clock
+   routing via the provided API, so we have to do it by hand
+*/
+class I2SSourceWithMasterClock : public I2SSource {
+public:
+    virtual void initialize() {
+        // Reserve the master clock pin
+        pinManager.allocatePin(mclkPin, true, PinOwner::DigitalMic);
+
+        /* Enable the mclk routing depending on the selected mclk pin
+           Only I2S_NUM_0 is supported
+        */
+        if (mclkPin == GPIO_NUM_0) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            WRITE_PERI_REG(PIN_CTRL,0xFFF0);
+        } else if (mclkPin == GPIO_NUM_1) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_CLK_OUT3);
+            WRITE_PERI_REG(PIN_CTRL, 0xF0F0);
+        } else {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_CLK_OUT2);
+            WRITE_PERI_REG(PIN_CTRL, 0xFF00);
+        }
+    }
+
+    virtual void deinitialize() {
+        // Release the master clock pin
+        pinManager.deallocatePin(mclkPin, PinOwner::BusDigital);
+        I2SSource::deinitialize();
+    }
+};
+
+/* ES7243 Microphone
+   This is an I2S microphone that requires ininitialization over
+   I2C before I2S data can be received
+*/
+class ES7243 : public I2SSourceWithMasterClock {
+
+private:
+
+    // I2C initialization functions for ES7243
+    void _es7243I2cBegin() {
+        Wire.begin(pin_ES7243_SDA, pin_ES7243_SCL, 100000U);
+    }
+
+    void _es7243I2cWrite(uint8_t reg, uint8_t val) {
+        Wire.beginTransmission(addr_ES7243);
+        Wire.write((uint8_t)reg);
+        Wire.write((uint8_t)val);
+        Wire.endTransmission();
+    }
+
+    void _es7243InitAdc()
+    {
+        _es7243I2cBegin();
+        _es7243I2cWrite(0x00, 0x01);
+        _es7243I2cWrite(0x06, 0x00);
+        _es7243I2cWrite(0x05, 0x1B);
+        _es7243I2cWrite(0x01, 0x0C);
+        _es7243I2cWrite(0x08, 0x43);
+        _es7243I2cWrite(0x05, 0x13);
+    }
+public:
+    void initialize() {
+        // Reserve SDA and SCL pins of the I2C interface
+        pinManager.allocatePin(pin_ES7243_SDA, true, PinOwner::DigitalMic);
+        pinManager.allocatePin(pin_ES7243_SCL, true, PinOwner::DigitalMic);
+        _es7243InitAdc();
+        I2SSourceWithMasterClock::initialize();
+    }
+
+    void deinitialize() {
+        // Release SDA and SCL pins of the I2C interface
+        pinManager.deallocatePin(pin_ES7243_SDA, PinOwner::DigitalMic);
+        pinManager.deallocatePin(pin_ES7243_SCL, PinOwner::DigitalMic);
+        I2SSourceWithMasterClock::deinitialize();
+    }
+};
+
+/* ADC over I2S Microphone
+   This microphone is an ADC pin sampled via the I2S interval
+   This allows to use the I2S API to obtain ADC samples with high sample rates
+   without the need of manual timing of the samples
+*/
+class I2SAdcSource : public I2SSource {
+public:
+    I2SAdcSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSource(sampleRate, blockSize, lshift, mask){
+    }
+
+    void initialize() {
+
+        // Make sure config object is "clean" before setting it up
+        memset(&_config, 0, sizeof(_config));
+
+        _config = {
+            .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
+            .sample_rate = _sampleRate,
+            .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+            // .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+            .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+            .dma_buf_count = 8,
+            .dma_buf_len = _blockSize
+        };
+
+        // Determine Analog channel. Only Channels on ADC1 are supported
+        int8_t channel = digitalPinToAnalogChannel(audioPin);
+        if (channel > 9) {
+            Serial.printf("Incompatible GPIO used for audio in: %d\n", audioPin);
+            while (true);
+        } else {
+            adc_gpio_init(ADC_UNIT_1, adc_channel_t(channel));
+        }
+
+        // Install Driver
+        esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to install i2s driver: %d\n", err);
+            while (true);
+        }
+
+        // Enable I2S mode of ADC
+        err = i2s_set_adc_mode(ADC_UNIT_1, adc1_channel_t(channel));
+        if (err != ESP_OK) {
+            Serial.printf("Failed to set i2s adc mode: %d\n", err);
+            while (true);
+        }
+    }
+
+    void getSamples(double *buffer, uint16_t num_samples) {
+
+        /* Enable ADC. This has to be enabled and disabled directly before and
+           after sampling, otherwise Wifi dies
+        */
+        esp_err_t err = i2s_adc_enable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to enable i2s adc: %d\n", err);
+            while (true);
+        }
+
+        I2SSource::getSamples(buffer, num_samples);
+
+        err = i2s_adc_disable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to disable i2s adc: %d\n", err);
+            while (true);
+        }
+    }
+};

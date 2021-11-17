@@ -76,8 +76,6 @@ protected:
     float _dcOffset;                /* Rolling average DC offset */
     uint16_t _shift;                /* Shift obtained samples to the right by this amount */
     uint32_t _mask;                 /* Bitmask for sample data after shifting */
-    i2s_config_t _config;           /* I2S config */
-    i2s_pin_config_t _pinConfig;    /* I2S pin config */
 
 };
 
@@ -93,9 +91,8 @@ public:
 
     virtual void initialize() {
         // Make sure config object is "clean" before setting it up
-        memset(&_config, 0, sizeof(_config));
 
-        _config = {
+        i2s_config_t _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
             .sample_rate = _sampleRate,
             .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
@@ -106,7 +103,7 @@ public:
             .dma_buf_len = _blockSize
         };
 
-        _pinConfig = {
+        i2s_pin_config_t _pinConfig = {
             .bck_io_num = i2sckPin,
             .ws_io_num = i2swsPin,
             .data_out_num = I2S_PIN_NO_CHANGE,
@@ -180,7 +177,7 @@ public:
     virtual void initialize() {
         // Reserve the master clock pin
         pinManager.allocatePin(mclkPin, true, PinOwner::DigitalMic);
-
+        I2SSource::initialize();
         /* Enable the mclk routing depending on the selected mclk pin
            Only I2S_NUM_0 is supported
         */
@@ -194,6 +191,7 @@ public:
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_CLK_OUT2);
             WRITE_PERI_REG(PIN_CTRL, 0xFF00);
         }
+
     }
 
     virtual void deinitialize() {
@@ -264,14 +262,12 @@ public:
     void initialize() {
 
         // Make sure config object is "clean" before setting it up
-        memset(&_config, 0, sizeof(_config));
 
-        _config = {
+        i2s_config_t _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
             .sample_rate = _sampleRate,
             .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-            // .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+            .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
             .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
             .dma_buf_count = 8,

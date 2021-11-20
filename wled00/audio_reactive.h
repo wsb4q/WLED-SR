@@ -17,6 +17,9 @@
 
 #include "wled.h"
 #include <driver/i2s.h>
+#include "audio_source.h"
+
+AudioSource *audioSource;
 
 // ALL AUDIO INPUT PINS DEFINED IN wled.h AND CONFIGURABLE VIA UI
 
@@ -280,36 +283,16 @@ void FFTcode( void * parameter) {
     // Only run the FFT computing code if we're not in Receive mode
     if (audioSyncEnabled & (1 << 1))
       continue;
+    audioSource->getSamples(vReal, samples);
 
-    microseconds = micros();
-    //extern double volume;   // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
+    // Last sample in vReal is our current mic sample
+    micDataSm = (uint16_t)vReal[samples - 1];
 
-    for(int i=0; i<samples; i++) {
-      if (dmEnabled == 0) {
-        micData = analogRead(audioPin) >> 2;           // Analog Read
-      } else if (!doReboot) {
-        int32_t digitalSample = 0;
-        size_t bytes_read = 0;
-        i2s_read(I2S_PORT, &digitalSample, sizeof(digitalSample), &bytes_read, /*portMAX_DELAY*/ 10); //esp_err_t result = 
-        //int bytes_read = i2s_pop_sample(I2S_PORT, (char *)&digitalSample, portMAX_DELAY); // no timeout
-        if (bytes_read > 0) micData = abs(digitalSample >> 16);
+    // micDataSm = ((micData * 3) + micData)/4;
 
-      }
-      micDataSm = ((micData * 3) + micData)/4;    // We'll be passing smoothed micData to the volume routines as the A/D is a bit twitchy.
-      vReal[i] = micData;                         // Store Mic Data in an array
+    for (int i=0; i < samples; i++)
+    {
       vImag[i] = 0;
-
-      // MIC DATA DEBUGGING
-      // DEBUGSR_PRINT("micData: ");
-      // DEBUGSR_PRINT(micData);
-      // DEBUGSR_PRINT("\tmicDataSm: ");
-      // DEBUGSR_PRINT("\t");
-      // DEBUGSR_PRINT(micDataSm);
-      // DEBUGSR_PRINT("\n");
-
-      if (dmEnabled == 0) { while(micros() - microseconds < sampling_period_us){/*empty loop*/} }
-
-      microseconds += sampling_period_us;
     }
 
     FFT.Windowing( FFT_WIN_TYP_HAMMING, FFT_FORWARD );      // Weigh data

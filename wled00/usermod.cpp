@@ -24,9 +24,10 @@ void userSetup() {
   if (dmEnabled == 1) {
     Serial.println("Attempting to configure digital Microphone.");
     #ifdef USE_ES7243
-      audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      // audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
     #else
-      audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      // audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
     #endif
   } else {
       Serial.println("Attempting to configure analog Microphone.");

@@ -18,7 +18,7 @@
 		function enDM()
 		{
 			var en = parseInt(d.getElementById('dme').value);
-			d.getElementById('dm').style.display = (en == 1) ? 'inline':'none';
+			d.getElementById('dm').style.display = (en >= 1) ? 'inline':'none';
 			d.getElementById('am').style.display = (en == 0) ? 'inline':'none';
 		}
     function GetV()
@@ -40,8 +40,10 @@
 		AGC: <input type="checkbox" name="AGC"><br>
 		<h2>Sound Input Pin Manager</h2>
 		Microphone type: <select id="dme" name="DMM" onchange="enDM()" >
-			<option value="0" selected>Analog</option>
-			<option value="1">Digital</option>
+			<option value="0" selected>Generic Analog</option>
+			<option value="1">Generic I2S</option>
+			<option value="2">ES7243</option>
+			<option value="3">SPH0654</option>
 		  </select><br>
 		<!--<input type="checkbox" name="DMM" onchange="enDM()" id="dme"><br> -->
 		<div id="dm">

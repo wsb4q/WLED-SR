@@ -310,12 +310,6 @@ void WLED::setup()
   pinManager.allocatePin(2, true, PinOwner::DMX);
 #endif
 
-// #ifdef USE_ES7243 // SET GPIO0 as Master Clock
-//   pinManager.allocatePin(0, true);
-//   WRITE_PERI_REG(PIN_CTRL, 0xFF0); // Tell ESP to put CLK1 out to GPIO0
-//   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1); // Tell GPIO0 that it's CLK1
-// #endif // USE_ES7243
-
   DEBUG_PRINTLN(F("Registering usermods ..."));
   registerUsermods();
 

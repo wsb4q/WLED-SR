@@ -21,18 +21,36 @@ void userSetup() {
   periph_module_reset(PERIPH_I2S0_MODULE);
 
   delay(100);         // Give that poor microphone some time to setup.
-  if (dmEnabled == 1) {
-    Serial.println("Attempting to configure digital Microphone.");
-    #ifdef USE_ES7243
-      // audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
-    #else
-      // audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+  switch (dmEnabled) {
+    case 1:
+      Serial.println("Attempting to configure generic I2S Microphone.");
+      audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      break;
+    case 2:
+      Serial.println("Attempting to configure ES7243 Microphone.");
       audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
-    #endif
-  } else {
+      break;
+    case 3:
+      Serial.println("Attempting to configure SPH0645 Microphone");
+      audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+    case 0:
+    default:
       Serial.println("Attempting to configure analog Microphone.");
       audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFF);
+      break;
   }
+  // if (dmEnabled == 1) {
+  //   Serial.println("Attempting to configure digital Microphone.");
+  //   #ifdef USE_ES7243
+  //     // audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+  //   #else
+  //     // audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+  //     audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+  //   #endif
+  // } else {
+  //     Serial.println("Attempting to configure analog Microphone.");
+  //     audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFF);
+  // }
   delay(100);
   audioSource->initialize();
   delay(250);
@@ -45,7 +63,7 @@ void userSetup() {
   xTaskCreatePinnedToCore(
         FFTcode,                          // Function to implement the task
         "FFT",                            // Name of the task
-        10000,                            // Stack size in words
+        5000,                            // Stack size in words
         NULL,                             // Task input parameter
         1,                                // Priority of the task
         &FFT_Task,                        // Task handle

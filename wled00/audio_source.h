@@ -86,7 +86,6 @@ class I2SSource : public AudioSource {
 public:
     I2SSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
         AudioSource(sampleRate, blockSize, lshift, mask) {
-            Serial.println("Inside I2SSource Constructor!");
         _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
             .sample_rate = _sampleRate,
@@ -236,7 +235,7 @@ private:
         _es7243I2cWrite(0x00, 0x01);
         _es7243I2cWrite(0x06, 0x00);
         _es7243I2cWrite(0x05, 0x1B);
-        _es7243I2cWrite(0x01, 0x0C);
+        _es7243I2cWrite(0x01, 0x00); // 0x00 for 24 bit to match INMP441
         _es7243I2cWrite(0x08, 0x43);
         _es7243I2cWrite(0x05, 0x13);
     }

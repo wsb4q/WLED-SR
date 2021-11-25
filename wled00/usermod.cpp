@@ -32,7 +32,8 @@ void userSetup() {
       break;
     case 3:
       Serial.println("Attempting to configure SPH0645 Microphone");
-      audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      audioSource = new SPH0654(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      break;
     case 0:
     default:
       Serial.println("Attempting to configure analog Microphone.");

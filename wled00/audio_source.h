@@ -330,3 +330,16 @@ public:
         }
     }
 };
+
+class SPH0654 : public I2SSource {
+
+public:
+    SPH0654(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSource(sampleRate, blockSize, lshift, mask){}
+
+    void initialize() {
+        I2SSource::initialize();
+        REG_SET_BIT(I2S_TIMING_REG(I2S_NUM_0), BIT(9));
+        REG_SET_BIT(I2S_CONF_REG(I2S_NUM_0), I2S_RX_MSB_SHIFT);
+    }
+};

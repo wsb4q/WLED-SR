@@ -23,13 +23,13 @@
 #ifndef ES7243_SDAPIN
     int pin_ES7243_SDA = 18;
 #else
-    int pin_ES7243_SDA =  ES7243_SDA;
+    int pin_ES7243_SDA =  ES7243_SDAPIN;
 #endif
 
 #ifndef ES7243_SDAPIN
     int pin_ES7243_SCL = 23;
 #else
-    int pin_ES7243_SCL =  ES7243_SCL;
+    int pin_ES7243_SCL =  ES7243_SCLPIN;
 #endif
 
 /* Interface class
@@ -86,13 +86,7 @@ class I2SSource : public AudioSource {
 public:
     I2SSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
         AudioSource(sampleRate, blockSize, lshift, mask) {
-    };
-
-
-    virtual void initialize() {
-        // Make sure config object is "clean" before setting it up
-
-        i2s_config_t _config = {
+        _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
             .sample_rate = _sampleRate,
             .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
@@ -103,12 +97,16 @@ public:
             .dma_buf_len = _blockSize
         };
 
-        i2s_pin_config_t _pinConfig = {
+        _pinConfig = {
             .bck_io_num = i2sckPin,
             .ws_io_num = i2swsPin,
             .data_out_num = I2S_PIN_NO_CHANGE,
             .data_in_num = i2ssdPin
         };
+    };
+
+
+    virtual void initialize() {
 
         esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
         if (err != ESP_OK) {
@@ -166,6 +164,10 @@ public:
     virtual int getSampleWithoutDCOffset() {
         return _sampleNoDCOffset;
     }
+
+protected:
+    i2s_config_t _config;
+    i2s_pin_config_t _pinConfig;
 };
 
 /* I2S microphone with master clock
@@ -174,10 +176,25 @@ public:
 */
 class I2SSourceWithMasterClock : public I2SSource {
 public:
+    I2SSourceWithMasterClock(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSource(sampleRate, blockSize, lshift, mask) {
+    };
+
     virtual void initialize() {
         // Reserve the master clock pin
         pinManager.allocatePin(mclkPin, true, PinOwner::DigitalMic);
+        _routeMclk();
         I2SSource::initialize();
+
+    }
+
+    virtual void deinitialize() {
+        // Release the master clock pin
+        pinManager.deallocatePin(mclkPin, PinOwner::DigitalMic);
+        I2SSource::deinitialize();
+    }
+protected:
+    void _routeMclk() {
         /* Enable the mclk routing depending on the selected mclk pin
            Only I2S_NUM_0 is supported
         */
@@ -191,13 +208,6 @@ public:
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_CLK_OUT2);
             WRITE_PERI_REG(PIN_CTRL, 0xFF00);
         }
-
-    }
-
-    virtual void deinitialize() {
-        // Release the master clock pin
-        pinManager.deallocatePin(mclkPin, PinOwner::BusDigital);
-        I2SSource::deinitialize();
     }
 };
 
@@ -208,7 +218,6 @@ public:
 class ES7243 : public I2SSourceWithMasterClock {
 
 private:
-
     // I2C initialization functions for ES7243
     void _es7243I2cBegin() {
         Wire.begin(pin_ES7243_SDA, pin_ES7243_SCL, 100000U);
@@ -221,21 +230,28 @@ private:
         Wire.endTransmission();
     }
 
-    void _es7243InitAdc()
-    {
+    void _es7243InitAdc() {
         _es7243I2cBegin();
         _es7243I2cWrite(0x00, 0x01);
         _es7243I2cWrite(0x06, 0x00);
         _es7243I2cWrite(0x05, 0x1B);
-        _es7243I2cWrite(0x01, 0x0C);
+        _es7243I2cWrite(0x01, 0x00); // 0x00 for 24 bit to match INMP441
         _es7243I2cWrite(0x08, 0x43);
         _es7243I2cWrite(0x05, 0x13);
     }
+
 public:
+
+    ES7243(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSourceWithMasterClock(sampleRate, blockSize, lshift, mask) {
+        _config.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT;
+    };
     void initialize() {
         // Reserve SDA and SCL pins of the I2C interface
         pinManager.allocatePin(pin_ES7243_SDA, true, PinOwner::DigitalMic);
         pinManager.allocatePin(pin_ES7243_SCL, true, PinOwner::DigitalMic);
+
+        // First route mclk, then configure ADC over I2C, then configure I2S
         _es7243InitAdc();
         I2SSourceWithMasterClock::initialize();
     }
@@ -257,13 +273,7 @@ class I2SAdcSource : public I2SSource {
 public:
     I2SAdcSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
         I2SSource(sampleRate, blockSize, lshift, mask){
-    }
-
-    void initialize() {
-
-        // Make sure config object is "clean" before setting it up
-
-        i2s_config_t _config = {
+        _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
             .sample_rate = _sampleRate,
             .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
@@ -273,7 +283,9 @@ public:
             .dma_buf_count = 8,
             .dma_buf_len = _blockSize
         };
+    }
 
+    void initialize() {
         // Determine Analog channel. Only Channels on ADC1 are supported
         int8_t channel = digitalPinToAnalogChannel(audioPin);
         if (channel > 9) {
@@ -316,5 +328,18 @@ public:
             Serial.printf("Failed to disable i2s adc: %d\n", err);
             while (true);
         }
+    }
+};
+
+class SPH0654 : public I2SSource {
+
+public:
+    SPH0654(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSource(sampleRate, blockSize, lshift, mask){}
+
+    void initialize() {
+        I2SSource::initialize();
+        REG_SET_BIT(I2S_TIMING_REG(I2S_NUM_0), BIT(9));
+        REG_SET_BIT(I2S_CONF_REG(I2S_NUM_0), I2S_RX_MSB_SHIFT);
     }
 };

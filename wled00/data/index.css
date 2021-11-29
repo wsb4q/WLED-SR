@@ -422,7 +422,8 @@ Effect Speed */
 	margin: 8px;
 }
 
-#kv, #kn {
+/* WLEDSR Custom Effects: add kceEditor */
+#kv, #kn, #kceEditor {
 	max-width: 490px;
 	display: inline-block;
 }
@@ -695,6 +696,14 @@ textarea {
 	outline: none;
 	resize: none;
 	font-size: 19px;
+}
+
+/* WLEDSR Custom Effects */
+.cetextarea {
+	width: 250px;
+	height: 300px;
+	resize: none;
+	white-space: pre;
 }
 
 ::selection {

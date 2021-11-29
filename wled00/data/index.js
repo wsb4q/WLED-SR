@@ -1,7 +1,7 @@
 //page js
 var loc = false, locip;
 var noNewSegs = false;
-var isOn = false, nlA = false, isLv = false, isInfo = false, isNodes = false, syncSend = false, syncTglRecv = true, isRgbw = false;
+var isOn = false, nlA = false, isLv = false, isInfo = false, isCEEditor = false, isNodes = false, syncSend = false, syncTglRecv = true, isRgbw = false;
 var whites = [0,0,0];
 var selColors;
 var expanded = [false];
@@ -558,6 +558,50 @@ function populateInfo(i)
   d.getElementById('kv').innerHTML = cn;
 }
 
+// WLEDSR Custom Effects
+function populateCEEditor(name)
+{
+  // console.log("name" + name);
+  var url = (loc?`http://${locip}`:'.') + "/" + name + ".wled"
+  console.log("name: " + url);
+
+  fetch
+  (url, {
+    method: 'get'
+  })
+  .then(res => {
+    if (!res.ok) {
+       showErrorToast();
+    }
+    return res.text();
+  })
+  .then(text => {
+    var cn="";
+
+    cn += `<div class="po1" id="p1o2">
+      Custom Effects Editor<br>
+      <i>${name}.wled</i><br>
+      <textarea class="cetextarea" id="p1api">${text}</textarea>
+    </div>`;
+    // cn += `<div class="po1" id="p1o1">
+    // text
+    // </div>`;
+    cn += `<button class="btn" onclick="toggleCEEditor()"><i class="icons btn-icon">&#xe08f;</i>Close</button><br>
+           <button class="btn" onclick="saveCE('${name}')"><i class="icons btn-icon">&#xe390;</i>Save</button><br>`;
+
+    d.getElementById('kceEditor').innerHTML = cn;
+  })
+  .catch(function (error) {
+    showToast(error, true);
+    console.log(error);
+    presetError(false);
+  })
+  .finally(() => {
+    // if (callback) setTimeout(callback,99);
+  });
+
+}
+
 function populateSegments(s)
 {
   var cn = "";
@@ -574,7 +618,7 @@ function populateSegments(s)
     if (i > lSeg) lSeg = i;
 
     //WLEDSR: add tooltip (title) and add reverse direction X / Y and rotation parameters
-    cn += `<div title="Fx${inst.fx}: ${inst.start}x${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
+    cn += `<div title="Fx${inst.fx}: ${inst.start}-${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
       <label class="check schkl">
         &nbsp;
         <input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
@@ -639,9 +683,16 @@ function populateSegments(s)
           Mirror effect
           <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
           <span class="checkmark schk"></span>
-        </label>
-      </div>
-    </div><br>`;
+        </label>`;
+
+        // WLEDSR Custom Effects
+        if (inst.fx == 187)
+        cn += `<button class="btn" onclick="toggleCEEditor('${inst.n?inst.n:"default"}')">Custom Effect Editor</button><br>  
+          </div>
+          </div><br>`;
+      else 
+        cn += `</div>
+          </div><br>`;
   }
 
   d.getElementById('segcont').innerHTML = cn;
@@ -1416,6 +1467,7 @@ function toggleLiveview() {
 
 function toggleInfo() {
   if (isNodes) toggleNodes();
+  if (isCEEditor) toggleCEEditor();// WLEDSR Custom Effects
   isInfo = !isInfo;
   if (isInfo) populateInfo(lastinfo);
   d.getElementById('info').style.transform = (isInfo) ? "translateY(0px)":"translateY(100%)";
@@ -1424,10 +1476,20 @@ function toggleInfo() {
 
 function toggleNodes() {
   if (isInfo) toggleInfo();
+  if (isCEEditor) toggleCEEditor();// WLEDSR Custom Effects
   isNodes = !isNodes;
   d.getElementById('nodes').style.transform = (isNodes) ? "translateY(0px)":"translateY(100%)";
   d.getElementById('buttonNodes').className = (isNodes) ? "active":"";
   if (isNodes) loadNodes();
+}
+
+// WLEDSR Custom Effects
+function toggleCEEditor(name) {
+  if (isInfo) toggleInfo();
+  if (isNodes) toggleNodes();
+  isCEEditor = !isCEEditor;
+  if (isCEEditor) populateCEEditor(name);
+  d.getElementById('ceEditor').style.transform = (isCEEditor) ? "translateY(0px)":"translateY(100%)";
 }
 
 function makeSeg() {
@@ -1885,6 +1947,10 @@ function saveP(i,pl) {
   }
   populatePresets();
   resetPUtil();
+}
+
+function saveCE(name = "noname") {
+  showToast("Saving " + name + ".wled not implemented yet");
 }
 
 function testPl(i,bt) {

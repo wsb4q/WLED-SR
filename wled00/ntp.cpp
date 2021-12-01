@@ -34,6 +34,7 @@ Timezone* tz;
 #define TZ_INIT               255
 
 byte tzCurrent = TZ_INIT; //uninitialized
+bool ntpFirstTime = true;
 
 void updateTimezone() {
   delete tz;
@@ -321,18 +322,47 @@ void checkTimers()
     // re-calculate sunrise and sunset just after midnight
     if (!hour(localTime) && minute(localTime)==1) calculateSunriseAndSunset();
 
-    DEBUG_PRINTF("Local time: %02d:%02d\n", hour(localTime), minute(localTime));
-    for (uint8_t i = 0; i < 8; i++)
+    int h = hour(localTime);
+    int m = minute(localTime);
+    byte d = weekdayMondayFirst();
+
+    DEBUG_PRINTF("Local time: %02d:%02d\n", h, m);
+    uint16_t scanBackMax = ntpFirstTime ? 10080 : 1;   // first time scan back 7 * 24 * 60 minutes 
+    for (uint16_t scanBack = 0; scanBack < scanBackMax; scanBack++) 
     {
-      if (timerMacro[i] != 0
-          && (timerHours[i] == hour(localTime) || timerHours[i] == 24) //if hour is set to 24, activate every hour
-          && timerMinutes[i] == minute(localTime)
-          && (timerWeekday[i] & 0x01) //timer is enabled
-          && ((timerWeekday[i] >> weekdayMondayFirst()) & 0x01)) //timer should activate at current day of week
+      for (uint8_t i = 0; i < 8; i++)
       {
-        applyPreset(timerMacro[i]);
+        if (timerMacro[i] != 0
+            && (timerHours[i] == h || timerHours[i] == 24) //if hour is set to 24, activate every hour
+            && timerMinutes[i] == m
+            && (timerWeekday[i] & 0x01) //timer is enabled
+            && ((timerWeekday[i] >> d) & 0x01)) //timer should activate at current day of week
+        {
+          if (currentPreset != timerMacro[i])
+          {
+            DEBUG_PRINTF("index: %d preset: %d time: %02d:%02d day: %d\n", i, timerMacro[i], h, m, d);
+            applyPreset(timerMacro[i]);
+          }
+          scanBack = scanBackMax;   // exit outer loop
+        }
+      }
+
+      // step back 1 minute and handle underflow of minute (0-59) / hour (0-23) / weekday (1-7)
+      m--;
+      if (m < 0)
+      {
+        m = 59;
+        h--;
+        if (h < 0) {
+          h = 23;
+          d--;
+          if (d == 0) d = 7;
+        }
       }
     }
+
+    ntpFirstTime = false;
+
     // sunrise macro
     if (sunrise) {
       time_t tmp = sunrise + timerMinutes[8]*60;  // NOTE: may not be ok

@@ -1407,7 +1407,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Squared Swirl@,,,,Blur;,,;!",
 "2D Fire2012@Speed;;",
 "2D DNA@Scroll speed,Blur;;!",
-"2D Matrix@Falling speed,Spawning rate;;",
+"2D Matrix@Falling speed,Spawning rate,Trail;;",
 "2D Metaballs@;;",
 " ♫ Freqmap@Fade rate,Starting color;,!;!",
 " ♪ Gravcenter@Rate of fall,Sensitivity;,!;!",

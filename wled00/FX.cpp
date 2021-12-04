@@ -4940,11 +4940,14 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 //    2D Matrix      //
 ///////////////////////
 
-uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy Williams. Adapted by Andrew Tuline.
+uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy Williams. Adapted by Andrew Tuline & improved by merkisoft.
 
   if (SEGENV.call == 0) fill_solid(leds, 0);
 
-  if (millis() - SEGENV.step >= ((256-SEGMENT.speed) >>2)) {
+  int fade = map(SEGMENT.fft1, 0, 255, 50, 250);    // equals trail size
+  int speed = (256-SEGMENT.speed) >> map(MIN(SEGMENT.height, 150), 0, 150, 0, 3);    // slower speeds for small displays
+
+  if (millis() - SEGENV.step >= speed) {
     SEGENV.step = millis();
 //    if (SEGMENT.fft3 < 128) {									            // check for orientation, slider in first quarter, default orientation
     	for (int16_t row=SEGMENT.height-1; row>=0; row--) {
@@ -4958,7 +4961,7 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
 
     // fade all leds
     for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
-      if (leds[XY(x,y)].g != 255) leds[XY(x,y)].nscale8(192);         // only fade trail
+      if (leds[XY(x,y)].g != 255) leds[XY(x,y)].nscale8(fade);         // only fade trail
     }
 
     // check for empty screen to ensure code spawn

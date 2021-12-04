@@ -558,50 +558,6 @@ function populateInfo(i)
   d.getElementById('kv').innerHTML = cn;
 }
 
-// WLEDSR Custom Effects
-function populateCEEditor(name)
-{
-  // console.log("name" + name);
-  var url = (loc?`http://${locip}`:'.') + "/" + name + ".wled"
-  console.log("name: " + url);
-
-  fetch
-  (url, {
-    method: 'get'
-  })
-  .then(res => {
-    if (!res.ok) {
-       showErrorToast();
-    }
-    return res.text();
-  })
-  .then(text => {
-    var cn="";
-
-    cn += `<div class="po1" id="p1o2">
-      Custom Effects Editor<br>
-      <i>${name}.wled</i><br>
-      <textarea class="cetextarea" id="p1api">${text}</textarea>
-    </div>`;
-    // cn += `<div class="po1" id="p1o1">
-    // text
-    // </div>`;
-    cn += `<button class="btn" onclick="toggleCEEditor()"><i class="icons btn-icon">&#xe08f;</i>Close</button><br>
-           <button class="btn" onclick="saveCE('${name}')"><i class="icons btn-icon">&#xe390;</i>Save</button><br>`;
-
-    d.getElementById('kceEditor').innerHTML = cn;
-  })
-  .catch(function (error) {
-    showToast(error, true);
-    console.log(error);
-    presetError(false);
-  })
-  .finally(() => {
-    // if (callback) setTimeout(callback,99);
-  });
-
-}
-
 function populateSegments(s)
 {
   var cn = "";
@@ -687,7 +643,7 @@ function populateSegments(s)
 
         // WLEDSR Custom Effects
         if (inst.fx == 187)
-        cn += `<button class="btn" onclick="toggleCEEditor('${inst.n?inst.n:"default"}')">Custom Effect Editor</button><br>  
+        cn += `<button class="btn" onclick="toggleCEEditor('${inst.n?inst.n:"default"}', ${i})">Custom Effect Editor</button><br>  
           </div>
           </div><br>`;
       else 
@@ -1484,11 +1440,11 @@ function toggleNodes() {
 }
 
 // WLEDSR Custom Effects
-function toggleCEEditor(name) {
+function toggleCEEditor(name, segID) {
   if (isInfo) toggleInfo();
   if (isNodes) toggleNodes();
   isCEEditor = !isCEEditor;
-  if (isCEEditor) populateCEEditor(name);
+  if (isCEEditor) populateCEEditor(name, segID);
   d.getElementById('ceEditor').style.transform = (isCEEditor) ? "translateY(0px)":"translateY(100%)";
 }
 
@@ -1949,8 +1905,132 @@ function saveP(i,pl) {
   resetPUtil();
 }
 
-function saveCE(name = "noname") {
-  showToast("Saving " + name + ".wled not implemented yet");
+// WLEDSR Custom Effects
+function fetchAndExecute(name, callback)
+{
+  var url = (loc?`http://${locip}`:'.') + "/" + name;
+
+  fetch
+  (url, {
+    method: 'get'
+  })
+  .then(res => {
+    if (!res.ok) {
+       showToast("File " + name + " not found");
+       return "";
+    }
+    return res.text();
+  })
+  .then(text => {
+    callback(text);
+  })
+  .catch(function (error) {
+    showToast(error, true);
+    console.log(error);
+    presetError(false);
+  })
+  .finally(() => {
+    // if (callback) setTimeout(callback,99);
+  });
+}
+
+// WLEDSR Custom Effects
+function populateCEEditor(name, segID)
+{
+
+  fetchAndExecute(name + ".wled", function(text) 
+  { 
+    fetchAndExecute(name + ".wled.log", function(logtext) 
+    { 
+      var cn="";
+
+      cn +=  `<table class="infot"><tr><td>
+              Custom Effects Editor<br>
+              <i>${name}.wled</i><br>
+              <textarea class="ceTextarea" id="ceProgramArea">${text}</textarea>
+              </td></tr></table>
+              <button class="btn infobtn" onclick="toggleCEEditor()">Close</button>
+              <button class="btn infobtn" onclick="saveCE('${name}.wled', ${segID})">Save</button><br>
+              <button class="btn infobtn" onclick="downloadCEFile('wled.json')">Download wled.json</button>
+              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button><br>
+              <button class="btn infobtn" onclick="loadCEExample('${name}')">Load example</button><br>
+              <a href="https://github.com/MoonModules/WLED-Effects/tree/master/CustomEffects/wled" target="_blank">Custom Effects Library</a><br>
+              <a href="https://github.com/atuline/WLED/wiki/WLED-Custom-effects" target="_blank">Custom Effects Help</a><br>
+              <br><i>Log</i><br>
+              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea>`;
+
+      d.getElementById('kceEditor').innerHTML = cn;
+    });
+  });
+}
+
+//WLEDSR Custom Effects
+function uploadFileWithText(name, text)
+{
+  var req = new XMLHttpRequest();
+  req.addEventListener('load', function(){showToast(this.responseText,this.status >= 400)});
+  req.addEventListener('error', function(e){showToast(e.stack,true);});
+  req.open("POST", "/upload");
+  var formData = new FormData();
+
+  var blob = new Blob([text], {type : 'application/text'});
+  var fileOfBlob = new File([blob], name);
+  formData.append("upload", fileOfBlob);
+
+  req.send(formData);
+}
+
+//WLEDSR Custom Effects
+function saveCE(name, segID) {
+  showToast("Saving " + name);
+
+  var ceProgramArea = d.getElementById("ceProgramArea");
+
+  uploadFileWithText("/" + name, ceProgramArea.value);
+
+  var obj = {"seg": {"id": segID, "reset": true}};
+  requestJson(obj);
+
+  setTimeout(() => 
+  { 
+      fetchAndExecute(name + ".log", function(logtext) 
+      { 
+        var ceLogArea = d.getElementById("ceLogArea");
+        ceLogArea.value = logtext;
+      });
+    }, 1000);
+}
+
+//WLEDSR Custom Effects
+function downloadCEFile(name) {
+  var url = "https://raw.githubusercontent.com/MoonModules/WLED-Effects/master/CustomEffects/wled/" + name;    
+
+  var request = new XMLHttpRequest();
+  request.onload = function() {
+    uploadFileWithText("/" + name, request.response);
+    if (name != "wled.json") {
+      var ceProgramArea = d.getElementById("ceProgramArea");
+      ceProgramArea.value = request.response;
+    }
+  }
+  request.open("GET", url);
+  request.send();
+}
+
+//WLEDSR Custom Effects
+function loadCEExample(name) {
+  var ceProgramArea = d.getElementById("ceProgramArea");
+  ceProgramArea.value = `/*
+  Custom Effects Example
+*/
+program ${name}
+{
+  function renderFrame() 
+  {
+    leds[counter] = colorFromPalette(counter, counter)
+  }
+}`;
+
 }
 
 function testPl(i,bt) {

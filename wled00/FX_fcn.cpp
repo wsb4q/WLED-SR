@@ -722,6 +722,10 @@ void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping,
   _segment_runtimes[n].reset();
 }
 
+  void WS2812FX::setReset(uint8_t n) {
+    _segment_runtimes[n].reset();
+  }
+
 void WS2812FX::resetSegments() {
   for (uint8_t i = 0; i < MAX_NUM_SEGMENTS; i++) if (_segments[i].name) delete _segments[i].name;
   mainSegment = 0;

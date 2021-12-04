@@ -686,6 +686,14 @@ input[type=number], input[type=text] {
 					appearance: textfield;
 }
 
+/* WLEDSR Custom Effects */
+.ceTextarea {
+	width: 90%;
+	height: 300px;
+	resize: none;
+	white-space: pre;
+}
+
 textarea {
 	background: var(--c-2);
 	color: var(--c-f);
@@ -696,14 +704,6 @@ textarea {
 	outline: none;
 	resize: none;
 	font-size: 19px;
-}
-
-/* WLEDSR Custom Effects */
-.cetextarea {
-	width: 250px;
-	height: 300px;
-	resize: none;
-	white-space: pre;
 }
 
 ::selection {

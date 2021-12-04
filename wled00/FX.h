@@ -830,6 +830,7 @@ class WS2812FX {
       setTransitionMode(bool t),
       calcGammaTable(float),
       trigger(void),
+      setReset(uint8_t n),
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
       resetSegments(),
       makeAutoSegments(),

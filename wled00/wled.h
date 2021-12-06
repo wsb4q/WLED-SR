@@ -243,9 +243,9 @@ WLED_GLOBAL int8_t audioPin _INIT(36);
 WLED_GLOBAL int8_t audioPin _INIT(AUDIOPIN);
 #endif
 #ifndef DMENABLED // aka DOUT
-WLED_GLOBAL uint8_t dmEnabled _INIT(0);
+WLED_GLOBAL uint8_t dmType _INIT(0);
 #else
-WLED_GLOBAL uint8_t dmEnabled _INIT(DMENABLED);
+WLED_GLOBAL uint8_t dmType _INIT(DMENABLED);
 #endif
 #ifndef I2S_SDPIN // aka DOUT
 WLED_GLOBAL int8_t i2ssdPin _INIT(32);

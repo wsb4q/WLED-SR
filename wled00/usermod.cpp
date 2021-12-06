@@ -21,7 +21,7 @@ void userSetup() {
   periph_module_reset(PERIPH_I2S0_MODULE);
 
   delay(100);         // Give that poor microphone some time to setup.
-  switch (dmEnabled) {
+  switch (dmType) {
     case 1:
       Serial.println("Attempting to configure generic I2S Microphone.");
       audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);

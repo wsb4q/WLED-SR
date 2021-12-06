@@ -231,7 +231,7 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   // }
 
   JsonObject hw_dmic = hw[F("digitalmic")]; // digital mic JsonObject
-  CJSON(dmEnabled, hw_dmic["en"]);
+  CJSON(dmType, hw_dmic["en"]);
 
   JsonObject hw_dmic_pins = hw_dmic["pins"]; // digital mic pins JsonObject
 
@@ -683,7 +683,7 @@ void serializeConfig() {
   hw_amic["pin"] = audioPin;
 
   JsonObject hw_dmic = hw.createNestedObject("digitalmic");
-  hw_dmic["en"] = dmEnabled;
+  hw_dmic["en"] = dmType;
 
   JsonObject hw_dmic_pins = hw_dmic.createNestedObject("pins");
   hw_dmic_pins[F("i2ssd")] = i2ssdPin;

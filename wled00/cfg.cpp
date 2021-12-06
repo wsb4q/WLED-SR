@@ -222,38 +222,41 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   // Sound Reactive Pin Config
   JsonObject analogmic = hw[F("analogmic")]; // analog mic JsonObject
 
-  int hw_amic_pin = analogmic[F("pin")];
-  if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
-    audioPin = hw_amic_pin;
-  } else {
-    audioPin = audioPin;
-  }
+  // int hw_amic_pin = analogmic[F("pin")];
+  CJSON(audioPin, analogmic[F("pin")]);
+  // if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
+  //   audioPin = hw_amic_pin;
+  // } else {
+  //   audioPin = audioPin;
+  // }
 
   JsonObject hw_dmic = hw[F("digitalmic")]; // digital mic JsonObject
   CJSON(dmEnabled, hw_dmic["en"]);
 
   JsonObject hw_dmic_pins = hw_dmic["pins"]; // digital mic pins JsonObject
 
-  int hw_i2ssd_pin = hw_dmic_pins[F("i2ssd")];
-  if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
-    i2ssdPin = hw_i2ssd_pin;
-  } else {
-    i2ssdPin = i2ssdPin;
-  }
+  CJSON(i2ssdPin, hw_dmic_pins[F("i2ssd")]);
+  // int hw_i2ssd_pin = hw_dmic_pins[F("i2ssd")];
+  // if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
+  //   i2ssdPin = hw_i2ssd_pin;
+  // } else {
+  //   i2ssdPin = i2ssdPin;
+  // }
+  CJSON(i2swsPin, hw_dmic_pins[F("i2sws")]);
+  // int hw_i2sws_pin = hw_dmic_pins[F("i2sws")];
+  // if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
+  //   i2swsPin = hw_i2sws_pin;
+  // } else {
+  //   i2swsPin = i2swsPin;
+  // }
 
-  int hw_i2sws_pin = hw_dmic_pins[F("i2sws")];
-  if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
-    i2swsPin = hw_i2sws_pin;
-  } else {
-    i2swsPin = i2swsPin;
-  }
-
-  int hw_i2sck_pin = hw_dmic_pins[F("i2sck")];
-  if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
-    i2sckPin = hw_i2sck_pin;
-  } else {
-    i2sckPin = i2sckPin;
-  }
+  CJSON(i2sckPin, hw_dmic_pins[F("i2sck")]);
+  // int hw_i2sck_pin = hw_dmic_pins[F("i2sck")];
+  // if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
+  //   i2sckPin = hw_i2sck_pin;
+  // } else {
+  //   i2sckPin = i2sckPin;
+  // }
 
   //int hw_status_pin = hw[F("status")]["pin"]; // -1
 

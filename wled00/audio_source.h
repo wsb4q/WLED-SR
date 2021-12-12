@@ -68,7 +68,7 @@ public:
 
 protected:
     // Private constructor, to make sure it is not callable except from derived classes
-    AudioSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) : _sampleRate(sampleRate), _blockSize(blockSize), _sampleNoDCOffset(0), _dcOffset(0.0f), _shift(lshift), _mask(mask) {};
+    AudioSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) : _sampleRate(sampleRate), _blockSize(blockSize), _sampleNoDCOffset(0), _dcOffset(0.0f), _shift(lshift), _mask(mask), _initialized(false) {};
 
     int _sampleRate;                /* Microphone sampling rate */
     int _blockSize;                 /* I2S block size */
@@ -76,7 +76,7 @@ protected:
     float _dcOffset;                /* Rolling average DC offset */
     uint16_t _shift;                /* Shift obtained samples to the right by this amount */
     uint32_t _mask;                 /* Bitmask for sample data after shifting */
-
+    bool _initialized;              /* Gets set to true if initialization is successful */
 };
 
 /* Basic I2S microphone source
@@ -106,59 +106,72 @@ public:
     };
 
 
+
+
     virtual void initialize() {
+
+        if (!pinManager.allocatePin(i2sckPin, true, PinOwner::DigitalMic) ||
+            !pinManager.allocatePin(i2swsPin, true, PinOwner::DigitalMic) ||
+            !pinManager.allocatePin(i2ssdPin, true, PinOwner::DigitalMic)) {
+                return;
+            }
 
         esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
         if (err != ESP_OK) {
             Serial.printf("Failed to install i2s driver: %d\n", err);
-            while (true);
+            return;
         }
 
         err = i2s_set_pin(I2S_NUM_0, &_pinConfig);
         if (err != ESP_OK) {
             Serial.printf("Failed to set i2s pin config: %d\n", err);
-            while (true);
+            return;
         }
+
+        _initialized = true;
     }
 
     virtual void deinitialize() {
+        _initialized = false;
         esp_err_t err = i2s_driver_uninstall(I2S_NUM_0);
         if (err != ESP_OK) {
             Serial.printf("Failed to uninstall i2s driver: %d\n", err);
-            while (true);
+            return;
         }
     }
 
     virtual void getSamples(double *buffer, uint16_t num_samples) {
-        esp_err_t err;
-        size_t bytes_read = 0;        /* Counter variable to check if we actually got enough data */
-        int32_t samples[num_samples]; /* Intermediary sample storage */
+        if(_initialized) {
+            esp_err_t err;
+            size_t bytes_read = 0;        /* Counter variable to check if we actually got enough data */
+            int32_t samples[num_samples]; /* Intermediary sample storage */
 
-        // Reset dc offset
-        _dcOffset = 0.0f;
+            // Reset dc offset
+            _dcOffset = 0.0f;
 
-        err = i2s_read(I2S_NUM_0, (void *)samples, sizeof(samples), &bytes_read, portMAX_DELAY);
-        if ((err != ESP_OK)){
-            Serial.printf("Failed to get samples: %d\n", err);
-            while(true);
+            err = i2s_read(I2S_NUM_0, (void *)samples, sizeof(samples), &bytes_read, portMAX_DELAY);
+            if ((err != ESP_OK)){
+                Serial.printf("Failed to get samples: %d\n", err);
+                return;
+            }
+
+            // For correct operation, we need to read exactly sizeof(samples) bytes from i2s
+            if(bytes_read != sizeof(samples)) {
+                Serial.printf("Failed to get enough samples: wanted: %d read: %d\n", sizeof(samples), bytes_read);
+                return;
+            }
+
+            // Store samples in sample buffer and update DC offset
+            for (int i = 0; i < num_samples; i++) {
+                // From the old code.
+                double sample = (double)abs((samples[i] >> _shift));
+                buffer[i] = sample;
+                _dcOffset = ((_dcOffset * 31) + sample) / 32;
+            }
+
+            // Update no-DC sample
+            _sampleNoDCOffset = abs(buffer[num_samples - 1] - _dcOffset);
         }
-
-        // For correct operation, we need to read exactly sizeof(samples) bytes from i2s
-        if(bytes_read != sizeof(samples)) {
-            Serial.printf("Failed to get enough samples: wanted: %d read: %d\n", sizeof(samples), bytes_read);
-            return;
-        }
-
-        // Store samples in sample buffer and update DC offset
-        for (int i = 0; i < num_samples; i++) {
-            // From the old code.
-            double sample = (double)abs((samples[i] >> _shift));
-            buffer[i] = sample;
-            _dcOffset = ((_dcOffset * 31) + sample) / 32;
-        }
-
-        // Update no-DC sample
-        _sampleNoDCOffset = abs(buffer[num_samples - 1] - _dcOffset);
     }
 
     virtual int getSampleWithoutDCOffset() {
@@ -182,7 +195,9 @@ public:
 
     virtual void initialize() {
         // Reserve the master clock pin
-        pinManager.allocatePin(mclkPin, true, PinOwner::DigitalMic);
+        if(!pinManager.allocatePin(mclkPin, true, PinOwner::DigitalMic)) {
+            return;
+        }
         _routeMclk();
         I2SSource::initialize();
 
@@ -248,8 +263,10 @@ public:
     };
     void initialize() {
         // Reserve SDA and SCL pins of the I2C interface
-        pinManager.allocatePin(pin_ES7243_SDA, true, PinOwner::DigitalMic);
-        pinManager.allocatePin(pin_ES7243_SCL, true, PinOwner::DigitalMic);
+        if (!pinManager.allocatePin(pin_ES7243_SDA, true, PinOwner::DigitalMic) ||
+            !pinManager.allocatePin(pin_ES7243_SCL, true, PinOwner::DigitalMic)) {
+                return;
+            }
 
         // First route mclk, then configure ADC over I2C, then configure I2S
         _es7243InitAdc();
@@ -286,11 +303,15 @@ public:
     }
 
     void initialize() {
+
+        if(!pinManager.allocatePin(audioPin, false, PinOwner::AnalogMic)) {
+            return;
+        }
         // Determine Analog channel. Only Channels on ADC1 are supported
         int8_t channel = digitalPinToAnalogChannel(audioPin);
         if (channel > 9) {
             Serial.printf("Incompatible GPIO used for audio in: %d\n", audioPin);
-            while (true);
+            return;
         } else {
             adc_gpio_init(ADC_UNIT_1, adc_channel_t(channel));
         }
@@ -299,35 +320,44 @@ public:
         esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
         if (err != ESP_OK) {
             Serial.printf("Failed to install i2s driver: %d\n", err);
-            while (true);
+            return;
         }
 
         // Enable I2S mode of ADC
         err = i2s_set_adc_mode(ADC_UNIT_1, adc1_channel_t(channel));
         if (err != ESP_OK) {
             Serial.printf("Failed to set i2s adc mode: %d\n", err);
-            while (true);
+            return;
         }
+
+        _initialized = true;
     }
 
     void getSamples(double *buffer, uint16_t num_samples) {
 
-        /* Enable ADC. This has to be enabled and disabled directly before and
-           after sampling, otherwise Wifi dies
-        */
-        esp_err_t err = i2s_adc_enable(I2S_NUM_0);
-        if (err != ESP_OK) {
-            Serial.printf("Failed to enable i2s adc: %d\n", err);
-            while (true);
-        }
+    /* Enable ADC. This has to be enabled and disabled directly before and
+    after sampling, otherwise Wifi dies
+    */
+        if (_initialized) {
+            esp_err_t err = i2s_adc_enable(I2S_NUM_0);
+            if (err != ESP_OK) {
+                Serial.printf("Failed to enable i2s adc: %d\n", err);
+                return;
+            }
 
-        I2SSource::getSamples(buffer, num_samples);
+            I2SSource::getSamples(buffer, num_samples);
 
-        err = i2s_adc_disable(I2S_NUM_0);
-        if (err != ESP_OK) {
-            Serial.printf("Failed to disable i2s adc: %d\n", err);
-            while (true);
+            err = i2s_adc_disable(I2S_NUM_0);
+            if (err != ESP_OK) {
+                Serial.printf("Failed to disable i2s adc: %d\n", err);
+                return;
+            }
         }
+    }
+
+    void deinitialize() {
+        pinManager.deallocatePin(audioPin, PinOwner::AnalogMic);
+        I2SSource::deinitialize();
     }
 };
 

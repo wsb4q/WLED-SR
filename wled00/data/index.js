@@ -1951,13 +1951,15 @@ function populateCEEditor(name, segID)
               </td></tr></table>
               <button class="btn infobtn" onclick="toggleCEEditor()">Close</button>
               <button class="btn infobtn" onclick="saveCE('${name}.wled', ${segID})">Save</button><br>
+              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button>
+              <button class="btn infobtn" onclick="loadCETemplate('${name}')">Load template</button><br>
               <button class="btn infobtn" onclick="downloadCEFile('wled.json')">Download wled.json</button>
-              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button><br>
-              <button class="btn infobtn" onclick="loadCEExample('${name}')">Load example</button><br>
+              <button class="btn infobtn" onclick="downloadCEFile('presets.json')">Download presets.json</button><br>
               <a href="https://github.com/MoonModules/WLED-Effects/tree/master/CustomEffects/wled" target="_blank">Custom Effects Library</a><br>
               <a href="https://github.com/atuline/WLED/wiki/WLED-Custom-effects" target="_blank">Custom Effects Help</a><br>
-              <br><i>Log</i><br>
-              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea>`;
+              <br><i>Compile Log</i><br>
+              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea><br>
+              <i>Run log (including errors and print commands) is send to Serial Ouput.</i>`;
 
       d.getElementById('kceEditor').innerHTML = cn;
     });
@@ -2007,8 +2009,13 @@ function downloadCEFile(name) {
 
   var request = new XMLHttpRequest();
   request.onload = function() {
-    uploadFileWithText("/" + name, request.response);
-    if (name != "wled.json") {
+    if (name == "wled.json" || name == "presets.json") {
+        if (!confirm('Are you sure to download' + name + '?'))
+          return;
+        uploadFileWithText("/" + name, request.response);
+    }
+    else
+    {
       var ceProgramArea = d.getElementById("ceProgramArea");
       ceProgramArea.value = request.response;
     }
@@ -2018,10 +2025,10 @@ function downloadCEFile(name) {
 }
 
 //WLEDSR Custom Effects
-function loadCEExample(name) {
+function loadCETemplate(name) {
   var ceProgramArea = d.getElementById("ceProgramArea");
   ceProgramArea.value = `/*
-  Custom Effects Example
+  Custom Effects Template
 */
 program ${name}
 {

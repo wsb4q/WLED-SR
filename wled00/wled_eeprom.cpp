@@ -366,9 +366,9 @@ void loadSettingsFromEEPROM()
     audioSyncPort = EEPROM.read(EEP_AUDIO+1) + ((EEPROM.read(EEP_AUDIO+2) << 8) & 0xFF00);
     audioSyncEnabled = EEPROM.read(EEP_AUDIO + 3);
 
-    effectFFT1 = EEPROM.read(EEP_AUDIO+4);
-    effectFFT2 = EEPROM.read(EEP_AUDIO+5);
-    effectFFT3 = EEPROM.read(EEP_AUDIO+6);
+    effectCustom1 = EEPROM.read(EEP_AUDIO+4);
+    effectCustom2 = EEPROM.read(EEP_AUDIO+5);
+    effectCustom3 = EEPROM.read(EEP_AUDIO+6);
 
     strip.stripOrMatrixPanel = EEPROM.read(EEP_AUDIO+7);
     strip.matrixWidth = EEPROM.read(EEP_AUDIO+8) + ((EEPROM.read(EEP_AUDIO+9) << 8) & 0xFF00); //if (strip.matrixWidth == 0) strip.matrixWidth = ledCount;
@@ -392,9 +392,9 @@ void loadSettingsFromEEPROM()
 
 // FFT Slider Data Preset Protocol 5 bytes, 25 "slots"
 // RESERVE 3175-3299 for FFT Preset saves and future expansion
-// 3175:      FFT1
-// 3176:      FFT2
-// 3177:      FFT3
+// 3175:      Custom1
+// 3176:      Custom2
+// 3177:      Custom3
 // 3178-3179: ZEROs
 
 // End of Audio Reactive SEGMENT specific read settings
@@ -458,9 +458,9 @@ void deEEP() {
         segObj[F("sx")]  = EEPROM.read(i+11);
         segObj[F("ix")]  = EEPROM.read(i+16);
         segObj["pal"]    = EEPROM.read(i+17);
-        segObj[F("f1x")] = EEPROM.read(k);      // Read FFT Slider values from EEPROM for presets
-        segObj[F("f2x")] = EEPROM.read(k+1);    // Read FFT Slider values from EEPROM for presets
-        segObj[F("f3x")] = EEPROM.read(k+2);    // Read FFT Slider values from EEPROM for presets
+        segObj[F("c1x")] = EEPROM.read(k);      // Read FFT Slider values from EEPROM for presets
+        segObj[F("c2x")] = EEPROM.read(k+1);    // Read FFT Slider values from EEPROM for presets
+        segObj[F("c3x")] = EEPROM.read(k+2);    // Read FFT Slider values from EEPROM for presets
       } else {
         WS2812FX::Segment* seg = strip.getSegments();
         memcpy(seg, EEPROM.getDataPtr() +i+2, 240);

@@ -353,11 +353,11 @@ double WS2812FX::arti_get_external_variable(uint8_t variable, double par1, doubl
       case F_intensitySlider:
         return SEGMENT.intensity;
       case F_custom1Slider:
-        return SEGMENT.fft1;
+        return SEGMENT.custom1;
       case F_custom2Slider:
-        return SEGMENT.fft2;
+        return SEGMENT.custom2;
       case F_custom3Slider:
-        return SEGMENT.fft3;
+        return SEGMENT.custom3;
       case F_sampleAvg:
         return sampleAvg;
 

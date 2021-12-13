@@ -969,9 +969,9 @@ function updateUI()
   updateTrail(d.getElementById('sliderBri'));
   updateTrail(d.getElementById('sliderSpeed'));
   updateTrail(d.getElementById('sliderIntensity'));
-  updateTrail(d.getElementById('sliderFFT1'));
-  updateTrail(d.getElementById('sliderFFT2'));
-  updateTrail(d.getElementById('sliderFFT3'));
+  updateTrail(d.getElementById('sliderCustom1'));
+  updateTrail(d.getElementById('sliderCustom2'));
+  updateTrail(d.getElementById('sliderCustom3'));
   updateTrail(d.getElementById('sliderW'));
   if (isRgbw) d.getElementById('wwrap').style.display = "block";
 
@@ -1059,9 +1059,9 @@ function readState(s,command=false) {
 
   d.getElementById('sliderSpeed').value = i.sx;
   d.getElementById('sliderIntensity').value = i.ix;
-  d.getElementById('sliderFFT1').value  = i.f1x;
-  d.getElementById('sliderFFT2').value  = i.f2x;
-  d.getElementById('sliderFFT3').value  = i.f3x;
+  d.getElementById('sliderCustom1').value  = i.c1x;
+  d.getElementById('sliderCustom2').value  = i.c2x;
+  d.getElementById('sliderCustom3').value  = i.c3x;
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
@@ -1825,18 +1825,18 @@ function setLor(i) {
   requestJson(obj);
 }
 
-function setFFT1() {
-  var obj = {"seg": {"f1x": parseInt(d.getElementById('sliderFFT1').value)}};
+function setCustom1() {
+  var obj = {"seg": {"c1x": parseInt(d.getElementById('sliderCustom1').value)}};
   requestJson(obj);
 }
 
-function setFFT2() {
-  var obj = {"seg": {"f2x": parseInt(d.getElementById('sliderFFT2').value)}};
+function setCustom2() {
+  var obj = {"seg": {"c2x": parseInt(d.getElementById('sliderCustom2').value)}};
   requestJson(obj);
 }
 
-function setFFT3() {
-  var obj = {"seg": {"f3x": parseInt(d.getElementById('sliderFFT3').value)}};
+function setCustom3() {
+  var obj = {"seg": {"c3x": parseInt(d.getElementById('sliderCustom3').value)}};
   requestJson(obj);
 }
 
@@ -2363,9 +2363,9 @@ function unfocusSliders() {
   d.getElementById("sliderBri").blur();
   d.getElementById("sliderSpeed").blur();
   d.getElementById("sliderIntensity").blur();
-  d.getElementById("sliderFFT1").blur();
-  d.getElementById("sliderFFT2").blur();
-  d.getElementById("sliderFFT3").blur();
+  d.getElementById("sliderCustom1").blur();
+  d.getElementById("sliderCustom2").blur();
+  d.getElementById("sliderCustom3").blur();
 
 }
 

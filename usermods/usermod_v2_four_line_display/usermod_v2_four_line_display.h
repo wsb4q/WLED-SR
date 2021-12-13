@@ -88,9 +88,9 @@ typedef enum {
   FLD_LINE_BRIGHTNESS = 0,
   FLD_LINE_EFFECT_SPEED,
   FLD_LINE_EFFECT_INTENSITY,
-  FLD_LINE_EFFECT_FFT1, //WLEDSR
-  FLD_LINE_EFFECT_FFT2, //WLEDSR
-  FLD_LINE_EFFECT_FFT3, //WLEDSR
+  FLD_LINE_EFFECT_CUSTOM1, //WLEDSR
+  FLD_LINE_EFFECT_CUSTOM2, //WLEDSR
+  FLD_LINE_EFFECT_CUSTOM3, //WLEDSR
   FLD_LINE_MODE,
   FLD_LINE_PALETTE,
   FLD_LINE_PRESET, //WLEDSR
@@ -151,9 +151,9 @@ class FourLineDisplayUsermod : public Usermod {
     uint8_t knownBrightness = 0;
     uint8_t knownEffectSpeed = 0;
     uint8_t knownEffectIntensity = 0;
-    uint8_t knownEffectFFT1 = 0; //WLEDSR
-    uint8_t knownEffectFFT2 = 0; //WLEDSR
-    uint8_t knownEffectFFT3 = 0; //WLEDSR
+    uint8_t knownEffectCustom1 = 0; //WLEDSR
+    uint8_t knownEffectCustom2 = 0; //WLEDSR
+    uint8_t knownEffectCustom3 = 0; //WLEDSR
     uint8_t knownMode = 0;
     uint8_t knownPalette = 0;
     uint8_t knownMinute = 99;
@@ -372,12 +372,12 @@ class FourLineDisplayUsermod : public Usermod {
         return FLD_LINE_EFFECT_SPEED;
       else if (knownEffectIntensity != effectIntensity)
         return FLD_LINE_EFFECT_INTENSITY;
-      else if (knownEffectFFT1 != effectFFT1)
-        return FLD_LINE_EFFECT_FFT1;
-      else if (knownEffectFFT2 != effectFFT2)
-        return FLD_LINE_EFFECT_FFT2;
-      else if (knownEffectFFT3 != effectFFT3)
-        return FLD_LINE_EFFECT_FFT3;
+      else if (knownEffectCustom1 != effectCustom1)
+        return FLD_LINE_EFFECT_CUSTOM1;
+      else if (knownEffectCustom2 != effectCustom2)
+        return FLD_LINE_EFFECT_CUSTOM2;
+      else if (knownEffectCustom3 != effectCustom3)
+        return FLD_LINE_EFFECT_CUSTOM3;
       else if (knownMode != strip.getMode())
         return FLD_LINE_MODE;
       else if (knownPalette != strip.getSegment(0).palette)
@@ -450,15 +450,15 @@ class FourLineDisplayUsermod : public Usermod {
             lineType = FLD_LINE_EFFECT_INTENSITY;
             break;
           case FLD_LINE_EFFECT_INTENSITY:
-            lineType = FLD_LINE_EFFECT_FFT1; //WLEDSR
+            lineType = FLD_LINE_EFFECT_CUSTOM1; //WLEDSR
             break;
-          case FLD_LINE_EFFECT_FFT1:
-            lineType = FLD_LINE_EFFECT_FFT2; //WLEDSR
+          case FLD_LINE_EFFECT_CUSTOM1:
+            lineType = FLD_LINE_EFFECT_CUSTOM2; //WLEDSR
             break;
-          case FLD_LINE_EFFECT_FFT2:
-            lineType = FLD_LINE_EFFECT_FFT3; //WLEDSR
+          case FLD_LINE_EFFECT_CUSTOM2:
+            lineType = FLD_LINE_EFFECT_CUSTOM3; //WLEDSR
             break;
-          case FLD_LINE_EFFECT_FFT3:
+          case FLD_LINE_EFFECT_CUSTOM3:
             lineType = FLD_LINE_PRESET;
             break;
           case FLD_LINE_PRESET:
@@ -479,12 +479,12 @@ class FourLineDisplayUsermod : public Usermod {
         if (lineType == FLD_LINE_EFFECT_SPEED && strlen_P(sliderNames[0]) == 0) //slidername empty
           lineType = FLD_LINE_EFFECT_INTENSITY;
         if (lineType == FLD_LINE_EFFECT_INTENSITY && strlen_P(sliderNames[1]) == 0)
-          lineType = FLD_LINE_EFFECT_FFT1;
-        if (lineType == FLD_LINE_EFFECT_FFT1 && strlen_P(sliderNames[2]) == 0)
-          lineType = FLD_LINE_EFFECT_FFT2;
-        if (lineType == FLD_LINE_EFFECT_FFT2 && strlen_P(sliderNames[3]) == 0)
-          lineType = FLD_LINE_EFFECT_FFT3;
-        if (lineType == FLD_LINE_EFFECT_FFT3 && strlen_P(sliderNames[4]) == 0)
+          lineType = FLD_LINE_EFFECT_CUSTOM1;
+        if (lineType == FLD_LINE_EFFECT_CUSTOM1 && strlen_P(sliderNames[2]) == 0)
+          lineType = FLD_LINE_EFFECT_CUSTOM2;
+        if (lineType == FLD_LINE_EFFECT_CUSTOM2 && strlen_P(sliderNames[3]) == 0)
+          lineType = FLD_LINE_EFFECT_CUSTOM3;
+        if (lineType == FLD_LINE_EFFECT_CUSTOM3 && strlen_P(sliderNames[4]) == 0)
           lineType = FLD_LINE_PRESET;
         if (lineType == FLD_LINE_PRESET && currentPreset == -1)
           lineType = FLD_LINE_SQUELCH;
@@ -516,9 +516,9 @@ class FourLineDisplayUsermod : public Usermod {
       knownPalette = strip.getSegment(0).palette;
       knownEffectSpeed = effectSpeed;
       knownEffectIntensity = effectIntensity;
-      knownEffectFFT1 = effectFFT1; //WLEDSR
-      knownEffectFFT2 = effectFFT2; //WLEDSR
-      knownEffectFFT3 = effectFFT3; //WLEDSR
+      knownEffectCustom1 = effectCustom1; //WLEDSR
+      knownEffectCustom2 = effectCustom2; //WLEDSR
+      knownEffectCustom3 = effectCustom3; //WLEDSR
       knownSquelch = soundSquelch;
       knownGain = sampleGain;
 
@@ -574,13 +574,13 @@ class FourLineDisplayUsermod : public Usermod {
         case FLD_LINE_EFFECT_INTENSITY:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 78, u8x8_font_open_iconic_thing_1x1); // kind of fire icon
           break;
-        case FLD_LINE_EFFECT_FFT1:
+        case FLD_LINE_EFFECT_CUSTOM1:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
           break;
-        case FLD_LINE_EFFECT_FFT2:
+        case FLD_LINE_EFFECT_CUSTOM2:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
           break;
-        case FLD_LINE_EFFECT_FFT3:
+        case FLD_LINE_EFFECT_CUSTOM3:
           drawGlyph(0, (clockMode?2:3)*lineHeight, 68, u8x8_font_open_iconic_weather_1x1); // star icon
           break;
         case FLD_LINE_PRESET:
@@ -618,16 +618,16 @@ class FourLineDisplayUsermod : public Usermod {
           sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[1], effectIntensity);
           drawString(1, line*lineHeight, lineBuffer);
           break;
-        case FLD_LINE_EFFECT_FFT1: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[2], effectFFT1);
+        case FLD_LINE_EFFECT_CUSTOM1: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[2], effectCustom1);
           drawString(1, line*lineHeight, lineBuffer);
           break;
-        case FLD_LINE_EFFECT_FFT2: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[3], effectFFT2);
+        case FLD_LINE_EFFECT_CUSTOM2: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[3], effectCustom2);
           drawString(1, line*lineHeight, lineBuffer);
           break;
-        case FLD_LINE_EFFECT_FFT3: //WLEDSR
-          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[4], effectFFT3);
+        case FLD_LINE_EFFECT_CUSTOM3: //WLEDSR
+          sprintf_P(lineBuffer, PSTR("%.11s %3d"), sliderNames[4], effectCustom3);
           drawString(1, line*lineHeight, lineBuffer);
           break;
         case FLD_LINE_PRESET:

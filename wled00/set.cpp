@@ -765,9 +765,9 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   byte prevEffect = effectCurrent;
   byte prevSpeed = effectSpeed;
   byte prevIntensity = effectIntensity;
-  byte prevFFT1 = effectFFT1;
-  byte prevFFT2 = effectFFT2;
-  byte prevFFT3 = effectFFT3;
+  byte prevCustom1 = effectCustom1;
+  byte prevCustom2 = effectCustom2;
+  byte prevCustom3 = effectCustom3;
   byte prevPalette = effectPalette;
 
   //set brightness
@@ -864,9 +864,9 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   if (updateVal(&req, "FX=", &effectCurrent, 0, strip.getModeCount()-1) && request != nullptr) unloadPlaylist();  //unload playlist if changing FX using web request
   updateVal(&req, "SX=", &effectSpeed);
   updateVal(&req, "IX=", &effectIntensity);
-  updateVal(&req, "F1=", &effectFFT1);
-  updateVal(&req, "F2=", &effectFFT2);
-  updateVal(&req, "F3=", &effectFFT3);
+  updateVal(&req, "C1=", &effectCustom1);
+  updateVal(&req, "C2=", &effectCustom2);
+  updateVal(&req, "C3=", &effectCustom3);
   updateVal(&req, "FP=", &effectPalette, 0, strip.getPaletteCount()-1);
 
   //set advanced overlay
@@ -1044,16 +1044,16 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
       seg.intensity = effectIntensity;
       effectChanged = true;
     }
-    if (effectFFT1 != prevFFT1) {
-      seg.fft1 = effectFFT1;
+    if (effectCustom1 != prevCustom1) {
+      seg.custom1 = effectCustom1;
       effectChanged = true;
     }
-    if (effectFFT2 != prevFFT2) {
-      seg.fft2 = effectFFT2;
+    if (effectCustom2 != prevCustom2) {
+      seg.custom2 = effectCustom2;
       effectChanged = true;
     }
-    if (effectFFT3 != prevFFT3) {
-      seg.fft3 = effectFFT3;
+    if (effectCustom3 != prevCustom3) {
+      seg.custom3 = effectCustom3;
       effectChanged = true;
     }
     if (effectPalette != prevPalette) {

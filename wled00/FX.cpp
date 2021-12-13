@@ -3455,7 +3455,7 @@ uint16_t WS2812FX::phased_base(uint8_t moder) {                  // We're making
   //float* phasePtr = reinterpret_cast<float*>(SEGENV.step);       // Phase change value gets calculated.
   static float phase = 0;//phasePtr[0];
   uint8_t cutOff = (255-SEGMENT.intensity);                      // You can change the number of pixels.  AKA INTENSITY (was 192).
-  uint8_t modVal = 5;//SEGMENT.fft1/8+1;                         // You can change the modulus. AKA FFT1 (was 5).
+  uint8_t modVal = 5;//SEGMENT.custom1/8+1;                         // You can change the modulus. AKA Custom1 (was 5).
 
   uint8_t index = now/64;                                    // Set color rotation speed
   phase += SEGMENT.speed/32.0;                                   // You can change the speed of the wave. AKA SPEED (was .4)
@@ -3494,7 +3494,7 @@ uint16_t WS2812FX::mode_twinkleup(void) {                 // A very short twinkl
   random16_set_seed(535);                                 // The randomizer needs to be re-set each time through the loop in order for the same 'random' numbers to be the same each time through.
 
   for (int i = 0; i<SEGLEN; i++) {
-    uint8_t pixBri = beatsin8(SEGMENT.speed/2+random8()/4,SEGMENT.fft1,255,0,random8());    // Every pixel gets a different timebase.
+    uint8_t pixBri = beatsin8(SEGMENT.speed/2+random8()/4,SEGMENT.custom1,255,0,random8());    // Every pixel gets a different timebase.
 
 /*
     if (i < SEGLEN/3) {                                 // You can use this to shape a 1D candle, where it's brightest at 1/3rd of SEGLEN and dull at both ends.
@@ -3551,15 +3551,15 @@ uint16_t WS2812FX::mode_noisepal(void) {                                    // S
 
 
 // Sine waves that have controllable phase change speed, frequency and cutoff. By Andrew Tuline.
-// SEGMENT.speed ->Speed, SEGMENT.intensity -> Frequency (SEGMENT.fft1 -> Color change, SEGMENT.fft2 -> PWM cutoff)
+// SEGMENT.speed ->Speed, SEGMENT.intensity -> Frequency (SEGMENT.custom1 -> Color change, SEGMENT.custom2 -> PWM cutoff)
 //
 uint16_t WS2812FX::mode_sinewave(void) {             // Adjustable sinewave. By Andrew Tuline
   //#define qsuba(x, b)  ((x>b)?x-b:0)               // Analog Unsigned subtraction macro. if result <0, then => 0
 
-  uint16_t colorIndex = now /32;//(256 - SEGMENT.fft1);  // Amount of colour change.
+  uint16_t colorIndex = now /32;//(256 - SEGMENT.custom1);  // Amount of colour change.
 
   SEGENV.step += SEGMENT.speed/16;                   // Speed of animation.
-  uint16_t freq = SEGMENT.intensity/4;//SEGMENT.fft2/8;                       // Frequency of the signal.
+  uint16_t freq = SEGMENT.intensity/4;//SEGMENT.custom2/8;                       // Frequency of the signal.
 
   for (int i=0; i<SEGLEN; i++) {                   // For each of the LED's in the strand, set a brightness based on a wave as follows:
     int pixBri = cubicwave8((i*freq)+SEGENV.step);//qsuba(cubicwave8((i*freq)+SEGENV.step), (255-SEGMENT.intensity)); // qsub sets a minimum value called thiscutoff. If < thiscutoff, then bright = 0. Otherwise, bright = 128 (as defined in qsub)..
@@ -4169,7 +4169,7 @@ void WS2812FX::setPixels(CRGB* leds) { // ewowi20210703: use realPixelIndex (rot
 
 uint16_t WS2812FX::mode_perlinmove(void) {
 
-  fade_out(255-SEGMENT.fft1);
+  fade_out(255-SEGMENT.custom1);
   for (int i=0; i<SEGMENT.intensity/16+1; i++) {
     uint16_t locn = inoise16(millis()*128/(260-SEGMENT.speed)+i*15000, millis()*128/(260-SEGMENT.speed));   // Get a new pixel location from moving noise.
     uint16_t pixloc = map(locn,50*256,192*256,0,SEGLEN)%(SEGLEN);                       // Map that to the length of the strand, and ensure we don't go over.
@@ -4188,8 +4188,8 @@ uint16_t WS2812FX::mode_wavesins(void) {                          // Uses beatsi
 
   for (int i = 0; i < SEGLEN; i++) {
     uint8_t bri = sin8(millis()/4+i* (int)SEGMENT.intensity);
-//    leds[i] = CHSV(beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), 255, bri);
-    leds[realPixelIndex(i)] = ColorFromPalette(currentPalette, beatsin8(SEGMENT.speed, SEGMENT.fft1, SEGMENT.fft1+SEGMENT.fft2, 0, i * SEGMENT.fft3), bri, LINEARBLEND);
+//    leds[i] = CHSV(beatsin8(SEGMENT.speed, SEGMENT.custom1, SEGMENT.custom1+SEGMENT.custom2, 0, i * SEGMENT.custom3), 255, bri);
+    leds[realPixelIndex(i)] = ColorFromPalette(currentPalette, beatsin8(SEGMENT.speed, SEGMENT.custom1, SEGMENT.custom1+SEGMENT.custom2, 0, i * SEGMENT.custom3), bri, LINEARBLEND);
   }
 
   setPixels(leds);
@@ -4390,10 +4390,10 @@ uint16_t WS2812FX::mode_2DBlackHole() {            // By: Stepko https://editor.
   fadeToBlackBy(leds, 32);
   double t = (float)(millis())/128;
   for (byte i = 0; i < 8; i++) {
-    leds[XY(beatsin8(SEGMENT.fft1/8, 0, SEGMENT.width - 1, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(10, 0, SEGMENT.height - 1, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
+    leds[XY(beatsin8(SEGMENT.custom1/8, 0, SEGMENT.width - 1, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(10, 0, SEGMENT.height - 1, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
   }
   for (byte i = 0; i < 8; i++) {
-    leds[XY(beatsin8(SEGMENT.fft2/8, SEGMENT.width/4, SEGMENT.width - 1-SEGMENT.width/4, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(SEGMENT.fft3/8, SEGMENT.height/4, SEGMENT.height - 1 - SEGMENT.height/4, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
+    leds[XY(beatsin8(SEGMENT.custom2/8, SEGMENT.width/4, SEGMENT.width - 1-SEGMENT.width/4, 0, ((i % 2) ? 128 : 0)+t*i), beatsin8(SEGMENT.custom3/8, SEGMENT.height/4, SEGMENT.height - 1 - SEGMENT.height/4, 0, ((i % 2) ? 192 : 64)+t*i))] += CHSV(i*32, 255, 255);
   }
   leds[XY(SEGMENT.width/2,SEGMENT.height/2)]=CHSV(0,0,255);
   blur2d(leds, 16);
@@ -4797,9 +4797,9 @@ uint16_t WS2812FX::mode_2DHiphotic() {                        //  By: ldirko  ht
 // Sliders are:
 //
 // intensity = Maximum number of iterations per pixel.
-// FFT1 = Location of X centerpoint
-// FFT2 = Location of Y centerpoint
-// FFT3 = Size of the area (small value = smaller area)
+// Custom1 = Location of X centerpoint
+// Custom2 = Location of Y centerpoint
+// Custom3 = Size of the area (small value = smaller area)
 
 typedef struct Julia {              // We can't use the 'static' keyword for persistent variables, so we have to go the LONG route to support them.
   float xcen;
@@ -4821,15 +4821,15 @@ uint16_t WS2812FX::mode_2DJulia(void) {                           // An animated
     julias->ycen = 0.;
     julias->xymag = 1.0;
 
-    SEGMENT.fft1 = 128;             // Make sure the location widgets are centered to start. Too bad
-    SEGMENT.fft2 = 128;             // it doesn't show up on the UI.
-    SEGMENT.fft3 = 128;
+    SEGMENT.custom1 = 128;             // Make sure the location widgets are centered to start. Too bad
+    SEGMENT.custom2 = 128;             // it doesn't show up on the UI.
+    SEGMENT.custom3 = 128;
     SEGMENT.intensity = 24;
   }
 
-  julias->xcen = julias->xcen + (float)(SEGMENT.fft1 - 128)/100000.;
-  julias->ycen = julias->ycen + (float)(SEGMENT.fft2 - 128)/100000.;
-  julias->xymag = julias->xymag + (float)(SEGMENT.fft3-128)/100000.;
+  julias->xcen = julias->xcen + (float)(SEGMENT.custom1 - 128)/100000.;
+  julias->ycen = julias->ycen + (float)(SEGMENT.custom2 - 128)/100000.;
+  julias->xymag = julias->xymag + (float)(SEGMENT.custom3-128)/100000.;
   if (julias->xymag < 0.01) julias->xymag = 0.01;
   if (julias->xymag > 1.0) julias->xymag = 1.0;
 
@@ -4944,12 +4944,12 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
 
   if (SEGENV.call == 0) fill_solid(leds, 0);
 
-  int fade = map(SEGMENT.fft1, 0, 255, 50, 250);    // equals trail size
+  int fade = map(SEGMENT.custom1, 0, 255, 50, 250);    // equals trail size
   int speed = (256-SEGMENT.speed) >> map(MIN(SEGMENT.height, 150), 0, 150, 0, 3);    // slower speeds for small displays
 
   if (millis() - SEGENV.step >= speed) {
     SEGENV.step = millis();
-//    if (SEGMENT.fft3 < 128) {									            // check for orientation, slider in first quarter, default orientation
+//    if (SEGMENT.custom3 < 128) {									            // check for orientation, slider in first quarter, default orientation
     	for (int16_t row=SEGMENT.height-1; row>=0; row--) {
     		for (int16_t col=0; col<SEGMENT.width; col++) {
     			if (leds[XY(col, row)] == CRGB(175,255,175)) {
@@ -4975,7 +4975,7 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     }
 
     // spawn new falling code
-//    if (SEGMENT.fft3 <=255) {
+//    if (SEGMENT.custom3 <=255) {
         if (random8() < SEGMENT.intensity || emptyScreen) {
     	    uint8_t spawnX = random8(SEGMENT.width);
       	  leds[XY(spawnX, 0)] = CRGB(175,255,175 );
@@ -5119,9 +5119,9 @@ uint16_t WS2812FX::mode_2DPolarLights() {            // By: Kostyantyn Matviyevs
 
   static unsigned long timer;        // Cannot be uint16_t value (aka aux0)
 
-  if (SEGENV.aux1 != SEGMENT.fft1/12) {   // Hacky palette rotation. We need that black.
+  if (SEGENV.aux1 != SEGMENT.custom1/12) {   // Hacky palette rotation. We need that black.
 
-    SEGENV.aux1 = SEGMENT.fft1;
+    SEGENV.aux1 = SEGMENT.custom1;
     for (int i = 0; i < 16; i++) {
       long ilk;
       ilk = (long)currentPalette[i].r << 16;
@@ -5202,13 +5202,13 @@ uint16_t WS2812FX::mode_2DSindots() {                             // By: ldirko 
 
 uint16_t WS2812FX::mode_2Dsquaredswirl(void) {            // By: Mark Kriegsman. https://gist.github.com/kriegsman/368b316c55221134b160
                                                           // Modifed by: Andrew Tuline
-                                                          // fft3 affects the blur amount.
+                                                          // custom3 affects the blur amount.
 
   const uint8_t kBorderWidth = 2;
 
   fadeToBlackBy(leds, 24);
   // uint8_t blurAmount = dim8_raw( beatsin8(20,64,128) );  //3,64,192
-  uint8_t blurAmount = SEGMENT.fft3;
+  uint8_t blurAmount = SEGMENT.custom3;
   blur2d(leds, blurAmount);
 
   // Use two out-of-sync sine waves
@@ -5290,7 +5290,7 @@ uint16_t WS2812FX::mode_2DSwirl(void) {             // By: Mark Kriegsman https:
 
   const uint8_t borderWidth = 2;
 
-  blur2d( leds, SEGMENT.fft1);
+  blur2d( leds, SEGMENT.custom1);
 
   uint8_t  i = beatsin8( 27*SEGMENT.speed/255, borderWidth, SEGMENT.height - borderWidth);
   uint8_t  j = beatsin8( 41*SEGMENT.speed/255, borderWidth, SEGMENT.width - borderWidth);
@@ -5705,8 +5705,8 @@ uint16_t WS2812FX::mode_puddlepeak(void) {                // Puddlepeak. By Andr
   uint8_t fadeVal = map(SEGMENT.speed,0,255, 224, 255);
   uint16_t pos = random(SEGLEN);                          // Set a random starting position.
 
-  binNum = SEGMENT.fft2;                               // Select a bin.
-  maxVol = SEGMENT.fft3/2;                             // Our volume comparator.
+  binNum = SEGMENT.custom2;                               // Select a bin.
+  maxVol = SEGMENT.custom3/2;                             // Our volume comparator.
 
 
   fade_out(fadeVal);
@@ -5774,8 +5774,8 @@ uint16_t WS2812FX::mode_ripplepeak(void) {                // * Ripple peak. By A
   if (SEGENV.call == 0) SEGENV.aux0 = 255;
 
 
-  binNum = SEGMENT.fft2;                               // Select a bin.
-  maxVol = SEGMENT.fft3/2;                             // Our volume comparator.
+  binNum = SEGMENT.custom2;                               // Select a bin.
+  maxVol = SEGMENT.custom3/2;                             // Our volume comparator.
 
   fade_out(240);                                          // Lower frame rate means less effective fading than FastLED
   fade_out(240);
@@ -5964,7 +5964,7 @@ uint16_t WS2812FX::mode_freqmatrix(void) {                // Freqmatrix. By Andr
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
 
-    double sensitivity = mapf(SEGMENT.fft3, 1, 255, 1, 10);
+    double sensitivity = mapf(SEGMENT.custom3, 1, 255, 1, 10);
     int pixVal = sampleAgc * SEGMENT.intensity / 256 * sensitivity;
     if (pixVal > 255) pixVal = 255;
 
@@ -5981,8 +5981,8 @@ uint16_t WS2812FX::mode_freqmatrix(void) {                // Freqmatrix. By Andr
     if (FFT_MajorPeak < 80) {
       color = CRGB::Black;
     } else {
-      int upperLimit = 20 * SEGMENT.fft2;
-      int lowerLimit = 2 * SEGMENT.fft1;
+      int upperLimit = 20 * SEGMENT.custom2;
+      int lowerLimit = 2 * SEGMENT.custom1;
       int i =  lowerLimit!=upperLimit?map(FFT_MajorPeak, lowerLimit, upperLimit, 0, 255):FFT_MajorPeak;
       uint16_t b = 255 * intensity;
       if (b > 255) b=255;
@@ -6040,9 +6040,9 @@ uint16_t WS2812FX::mode_freqpixels(void) {                // Freqpixel. By Andre
 // Assign a color to the central (starting pixels) based on the predominant frequencies and the volume. The color is being determined by mapping the MajorPeak from the FFT
 // and then mapping this to the HSV color circle. Currently we are sampling at 10240 Hz, so the highest frequency we can look at is 5120Hz.
 //
-// SEGMENT.fft1: the lower cut off point for the FFT. (many, most time the lowest values have very little information since they are FFT conversion artifacts. Suggested value is close to but above 0
-// SEGMENT.fft2: The high cut off point. This depends on your sound profile. Most music looks good when this slider is between 50% and 100%.
-// SEGMENT.fft3: "preamp" for the audio signal for audio10.
+// SEGMENT.custom1: the lower cut off point for the FFT. (many, most time the lowest values have very little information since they are FFT conversion artifacts. Suggested value is close to but above 0
+// SEGMENT.custom2: The high cut off point. This depends on your sound profile. Most music looks good when this slider is between 50% and 100%.
+// SEGMENT.custom3: "preamp" for the audio signal for audio10.
 //
 // I suggest that for this effect you turn the brightness to 95%-100% but again it depends on your soundprofile you find yourself in.
 // Instead of using colorpalettes, This effect works on the HSV color circle with red being the lowest frequency
@@ -6063,10 +6063,10 @@ uint16_t WS2812FX::mode_freqwave(void) {                  // Freqwave. By Andrea
   if(SEGENV.aux0 != secondHand) {
     SEGENV.aux0 = secondHand;
 
-    //uint8_t fade = SEGMENT.fft3;
+    //uint8_t fade = SEGMENT.custom3;
     //uint8_t fadeval;
 
-    double sensitivity = mapf(SEGMENT.fft3, 1, 255, 1, 10);
+    double sensitivity = mapf(SEGMENT.custom3, 1, 255, 1, 10);
     int pixVal = sampleAvg * SEGMENT.intensity / 256 * sensitivity;
     if (pixVal > 255) pixVal = 255;
 
@@ -6083,8 +6083,8 @@ uint16_t WS2812FX::mode_freqwave(void) {                  // Freqwave. By Andrea
     if (FFT_MajorPeak < 80) {
       color = CRGB::Black;
     } else {
-      int upperLimit = 20 * SEGMENT.fft2;
-      int lowerLimit = 2 * SEGMENT.fft1;
+      int upperLimit = 20 * SEGMENT.custom2;
+      int lowerLimit = 2 * SEGMENT.custom1;
       int i =  lowerLimit!=upperLimit?map(FFT_MajorPeak, lowerLimit, upperLimit, 0, 255):FFT_MajorPeak;
       uint16_t b = 255 * intensity;
       if (b > 255) b=255;
@@ -6219,8 +6219,8 @@ uint16_t WS2812FX::mode_waterfall(void) {                   // Waterfall. By: An
 
   if (SEGENV.call == 0) fill_solid(leds, 0);
 
-  binNum = SEGMENT.fft2;                               // Select a bin.
-  maxVol = SEGMENT.fft3/2;                             // Our volume comparator.
+  binNum = SEGMENT.custom2;                               // Select a bin.
+  maxVol = SEGMENT.custom3/2;                             // Our volume comparator.
 
   uint8_t secondHand = micros() / (256-SEGMENT.speed)/500 + 1 % 16;
 
@@ -6254,7 +6254,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
 
   fadeToBlackBy(leds, SEGMENT.speed);
 
-  int NUMB_BANDS = map(SEGMENT.fft1, 0, 255, 1, 16);
+  int NUMB_BANDS = map(SEGMENT.custom1, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);
   int bandInc = 1;
   if(barWidth == 0) {
@@ -6326,7 +6326,7 @@ uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Ma
 
 uint16_t WS2812FX::mode_2DFunkyPlank(void) {              // Written by ??? Adapted by Will Tatam.
 
-  int NUMB_BANDS = map(SEGMENT.fft1, 0, 255, 1, 16);
+  int NUMB_BANDS = map(SEGMENT.custom1, 0, 255, 1, 16);
   int barWidth = (SEGMENT.width / NUMB_BANDS);
   int bandInc = 1;
   if(barWidth == 0) {

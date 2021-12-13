@@ -240,9 +240,9 @@
 //    Start of Audio Reactive fork (WLEDSR)                                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define DEFAULT_FFT1       (uint8_t)128
-#define DEFAULT_FFT2       (uint8_t)128
-#define DEFAULT_FFT3       (uint8_t)128
+#define DEFAULT_Custom1       (uint8_t)128
+#define DEFAULT_Custom2       (uint8_t)128
+#define DEFAULT_Custom3       (uint8_t)128
 
 // bits 4-6: WLEDSR: used for rotation and reverse
 #define ROTATED2D     (uint8_t)0x10 //0x01, 0x02, 0x04, 0x08, 0x0F, 0x10, 0x20, 0x40, 0x80, 0xF0
@@ -339,9 +339,9 @@ class WS2812FX {
       uint16_t offset;  // WLEDSR: this is in latest AC
       uint8_t speed;
       uint8_t intensity;
-      uint8_t fft1;     // WLEDSR
-      uint8_t fft2;     // WLEDSR
-      uint8_t fft3;     // WLEDSR
+      uint8_t custom1;     // WLEDSR
+      uint8_t custom2;     // WLEDSR
+      uint8_t custom3;     // WLEDSR
       uint8_t palette;
       uint8_t mode;
       uint8_t options; //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
@@ -432,9 +432,9 @@ class WS2812FX {
         if (mode != b.mode)           d |= SEG_DIFFERS_FX;
         if (speed != b.speed)         d |= SEG_DIFFERS_FX;
         if (intensity != b.intensity) d |= SEG_DIFFERS_FX;
-        if (fft1 != b.fft1)           d |= SEG_DIFFERS_FX;
-        if (fft2 != b.fft2)           d |= SEG_DIFFERS_FX;
-        if (fft3 != b.fft3)           d |= SEG_DIFFERS_FX;
+        if (custom1 != b.custom1)           d |= SEG_DIFFERS_FX;
+        if (custom2 != b.custom2)           d |= SEG_DIFFERS_FX;
+        if (custom3 != b.custom3)           d |= SEG_DIFFERS_FX;
         if (palette != b.palette)     d |= SEG_DIFFERS_FX;
 
         if ((options & 0b00101111) != (b.options & 0b00101111)) d |= SEG_DIFFERS_OPT;
@@ -1215,8 +1215,8 @@ class WS2812FX {
     uint8_t _segment_index_palette_last = 99;
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 27 bytes per element
       //WLEDSR: add f1,2,3
-      // start, stop, offset, speed, intensity, fft1, fft2, fft3, palette, mode, options, grouping, spacing, opacity (unused), color[]
-      {0, 7, 0, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_FFT1, DEFAULT_FFT2, DEFAULT_FFT3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
+      // start, stop, offset, speed, intensity, custom1, custom2, custom3, palette, mode, options, grouping, spacing, opacity (unused), color[]
+      {0, 7, 0, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_Custom1, DEFAULT_Custom2, DEFAULT_Custom3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 28 bytes per element
     friend class Segment_runtime;

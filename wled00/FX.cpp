@@ -4951,12 +4951,12 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
   CRGB trailColor;
 
   if (SEGMENT.custom2 > 128) {
-    spawnColor = SEGCOLOR(0);// ColorFromPalette(currentPalette, millis()/100, 255, LINEARBLEND);
-    trailColor = SEGCOLOR(1); ColorFromPalette(currentPalette, millis()/100 + 128, 255, LINEARBLEND);
+    spawnColor = SEGCOLOR(0);
+    trailColor = SEGCOLOR(1);
   }
   else {
-    spawnColor = CHSV(120,31.4,100);// CRGB(175,255,175);
-    trailColor = CHSV(127, 79.2, 51);// CRGB(27,130,39);
+    spawnColor = CRGB(175,255,175);
+    trailColor = CRGB(27,130,39);
   }
 
   if (millis() - SEGENV.step >= speed) {

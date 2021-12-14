@@ -1408,7 +1408,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Squared Swirl@,,,,Blur;,,;!",
 "2D Fire2012@Speed;;",
 "2D DNA@Scroll speed,Blur;;!",
-"2D Matrix@Falling speed,Spawning rate,Trail;;",
+"2D Matrix@Falling speed,Spawning rate,Trail,Custom color ☑;Spawn,Trail;",
 "2D Metaballs@;;",
 " ♫ Freqmap@Fade rate,Starting color;,!;!",
 " ♪ Gravcenter@Rate of fall,Sensitivity;,!;!",
@@ -1427,7 +1427,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Reserved for PoolNoise",
 "Reserved for Twister",
 "Reserved for Elementary",
-"2D Game Of Life@!,Palette toggle;!,!;!",
+"2D Game Of Life@!,Palette ☑;!,!;!",
 "2D Tartan@X scale,Y scale;;!",
 "2D Polar Lights@Speed,X scale,Palette;;",
 " ♪ 2D Swirl@!,Sensitivity,Blur;,Bg Swirl;!",
@@ -1441,7 +1441,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "2D Black Hole@Outer X frequency,Inner X frequency,Inner Y frequency;;",
 "Wavesins@Speed,Brightness variation,Starting Color,Range of Colors,Color variation;;!",
 " ♫ Rocktaves@;,!;!",
-" ♫ 2D Akemi@Color speed,Dance toggle;Head palette,Arms & Legs,Eyes & Mouth;Face palette",
+" ♫ 2D Akemi@Color speed,Dance ☑;Head palette,Arms & Legs,Eyes & Mouth;Face palette",
 " ⚙️ Custom Effect@Speed,Intensity,Custom 1, Custom 2, Custom 3;!;!"
 ])=====";
 

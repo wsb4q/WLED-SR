@@ -4940,33 +4940,45 @@ uint16_t WS2812FX::mode_2DLissajous(void) {            // By: Andrew Tuline
 //    2D Matrix      //
 ///////////////////////
 
-uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy Williams. Adapted by Andrew Tuline & improved by merkisoft.
+uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy Williams. Adapted by Andrew Tuline & improved by merkisoft and ewowi.
 
   if (SEGENV.call == 0) fill_solid(leds, 0);
 
   int fade = map(SEGMENT.custom1, 0, 255, 50, 250);    // equals trail size
   int speed = (256-SEGMENT.speed) >> map(MIN(SEGMENT.height, 150), 0, 150, 0, 3);    // slower speeds for small displays
 
+  CRGB spawnColor;
+  CRGB trailColor;
+
+  if (SEGMENT.custom2 > 128) {
+    spawnColor = SEGCOLOR(0);// ColorFromPalette(currentPalette, millis()/100, 255, LINEARBLEND);
+    trailColor = SEGCOLOR(1); ColorFromPalette(currentPalette, millis()/100 + 128, 255, LINEARBLEND);
+  }
+  else {
+    spawnColor = CHSV(120,31.4,100);// CRGB(175,255,175);
+    trailColor = CHSV(127, 79.2, 51);// CRGB(27,130,39);
+  }
+
   if (millis() - SEGENV.step >= speed) {
     SEGENV.step = millis();
-//    if (SEGMENT.custom3 < 128) {									            // check for orientation, slider in first quarter, default orientation
+    // if (SEGMENT.custom3 < 128) {									            // check for orientation, slider in first quarter, default orientation
     	for (int16_t row=SEGMENT.height-1; row>=0; row--) {
     		for (int16_t col=0; col<SEGMENT.width; col++) {
-    			if (leds[XY(col, row)] == CRGB(175,255,175)) {
-    				leds[XY(col, row)] = CRGB(27,130,39);         // create trail
-    				if (row < SEGMENT.height-1) leds[XY(col, row+1)] = CRGB(175,255,175);
+    			if (leds[XY(col, row)] == spawnColor) {
+    				leds[XY(col, row)] = trailColor;         // create trail
+    				if (row < SEGMENT.height-1) leds[XY(col, row+1)] = spawnColor;
     			}
     		}
     	}
 
     // fade all leds
-    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
-      if (leds[XY(x,y)].g != 255) leds[XY(x,y)].nscale8(fade);         // only fade trail
+    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) {
+      if (leds[XY(x,y)] != spawnColor) leds[XY(x,y)].nscale8(fade);         // only fade trail
     }
 
     // check for empty screen to ensure code spawn
     bool emptyScreen = true;
-    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) { // ewowi20210629: change to segment width/height
+    for (int x=0; x<SEGMENT.width; x++) for (int y=0; y<SEGMENT.height; y++) {
       if (leds[XY(x,y)])
       {
         emptyScreen = false;
@@ -4975,11 +4987,11 @@ uint16_t WS2812FX::mode_2Dmatrix(void) {                  // Matrix2D. By Jeremy
     }
 
     // spawn new falling code
-//    if (SEGMENT.custom3 <=255) {
-        if (random8() < SEGMENT.intensity || emptyScreen) {
-    	    uint8_t spawnX = random8(SEGMENT.width);
-      	  leds[XY(spawnX, 0)] = CRGB(175,255,175 );
-    	}
+    // if (SEGMENT.custom3 <=255) {
+      if (random8() < SEGMENT.intensity || emptyScreen) {
+        uint8_t spawnX = random8(SEGMENT.width);
+    	  leds[XY(spawnX, 0)] = spawnColor;
+      }
 
     setPixels(leds);
   } // if millis

@@ -314,7 +314,7 @@
 #define FX_MODE_2DAKEMI                186
 #define FX_MODE_CUSTOMEFFECT           187 //WLEDSR Custom Effects
 
-#define doubleNull -32768 //WLEDSR Custom Effects
+#define floatNull -32768 //WLEDSR Custom Effects
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                       //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1141,9 +1141,9 @@ class WS2812FX {
       _skipFirstMode; //private? not in AC (anymore)
 
     //WLEDSR Custom Effects
-    double arti_external_function(uint8_t function, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull, double par4 = doubleNull, double par5 = doubleNull);
-    double arti_get_external_variable(uint8_t variable, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull);
-    void arti_set_external_variable(double value, uint8_t variable, double par1 = doubleNull, double par2 = doubleNull, double par3 = doubleNull);
+    float arti_external_function(uint8_t function, float par1 = floatNull, float par2 = floatNull, float par3 = floatNull, float par4 = floatNull, float par5 = floatNull);
+    float arti_get_external_variable(uint8_t variable, float par1 = floatNull, float par2 = floatNull, float par3 = floatNull);
+    void arti_set_external_variable(float value, uint8_t variable, float par1 = floatNull, float par2 = floatNull, float par3 = floatNull);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    End of Audio Reactive fork (WLEDSR)                                                                                                //

@@ -563,13 +563,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     t = request->hasArg(F("AGC"));
     if (t >=0) soundAgc = t;
 
-    // Analog mic pin
-    // int hw_amic_pin = request->arg(F("SI")).toInt();
-    // if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
-    //   audioPin = hw_amic_pin;
-    // } else {
-    //   audioPin = audioPin;
-    // }
+
     t = request->arg(F("SI")).toInt();
     if (t >= 0 && t <=39) audioPin = t;
 
@@ -583,7 +577,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
 
     // Digital Mic I2S SCK pin
     t = request->arg(F("CK")).toInt();
-    if (t >= 0 && t <=39) i2sckPin = t;
+    if (t >= -1 && t <=39) i2sckPin = t;
 
     // Digital mic mode
     uint8_t newDmType = request->arg(F("DMM")).toInt();
@@ -592,26 +586,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
       serveMessage(request, 200,F("Settings saved..."),F("Please reset the board for changes to take effect!"), 10);
       dmType = newDmType;
     }
-    // int hw_i2ssd_pin = request->arg(F("DI")).toInt();
-    // if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
-    //   i2ssdPin = hw_i2ssd_pin;
-    // } else {
-    //   i2ssdPin = i2ssdPin;
-    // }
-    // // Digital Mic I2S WS pin
-    // int hw_i2sws_pin = request->arg(F("LR")).toInt();
-    // if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
-    //   i2swsPin = hw_i2sws_pin;
-    // } else {
-    //   i2swsPin = i2swsPin;
-    // }
-    // // Digital Mic I2S SCK pin
-    // int hw_i2sck_pin = request->arg(F("CK")).toInt();
-    // if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
-    //   i2sckPin = hw_i2sck_pin;
-    // } else {
-    //   i2sckPin = i2sckPin;
-    // }
   }
 
   if (subPage != 2 && (subPage != 6 || !doReboot)) serializeConfig(); //do not save if factory reset or LED settings (which are saved after LED re-init)

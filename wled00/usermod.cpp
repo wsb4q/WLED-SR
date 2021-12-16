@@ -23,36 +23,34 @@ void userSetup() {
   delay(100);         // Give that poor microphone some time to setup.
   switch (dmType) {
     case 1:
-      Serial.println("Attempting to configure generic I2S Microphone.");
+      Serial.println("AS: Generic I2S Microphone.");
       audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
       break;
     case 2:
-      Serial.println("Attempting to configure ES7243 Microphone.");
+      Serial.println("AS: ES7243 Microphone.");
       audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
       break;
     case 3:
-      Serial.println("Attempting to configure SPH0645 Microphone");
+      Serial.println("AS: SPH0645 Microphone");
       audioSource = new SPH0654(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      break;
+    case 4:
+      Serial.println("AS: Generic I2S Microphone with Master Clock");
+      audioSource = new I2SSourceWithMasterClock(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
+      break;
+    case 5:
+      Serial.println("AS: I2S PDM Microphone");
+      audioSource = new I2SPdmSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
       break;
     case 0:
     default:
-      Serial.println("Attempting to configure analog Microphone.");
+      Serial.println("AS: Analog Microphone.");
       audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFF);
       break;
   }
-  // if (dmEnabled == 1) {
-  //   Serial.println("Attempting to configure digital Microphone.");
-  //   #ifdef USE_ES7243
-  //     // audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
-  //   #else
-  //     // audioSource = new I2SSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
-  //     audioSource = new ES7243(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFFFFFFF);
-  //   #endif
-  // } else {
-  //     Serial.println("Attempting to configure analog Microphone.");
-  //     audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, 16, 0xFFF);
-  // }
+
   delay(100);
+
   audioSource->initialize();
   delay(250);
 

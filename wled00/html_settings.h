@@ -194,12 +194,14 @@ type="checkbox" name="AGC"><br><h2>Sound Input Pin Manager</h2>Microphone type:
 <select id="dme" name="DMM" onchange="enDM()"><option value="0" 
 selected="selected">Generic Analog</option><option value="1">Generic I2S
 </option><option value="2">ES7243</option><option value="3">SPH0654</option>
-</select><br><div id="dm">I2S SD pin: <input type="number" min="-1" max="40" 
-name="DI"><br>I2S WS pin: <input type="number" min="-1" max="40" name="LR"><br>
-I2S SCK pin: <input type="number" min="-1" max="40" name="CK"><br></div><div 
-id="am">Analog Input pin: <input type="number" min="-1" max="40" name="SI"><br>
-</div><button type="button" onclick="B()">Back</button><button type="submit">
-Save</button></form></body></html>)=====";
+<option value="4">Generic I2S with Mclk</option><option value="5">
+Generic I2S PDM</option></select><br><div id="dm">I2S SD pin: <input 
+type="number" min="-1" max="40" name="DI"><br>I2S WS pin: <input type="number" 
+min="-1" max="40" name="LR"><br>I2S SCK pin: <input type="number" min="-1" 
+max="40" name="CK"><br></div><div id="am">Analog Input pin: <input 
+type="number" min="-1" max="40" name="SI"><br></div><button type="button" 
+onclick="B()">Back</button><button type="submit">Save</button></form></body>
+</html>)=====";
 
 
 #ifdef WLED_ENABLE_DMX

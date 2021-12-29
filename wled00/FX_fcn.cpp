@@ -236,7 +236,7 @@ uint16_t WS2812FX::realPixelIndex(uint16_t i) { // ewowi20210703: will not map t
 void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
 {
   if (SEGLEN) {//from segment
-    uint16_t realIndex = realPixelIndex(i);
+    uint16_t realIndex = realPixelIndex(i); // ewowi20210624: from segment index to logical index
     uint16_t len = SEGMENT.length();
 
     //color_blend(getpixel, col, _bri_t); (pseudocode for future blending of segments)
@@ -249,8 +249,6 @@ void WS2812FX::setPixelColor(uint16_t i, byte r, byte g, byte b, byte w)
     uint32_t col = RGBW32(r, g, b, w);
 
     /* Set all the pixels in the group */
-    uint16_t realIndex = realPixelIndex(i); // ewowi20210624: from segment index to logical index
-
     for (uint16_t j = 0; j < SEGMENT.grouping; j++) {
       uint16_t indexSet = realIndex + (IS_REVERSE ? -j : j);
       if (indexSet >= SEGMENT.start && indexSet < SEGMENT.stop) {

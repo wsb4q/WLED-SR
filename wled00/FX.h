@@ -161,16 +161,16 @@
 #define FX_MODE_COMET                   41
 #define FX_MODE_FIREWORKS               42
 #define FX_MODE_RAIN                    43
-#define FX_MODE_TETRIX                  44
+#define FX_MODE_TETRIX                  44  //was Merry Christmas prior to 0.12.0 (use "Chase 2" with Red/Green)
 #define FX_MODE_FIRE_FLICKER            45
 #define FX_MODE_GRADIENT                46
 #define FX_MODE_LOADING                 47
-#define FX_MODE_POLICE                  48
-#define FX_MODE_POLICE_ALL              49
+#define FX_MODE_POLICE                  48  // candidate for removal (after below three)
+#define FX_MODE_FAIRY                   49  //was Police All prior to 0.13.0-b6 (use "Two Dots" with Red/Blue and full intensity)
 #define FX_MODE_TWO_DOTS                50
-#define FX_MODE_TWO_AREAS               51
+#define FX_MODE_FAIRYTWINKLE            51  //was Two Areas prior to 0.13.0-b6 (use "Two Dots" with full intensity)
 #define FX_MODE_RUNNING_DUAL            52
-#define FX_MODE_HALLOWEEN               53
+#define FX_MODE_HALLOWEEN               53  // candidate for removal
 #define FX_MODE_TRICOLOR_CHASE          54
 #define FX_MODE_TRICOLOR_WIPE           55
 #define FX_MODE_TRICOLOR_FADE           56
@@ -231,7 +231,7 @@
 #define FX_MODE_CHUNCHUN               111
 #define FX_MODE_DANCING_SHADOWS        112
 #define FX_MODE_WASHING_MACHINE        113
-#define FX_MODE_CANDY_CANE             114
+#define FX_MODE_CANDY_CANE             114  // candidate for removal
 #define FX_MODE_BLENDS                 115
 #define FX_MODE_TV_SIMULATOR           116
 #define FX_MODE_DYNAMIC_SMOOTH         117
@@ -333,7 +333,7 @@ class WS2812FX {
     // FastLED array, so we can refer to leds[i] instead of getPixel() and setPixel()
     CRGB leds[MAX_LEDS+1];                          // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
 
-    typedef struct Segment { // 29 (32 in memory?) bytes
+    typedef struct Segment { // 30 (32 in memory?) bytes
       uint16_t start;
       uint16_t stop;    //segment invalid if stop == 0
       uint16_t offset;  // WLEDSR: this is in latest AC
@@ -344,10 +344,11 @@ class WS2812FX {
       uint8_t fft3;     // WLEDSR
       uint8_t palette;
       uint8_t mode;
-      uint8_t options; //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
+      uint8_t options;  //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
       uint8_t grouping, spacing;
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
+      uint8_t  cct;     //0==1900K, 255==10091K
       uint16_t width;   // WLEDSRewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
       uint16_t height;  // WLEDSR
       uint16_t startX;  // WLEDSR
@@ -359,8 +360,20 @@ class WS2812FX {
       bool setColor(uint8_t slot, uint32_t c, uint8_t segn) { //returns true if changed
         if (slot >= NUM_COLORS || segn >= MAX_NUM_SEGMENTS) return false;
         if (c == colors[slot]) return false;
-        ColorTransition::startTransition(opacity, colors[slot], instance->_transitionDur, segn, slot);
+        uint8_t b = (slot == 1) ? cct : opacity;
+        ColorTransition::startTransition(b, colors[slot], instance->_transitionDur, segn, slot);
         colors[slot] = c; return true;
+      }
+      void setCCT(uint16_t k, uint8_t segn) {
+        if (segn >= MAX_NUM_SEGMENTS) return;
+        if (k > 255) { //kelvin value, convert to 0-255
+          if (k < 1900)  k = 1900;
+          if (k > 10091) k = 10091;
+          k = (k - 1900) >> 5;
+        }
+        if (cct == k) return;
+        ColorTransition::startTransition(cct, colors[1], instance->_transitionDur, segn, 1);
+        cct = k;
       }
       void setOpacity(uint8_t o, uint8_t segn) {
         if (segn >= MAX_NUM_SEGMENTS) return;
@@ -368,10 +381,6 @@ class WS2812FX {
         ColorTransition::startTransition(opacity, colors[0], instance->_transitionDur, segn, 0);
         opacity = o;
       }
-      /*uint8_t actualOpacity() { //respects On/Off state
-        if (!getOption(SEG_OPTION_ON)) return 0;
-        return opacity;
-      }*/
       void setOption(uint8_t n, bool val, uint8_t segn = 255)
       {
         bool prevOn = false;
@@ -544,7 +553,7 @@ class WS2812FX {
         if (t.segment == s) //this is an active transition on the same segment+color
         {
           bool wasTurningOff = (oldBri == 0);
-          t.briOld = t.currentBri(wasTurningOff);
+          t.briOld = t.currentBri(wasTurningOff, slot);
           t.colorOld = t.currentColor(oldCol);
         } else {
           t.briOld = oldBri;
@@ -576,11 +585,15 @@ class WS2812FX {
       uint32_t currentColor(uint32_t colorNew) {
         return instance->color_blend(colorOld, colorNew, progress(true), true);
       }
-      uint8_t currentBri(bool turningOff = false) {
+      uint8_t currentBri(bool turningOff = false, uint8_t slot = 0) {
         uint8_t segn = segment & 0x3F;
         if (segn >= MAX_NUM_SEGMENTS) return 0;
         uint8_t briNew = instance->_segments[segn].opacity;
-        if (!instance->_segments[segn].getOption(SEG_OPTION_ON) || turningOff) briNew = 0;
+        if (slot == 0) {
+          if (!instance->_segments[segn].getOption(SEG_OPTION_ON) || turningOff) briNew = 0;
+        } else { //transition slot 1 brightness for CCT transition
+          briNew = instance->_segments[segn].cct;
+        }
         uint32_t prog = progress() + 1;
         return ((briNew * prog) + (briOld * (0x10000 - prog))) >> 16;
       }
@@ -636,9 +649,9 @@ class WS2812FX {
       _mode[FX_MODE_GRADIENT]                = &WS2812FX::mode_gradient;
       _mode[FX_MODE_LOADING]                 = &WS2812FX::mode_loading;
       _mode[FX_MODE_POLICE]                  = &WS2812FX::mode_police;
-      _mode[FX_MODE_POLICE_ALL]              = &WS2812FX::mode_police_all;
+      _mode[FX_MODE_FAIRY]                   = &WS2812FX::mode_fairy;
       _mode[FX_MODE_TWO_DOTS]                = &WS2812FX::mode_two_dots;
-      _mode[FX_MODE_TWO_AREAS]               = &WS2812FX::mode_two_areas;
+      _mode[FX_MODE_FAIRYTWINKLE]            = &WS2812FX::mode_fairytwinkle;
       _mode[FX_MODE_RUNNING_DUAL]            = &WS2812FX::mode_running_dual;
       _mode[FX_MODE_HALLOWEEN]               = &WS2812FX::mode_halloween;
       _mode[FX_MODE_TRICOLOR_CHASE]          = &WS2812FX::mode_tricolor_chase;
@@ -831,7 +844,7 @@ class WS2812FX {
       calcGammaTable(float),
       trigger(void),
       setReset(uint8_t n),
-      setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
+      setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0, uint16_t offset = UINT16_MAX),
       resetSegments(),
       makeAutoSegments(),
       fixInvalidSegments(),
@@ -849,15 +862,16 @@ class WS2812FX {
       applyToAllSelected = true,
       setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t f1, uint8_t f2, uint8_t f3, uint8_t p), //WLEDSR: add f1,2,3
       checkSegmentAlignment(void),
+			hasCCTBus(void),
       // return true if the strip is being sent pixel updates
       isUpdating(void);
 
     uint8_t
       mainSegment = 0,
-      rgbwMode = RGBW_MODE_DUAL,
       paletteFade = 0,
       paletteBlend = 0,
       milliampsPerLed = 55,
+			cctBlending = 0,
       getBrightness(void),
       getMode(void),
       getSpeed(void),
@@ -956,9 +970,9 @@ class WS2812FX {
       mode_gradient(void),
       mode_loading(void),
       mode_police(void),
-      mode_police_all(void),
+      mode_fairy(void),
       mode_two_dots(void),
-      mode_two_areas(void),
+      mode_fairytwinkle(void),
       mode_running_dual(void),
       mode_bicolor_chase(void),
       mode_tricolor_chase(void),
@@ -1185,7 +1199,7 @@ class WS2812FX {
       chase(uint32_t, uint32_t, uint32_t, bool),
       gradient_base(bool),
       ripple_base(bool),
-      police_base(uint32_t, uint32_t, uint16_t),
+      police_base(uint32_t, uint32_t),
       running(uint32_t, uint32_t, bool theatre=false),
       tricolor_chase(uint32_t, uint32_t),
       twinklefox_base(bool),
@@ -1292,7 +1306,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Colorful",
 "Traffic Light",
 "Sweep Random",
-"Running 2",
+"Chase 2",
 "Aurora",
 "Stream",
 "Scanner",
@@ -1304,9 +1318,9 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 "Gradient",
 "Loading",
 "Police",
-"Police All",
+"Fairy",
 "Two Dots",
-"Two Areas",
+"Fairytwinkle",
 "Running Dual",
 "Halloween",
 "Tri Chase",

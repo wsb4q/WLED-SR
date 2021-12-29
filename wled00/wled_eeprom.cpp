@@ -90,7 +90,16 @@ void loadSettingsFromEEPROM()
   if (apChannel > 13 || apChannel < 1) apChannel = 1;
   apHide = EEPROM.read(228);
   if (apHide > 1) apHide = 1;
-  ledCount = EEPROM.read(229) + ((EEPROM.read(398) << 8) & 0xFF00); if (ledCount > MAX_LEDS || ledCount == 0) ledCount = 30;
+  uint16_t length = EEPROM.read(229) + ((EEPROM.read(398) << 8) & 0xFF00); //was ledCount
+  if (length > MAX_LEDS || length == 0) length = 30;
+  uint8_t pins[5] = {2, 255, 255, 255, 255};
+  uint8_t colorOrder = COL_ORDER_GRB;
+  if (lastEEPROMversion > 9) colorOrder = EEPROM.read(383);
+  if (colorOrder > COL_ORDER_GBR) colorOrder = COL_ORDER_GRB;
+  bool skipFirst = EEPROM.read(2204);
+  bool reversed = EEPROM.read(252);
+  BusConfig bc = BusConfig(EEPROM.read(372) ? TYPE_SK6812_RGBW : TYPE_WS2812_RGB, pins, 0, length, colorOrder, reversed, skipFirst);
+  busses.add(bc);
 
   notifyButton = EEPROM.read(230);
   notifyTwice = EEPROM.read(231);
@@ -144,7 +153,7 @@ void loadSettingsFromEEPROM()
   arlsOffset = EEPROM.read(368);
   if (!EEPROM.read(367)) arlsOffset = -arlsOffset;
   turnOnAtBoot = EEPROM.read(369);
-  strip.isRgbw = EEPROM.read(372);
+  //strip.isRgbw = EEPROM.read(372);
   //374 - strip.paletteFade
 
   apBehavior = EEPROM.read(376);
@@ -321,7 +330,7 @@ void loadSettingsFromEEPROM()
   receiveDirect = !EEPROM.read(2200);
   notifyMacro = EEPROM.read(2201);
 
-  strip.rgbwMode = EEPROM.read(2203);
+  //strip.rgbwMode = EEPROM.read(2203);
   //skipFirstLed = EEPROM.read(2204);
 
   bootPreset = EEPROM.read(389);
@@ -387,7 +396,7 @@ void loadSettingsFromEEPROM()
     strip.panelTranspose = EEPROM.read(EEP_AUDIO+19); // > 0;
 
     sampleGain = EEPROM.read(EEP_AUDIO+20);
-    soundAgc = EEPROM.read(EEP_AUDIO+21); 
+    soundAgc = EEPROM.read(EEP_AUDIO+21);
   }
 
 // FFT Slider Data Preset Protocol 5 bytes, 25 "slots"
@@ -415,8 +424,13 @@ void deEEP() {
 
   DEBUG_PRINTLN(F("Preset file not found, attempting to load from EEPROM"));
   DEBUGFS_PRINTLN(F("Allocating saving buffer for dEEP"));
-  DynamicJsonDocument dDoc(JSON_BUFFER_SIZE *2);
-  JsonObject sObj = dDoc.to<JsonObject>();
+  #ifdef WLED_USE_DYNAMIC_JSON
+  DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+  #else
+  if (!requestJSONBufferLock(8)) return;
+  #endif
+
+  JsonObject sObj = doc.to<JsonObject>();
   sObj.createNestedObject("0");
 
   EEPROM.begin(EEPSIZE);
@@ -479,8 +493,6 @@ void deEEP() {
       }
     }
 
-
-
     for (uint16_t index = 1; index <= 16; index++) { //copy macros to presets.json
       char m[65];
       readStringFromEEPROM(1024+64*(index-1), m, 64);
@@ -500,10 +512,14 @@ void deEEP() {
   File f = WLED_FS.open("/presets.json", "w");
   if (!f) {
     errorFlag = ERR_FS_GENERAL;
+    releaseJSONBufferLock();
     return;
   }
-  serializeJson(dDoc, f);
+  serializeJson(doc, f);
   f.close();
+
+  releaseJSONBufferLock();
+
   DEBUG_PRINTLN(F("deEEP complete!"));
 }
 

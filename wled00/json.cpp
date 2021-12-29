@@ -164,12 +164,12 @@ void deserializeSegment(JsonObject elem, byte it, byte presetId)
 		byte effectPrev = effectCurrent;
     if (getVal(elem["fx"], &effectCurrent, 1, strip.getModeCount())) { //load effect ('r' random, '~' inc/dec, 0-255 exact value)
       if (!presetId && effectCurrent != effectPrev) unloadPlaylist(); //stop playlist if active and FX changed manually
-    }
+    } // ADDED WHAT LOOKED LIKE A MISSING CLOSING CURLY BRACE - CHRIS REESE
     effectSpeed = elem[F("sx")] | effectSpeed;
     effectIntensity = elem[F("ix")] | effectIntensity;
-    effectFFT1 = elem[F("f1x")] | effectFFT1;
-    effectFFT2 = elem[F("f2x")] | effectFFT2;
-    effectFFT3 = elem[F("f3x")] | effectFFT3;
+    effectCustom1 = elem[F("c1x")] | effectCustom1;
+    effectCustom2 = elem[F("c2x")] | effectCustom2;
+    effectCustom3 = elem[F("c3x")] | effectCustom3;
     getVal(elem["pal"], &effectPalette, 1, strip.getPaletteCount());
   } else { //permanent
     byte fx = seg.mode;
@@ -180,9 +180,9 @@ void deserializeSegment(JsonObject elem, byte it, byte presetId)
     }
     seg.speed = elem[F("sx")] | seg.speed;
     seg.intensity = elem[F("ix")] | seg.intensity;
-    seg.fft1 = elem[F("f1x")] | seg.fft1;
-    seg.fft2 = elem[F("f2x")] | seg.fft2;
-    seg.fft3 = elem[F("f3x")] | seg.fft3;
+    seg.custom1 = elem[F("c1x")] | seg.custom1;
+    seg.custom2 = elem[F("c2x")] | seg.custom2;
+    seg.custom3 = elem[F("c3x")] | seg.custom3;
     getVal(elem["pal"], &seg.palette, 1, strip.getPaletteCount());
   }
 
@@ -436,9 +436,9 @@ void serializeSegment(JsonObject& root, WS2812FX::Segment& seg, byte id, bool fo
 	root["fx"]  = seg.mode;
 	root[F("sx")]  = seg.speed;
 	root[F("ix")]  = seg.intensity;
-  root[F("f1x")] = seg.fft1;
-  root[F("f2x")] = seg.fft2;
-  root[F("f3x")] = seg.fft3;
+  root[F("c1x")] = seg.custom1;
+  root[F("c2x")] = seg.custom2;
+  root[F("c3x")] = seg.custom3;
 	root["pal"] = seg.palette;
 	root[F("sel")] = seg.isSelected();
 	root["rev"] = seg.getOption(SEG_OPTION_REVERSED);

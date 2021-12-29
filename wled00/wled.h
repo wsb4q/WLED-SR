@@ -503,9 +503,9 @@ WLED_GLOBAL bool notificationTwoRequired _INIT(false);
 WLED_GLOBAL byte effectCurrent _INIT(0);
 WLED_GLOBAL byte effectSpeed _INIT(128);
 WLED_GLOBAL byte effectIntensity _INIT(128);
-WLED_GLOBAL byte effectFFT1 _INIT(128);
-WLED_GLOBAL byte effectFFT2 _INIT(128);
-WLED_GLOBAL byte effectFFT3 _INIT(128);
+WLED_GLOBAL byte effectCustom1 _INIT(128);
+WLED_GLOBAL byte effectCustom2 _INIT(128);
+WLED_GLOBAL byte effectCustom3 _INIT(128);
 WLED_GLOBAL byte effectPalette _INIT(0);
 WLED_GLOBAL bool effectChanged _INIT(false);
 

@@ -54,11 +54,11 @@ void XML_response(AsyncWebServerRequest *request, char* dest)
   oappend(SET_F("</sx><ix>"));
   oappendi(effectIntensity);
   oappend(SET_F("</ix><f1>"));
-  oappendi(effectFFT1);
+  oappendi(effectCustom1);
   oappend(SET_F("</f1><f2>"));
-  oappendi(effectFFT2);
+  oappendi(effectCustom2);
   oappend(SET_F("</f2><f3>"));
-  oappendi(effectFFT3);
+  oappendi(effectCustom3);
   oappend(SET_F("</f3><fp>"));
   oappendi(effectPalette);
   oappend(SET_F("</fp><wv>"));
@@ -118,12 +118,12 @@ void URL_response(AsyncWebServerRequest *request)
   oappendi(effectSpeed);
   oappend(SET_F("&IX="));
   oappendi(effectIntensity);
-  oappend(SET_F("&F1="));
-  oappendi(effectFFT1);
-  oappend(SET_F("&F2="));
-  oappendi(effectFFT2);
-  oappend(SET_F("&F3="));
-  oappendi(effectFFT3);
+  oappend(SET_F("&C1="));
+  oappendi(effectCustom1);
+  oappend(SET_F("&C2="));
+  oappendi(effectCustom2);
+  oappend(SET_F("&C3="));
+  oappendi(effectCustom3);
   oappend(SET_F("&FP="));
   oappendi(effectPalette);
 

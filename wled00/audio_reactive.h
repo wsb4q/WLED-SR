@@ -268,8 +268,6 @@ double fftAdd( int from, int to) {
 // FFT main code
 void FFTcode( void * parameter) {
   DEBUG_PRINT("FFT running on core: "); DEBUG_PRINTLN(xPortGetCoreID());
-  //double beatSample = 0;  // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
-  //double envelope = 0;    // COMMENTED OUT - UNUSED VARIABLE COMPILER WARNINGS
 
   for(;;) {
     delay(1);           // DO NOT DELETE THIS LINE! It is needed to give the IDLE(0) task enough time and to keep the watchdog happy.

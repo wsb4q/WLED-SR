@@ -432,9 +432,9 @@ uint8_t WS2812FX::getPaletteCount()
 //TODO effect transitions
 
 
-bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uint8_t f2, uint8_t f3, uint8_t p) {
+bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t c1, uint8_t c2, uint8_t c3, uint8_t p) {
   Segment& seg = _segments[getMainSegmentId()];
-  uint8_t modePrev = seg.mode, speedPrev = seg.speed, intensityPrev = seg.intensity, fft1Prev = seg.fft1, fft2Prev = seg.fft2, fft3Prev = seg.fft3, palettePrev = seg.palette;
+  uint8_t modePrev = seg.mode, speedPrev = seg.speed, intensityPrev = seg.intensity, custom1Prev = seg.custom1, custom2Prev = seg.custom2, custom3Prev = seg.custom3, palettePrev = seg.palette;
 
   bool applied = false;
 
@@ -445,9 +445,9 @@ bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uin
       {
         _segments[i].speed = s;
         _segments[i].intensity = in;
-        _segments[i].fft1 = f1;
-        _segments[i].fft2 = f2;
-        _segments[i].fft3 = f3;
+        _segments[i].custom1 = c1;
+        _segments[i].custom2 = c2;
+        _segments[i].custom3 = c3;
         _segments[i].palette = p;
         setMode(i, m);
         applied = true;
@@ -458,14 +458,14 @@ bool WS2812FX::setEffectConfig(uint8_t m, uint8_t s, uint8_t in, uint8_t f1, uin
   if (!applyToAllSelected || !applied) {
     seg.speed = s;
     seg.intensity = in;
-    seg.fft1 = f1;
-    seg.fft2 = f2;
-    seg.fft3 = f3;
+    seg.custom1 = c1;
+    seg.custom2 = c2;
+    seg.custom3 = c3;
     seg.palette = p;
     setMode(mainSegment, m);
   }
 
-  if (seg.mode != modePrev || seg.speed != speedPrev || seg.intensity != intensityPrev || seg.fft1 != fft1Prev || seg.fft2 != fft2Prev || seg.fft3 != fft3Prev || seg.palette != palettePrev) return true;
+  if (seg.mode != modePrev || seg.speed != speedPrev || seg.intensity != intensityPrev || seg.custom1 != custom1Prev || seg.custom2 != custom2Prev || seg.custom3 != custom3Prev || seg.palette != palettePrev) return true;
   return false;
 }
 

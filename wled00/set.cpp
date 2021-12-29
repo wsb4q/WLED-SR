@@ -571,13 +571,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
     t = request->hasArg(F("AGC"));
     if (t >=0) soundAgc = t;
 
-    // Analog mic pin
-    // int hw_amic_pin = request->arg(F("SI")).toInt();
-    // if (pinManager.allocatePin(hw_amic_pin,false, PinOwner::AnalogMic)) {
-    //   audioPin = hw_amic_pin;
-    // } else {
-    //   audioPin = audioPin;
-    // }
+
     t = request->arg(F("SI")).toInt();
     if (t >= 0 && t <=39) audioPin = t;
 
@@ -591,7 +585,7 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
 
     // Digital Mic I2S SCK pin
     t = request->arg(F("CK")).toInt();
-    if (t >= 0 && t <=39) i2sckPin = t;
+    if (t >= -1 && t <=39) i2sckPin = t;
 
     // Digital mic mode
     uint8_t newDmType = request->arg(F("DMM")).toInt();
@@ -600,26 +594,6 @@ void handleSettingsSet(AsyncWebServerRequest *request, byte subPage)
       serveMessage(request, 200,F("Settings saved..."),F("Please reset the board for changes to take effect!"), 10);
       dmType = newDmType;
     }
-    // int hw_i2ssd_pin = request->arg(F("DI")).toInt();
-    // if (pinManager.allocatePin(hw_i2ssd_pin,false, PinOwner::DigitalMic)) {
-    //   i2ssdPin = hw_i2ssd_pin;
-    // } else {
-    //   i2ssdPin = i2ssdPin;
-    // }
-    // // Digital Mic I2S WS pin
-    // int hw_i2sws_pin = request->arg(F("LR")).toInt();
-    // if (pinManager.allocatePin(hw_i2sws_pin,false, PinOwner::DigitalMic)) {
-    //   i2swsPin = hw_i2sws_pin;
-    // } else {
-    //   i2swsPin = i2swsPin;
-    // }
-    // // Digital Mic I2S SCK pin
-    // int hw_i2sck_pin = request->arg(F("CK")).toInt();
-    // if (pinManager.allocatePin(hw_i2sck_pin,false, PinOwner::DigitalMic)) {
-    //   i2sckPin = hw_i2sck_pin;
-    // } else {
-    //   i2sckPin = i2sckPin;
-    // }
   }
 
   releaseJSONBufferLock();
@@ -792,9 +766,9 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   byte prevEffect = effectCurrent;
   byte prevSpeed = effectSpeed;
   byte prevIntensity = effectIntensity;
-  byte prevFFT1 = effectFFT1;
-  byte prevFFT2 = effectFFT2;
-  byte prevFFT3 = effectFFT3;
+  byte prevCustom1 = effectCustom1;
+  byte prevCustom2 = effectCustom2;
+  byte prevCustom3 = effectCustom3;
   byte prevPalette = effectPalette;
 
   //set brightness
@@ -891,9 +865,9 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
   if (updateVal(&req, "FX=", &effectCurrent, 0, strip.getModeCount()-1) && request != nullptr) unloadPlaylist();  //unload playlist if changing FX using web request
   updateVal(&req, "SX=", &effectSpeed);
   updateVal(&req, "IX=", &effectIntensity);
-  updateVal(&req, "F1=", &effectFFT1);
-  updateVal(&req, "F2=", &effectFFT2);
-  updateVal(&req, "F3=", &effectFFT3);
+  updateVal(&req, "C1=", &effectCustom1);
+  updateVal(&req, "C2=", &effectCustom2);
+  updateVal(&req, "C3=", &effectCustom3);
   updateVal(&req, "FP=", &effectPalette, 0, strip.getPaletteCount()-1);
 
   //set advanced overlay
@@ -1071,16 +1045,16 @@ bool handleSet(AsyncWebServerRequest *request, const String& req, bool apply)
       seg.intensity = effectIntensity;
       effectChanged = true;
     }
-    if (effectFFT1 != prevFFT1) {
-      seg.fft1 = effectFFT1;
+    if (effectCustom1 != prevCustom1) {
+      seg.custom1 = effectCustom1;
       effectChanged = true;
     }
-    if (effectFFT2 != prevFFT2) {
-      seg.fft2 = effectFFT2;
+    if (effectCustom2 != prevCustom2) {
+      seg.custom2 = effectCustom2;
       effectChanged = true;
     }
-    if (effectFFT3 != prevFFT3) {
-      seg.fft3 = effectFFT3;
+    if (effectCustom3 != prevCustom3) {
+      seg.custom3 = effectCustom3;
       effectChanged = true;
     }
     if (effectPalette != prevPalette) {

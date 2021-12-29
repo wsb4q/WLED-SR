@@ -274,11 +274,11 @@
       gId('psu2').innerHTML = isWS2815 ? "" : s2;
       gId("json").style.display = d.Sf.IT.value==8 ? "" : "none";
 
-      // 2D Matrix Settings
+      // WLEDSR 2D Matrix Settings
       var SOMP = parseInt(d.Sf.SOMP.value, 10);
       var MXW = parseInt(d.Sf.MXW.value, 10);
       var MXH = parseInt(d.Sf.MXH.value, 10);
-      if (!isNaN(MXW) && !isNaN(MXH) && (MXW > 0 || MXH > 0) && MXW * MXH > parseInt(sLC, 10) && SOMP == 1) {
+      if (!isNaN(MXW) && !isNaN(MXH) && (MXW > 0 || MXH > 0) && MXW * MXH != parseInt(sLC, 10) && SOMP == 1) {
       gId('2dwarning').style.display = 'inline';
       for (let s of d.Sf.querySelectorAll('button[type="submit"]')) s.disabled = true;
       } else {

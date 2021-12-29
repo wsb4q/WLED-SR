@@ -110,11 +110,16 @@ public:
 
     virtual void initialize() {
 
-        if (!pinManager.allocatePin(i2sckPin, true, PinOwner::DigitalMic) ||
-            !pinManager.allocatePin(i2swsPin, true, PinOwner::DigitalMic) ||
+        if (!pinManager.allocatePin(i2swsPin, true, PinOwner::DigitalMic) ||
             !pinManager.allocatePin(i2ssdPin, true, PinOwner::DigitalMic)) {
                 return;
-            }
+        }
+
+        // i2ssckPin needs special treatment, since it might be unused on PDM mics
+        if (i2sckPin != -1) {
+            if (!pinManager.allocatePin(i2sckPin, true, PinOwner::DigitalMic))
+                return;
+        }
 
         esp_err_t err = i2s_driver_install(I2S_NUM_0, &_config, 0, nullptr);
         if (err != ESP_OK) {
@@ -137,6 +142,12 @@ public:
         if (err != ESP_OK) {
             Serial.printf("Failed to uninstall i2s driver: %d\n", err);
             return;
+        }
+        pinManager.deallocatePin(i2swsPin, PinOwner::DigitalMic);
+        pinManager.deallocatePin(i2ssdPin, PinOwner::DigitalMic);
+        // i2ssckPin needs special treatment, since it might be unused on PDM mics
+        if (i2sckPin != -1) {
+            pinManager.deallocatePin(i2sckPin, PinOwner::DigitalMic);
         }
     }
 
@@ -357,10 +368,19 @@ public:
 
     void deinitialize() {
         pinManager.deallocatePin(audioPin, PinOwner::AnalogMic);
-        I2SSource::deinitialize();
+        _initialized = false;
+        esp_err_t err = i2s_driver_uninstall(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to uninstall i2s driver: %d\n", err);
+            return;
+        }
     }
 };
 
+/* SPH0645 Microphone
+   This is an I2S microphone with some timing quirks that need
+   special consideration.
+*/
 class SPH0654 : public I2SSource {
 
 public:
@@ -371,5 +391,28 @@ public:
         I2SSource::initialize();
         REG_SET_BIT(I2S_TIMING_REG(I2S_NUM_0), BIT(9));
         REG_SET_BIT(I2S_CONF_REG(I2S_NUM_0), I2S_RX_MSB_SHIFT);
+    }
+};
+
+/* I2S PDM Microphone
+   This is an I2S PDM microphone, these microphones only use a clock and
+   data line, to make it simpler to debug, use the WS pin as CLK and SD
+   pin as DATA
+*/
+
+class I2SPdmSource : public I2SSource {
+
+public:
+    I2SPdmSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+        I2SSource(sampleRate, blockSize, lshift, mask) {
+
+        _config.mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM); // Change mode to pdm
+
+        _pinConfig = {
+            .bck_io_num = I2S_PIN_NO_CHANGE, // bck is unused in PDM mics
+            .ws_io_num = i2swsPin, // clk pin for PDM mic
+            .data_out_num = I2S_PIN_NO_CHANGE,
+            .data_in_num = i2ssdPin
+        };
     }
 };

@@ -934,9 +934,9 @@ function updateUI()
   updateTrail(d.getElementById('sliderBri'));
   updateTrail(d.getElementById('sliderSpeed'));
   updateTrail(d.getElementById('sliderIntensity'));
-  updateTrail(d.getElementById('sliderFFT1'));
-  updateTrail(d.getElementById('sliderFFT2'));
-  updateTrail(d.getElementById('sliderFFT3'));
+  updateTrail(d.getElementById('sliderCustom1'));
+  updateTrail(d.getElementById('sliderCustom2'));
+  updateTrail(d.getElementById('sliderCustom3'));
 	d.getElementById('wwrap').style.display = (isRgbw) ? "block":"none";
 	d.getElementById('wbal').style.display = (lastinfo.leds.cct) ? "block":"none";
 	d.getElementById('kwrap').style.display = (lastinfo.leds.cct) ? "none":"block";
@@ -1024,9 +1024,9 @@ function readState(s,command=false) {
 
   d.getElementById('sliderSpeed').value = i.sx;
   d.getElementById('sliderIntensity').value = i.ix;
-  d.getElementById('sliderFFT1').value  = i.f1x;
-  d.getElementById('sliderFFT2').value  = i.f2x;
-  d.getElementById('sliderFFT3').value  = i.f3x;
+  d.getElementById('sliderCustom1').value  = i.c1x;
+  d.getElementById('sliderCustom2').value  = i.c2x;
+  d.getElementById('sliderCustom3').value  = i.c3x;
 
   // Effects
   var selFx = fxlist.querySelector(`input[name="fx"][value="${i.fx}"]`);
@@ -1789,18 +1789,18 @@ function setLor(i) {
   requestJson(obj);
 }
 
-function setFFT1() {
-  var obj = {"seg": {"f1x": parseInt(d.getElementById('sliderFFT1').value)}};
+function setCustom1() {
+  var obj = {"seg": {"c1x": parseInt(d.getElementById('sliderCustom1').value)}};
   requestJson(obj);
 }
 
-function setFFT2() {
-  var obj = {"seg": {"f2x": parseInt(d.getElementById('sliderFFT2').value)}};
+function setCustom2() {
+  var obj = {"seg": {"c2x": parseInt(d.getElementById('sliderCustom2').value)}};
   requestJson(obj);
 }
 
-function setFFT3() {
-  var obj = {"seg": {"f3x": parseInt(d.getElementById('sliderFFT3').value)}};
+function setCustom3() {
+  var obj = {"seg": {"c3x": parseInt(d.getElementById('sliderCustom3').value)}};
   requestJson(obj);
 }
 
@@ -1915,13 +1915,15 @@ function populateCEEditor(name, segID)
               </td></tr></table>
               <button class="btn infobtn" onclick="toggleCEEditor()">Close</button>
               <button class="btn infobtn" onclick="saveCE('${name}.wled', ${segID})">Save</button><br>
+              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button>
+              <button class="btn infobtn" onclick="loadCETemplate('${name}')">Load template</button><br>
               <button class="btn infobtn" onclick="downloadCEFile('wled.json')">Download wled.json</button>
-              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button><br>
-              <button class="btn infobtn" onclick="loadCEExample('${name}')">Load example</button><br>
+              <button class="btn infobtn" onclick="downloadCEFile('presets.json')">Download presets.json</button><br>
               <a href="https://github.com/MoonModules/WLED-Effects/tree/master/CustomEffects/wled" target="_blank">Custom Effects Library</a><br>
               <a href="https://github.com/atuline/WLED/wiki/WLED-Custom-effects" target="_blank">Custom Effects Help</a><br>
-              <br><i>Log</i><br>
-              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea>`;
+              <br><i>Compile Log</i><br>
+              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea><br>
+              <i>Run log (including errors and print commands) is send to Serial Ouput.</i>`;
 
       d.getElementById('kceEditor').innerHTML = cn;
     });
@@ -1971,8 +1973,13 @@ function downloadCEFile(name) {
 
   var request = new XMLHttpRequest();
   request.onload = function() {
-    uploadFileWithText("/" + name, request.response);
-    if (name != "wled.json") {
+    if (name == "wled.json" || name == "presets.json") {
+        if (!confirm('Are you sure to download' + name + '?'))
+          return;
+        uploadFileWithText("/" + name, request.response);
+    }
+    else
+    {
       var ceProgramArea = d.getElementById("ceProgramArea");
       ceProgramArea.value = request.response;
     }
@@ -1982,10 +1989,10 @@ function downloadCEFile(name) {
 }
 
 //WLEDSR Custom Effects
-function loadCEExample(name) {
+function loadCETemplate(name) {
   var ceProgramArea = d.getElementById("ceProgramArea");
   ceProgramArea.value = `/*
-  Custom Effects Example
+  Custom Effects Template
 */
 program ${name}
 {
@@ -2351,9 +2358,9 @@ function unfocusSliders() {
   d.getElementById("sliderBri").blur();
   d.getElementById("sliderSpeed").blur();
   d.getElementById("sliderIntensity").blur();
-  d.getElementById("sliderFFT1").blur();
-  d.getElementById("sliderFFT2").blur();
-  d.getElementById("sliderFFT3").blur();
+  d.getElementById("sliderCustom1").blur();
+  d.getElementById("sliderCustom2").blur();
+  d.getElementById("sliderCustom3").blur();
 
 }
 

@@ -478,10 +478,10 @@ bool deserializeConfig(JsonObject doc, bool fromFS) {
   CJSON(sampleGain, snd_cfg[F("gn")]);        // gain
   CJSON(soundAgc, snd_cfg[F("agc")]);         // agc
 
-  JsonObject snd_fft = sound[F("fft")];       // FFT Settings
-  CJSON(effectFFT1, snd_fft[F("f1")]);
-  CJSON(effectFFT2, snd_fft[F("f2")]);
-  CJSON(effectFFT3, snd_fft[F("f3")]);
+  JsonObject snd_custom = sound[F("custom")];       // Custom settings
+  CJSON(effectCustom1, snd_custom[F("c1")]);
+  CJSON(effectCustom2, snd_custom[F("c2")]);
+  CJSON(effectCustom3, snd_custom[F("c3")]);
 
   JsonObject snd_sync = sound[F("sync")];     // Sound Reactive audio sync
   CJSON(audioSyncPort, snd_sync[F("port")]);  // 11988
@@ -879,10 +879,10 @@ void serializeConfig() {
   snd_cfg[F("gn")] = sampleGain;
   snd_cfg[F("agc")] = soundAgc;
 
-  JsonObject snd_fft = sound.createNestedObject("fft");   // FFT Settings
-  snd_fft[F("f1")] = effectFFT1;
-  snd_fft[F("f2")] = effectFFT2;
-  snd_fft[F("f3")] = effectFFT3;
+  JsonObject snd_custom = sound.createNestedObject("custom");   // Custom settings
+  snd_custom[F("c1")] = effectCustom1;
+  snd_custom[F("c2")] = effectCustom2;
+  snd_custom[F("c3")] = effectCustom3;
 
   JsonObject snd_sync = sound.createNestedObject("sync"); // Sound Reactive audio sync
   snd_sync[F("port")] = audioSyncPort;  // 11988

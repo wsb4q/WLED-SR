@@ -134,9 +134,9 @@ float WS2812FX::arti_external_function(uint8_t function, float par1, float par2,
     switch (function) {
       case F_setPixelColor: {
         if (par2 == 0)
-          setPixelColor(((uint16_t)par1)%ledCount, CRGB::Black);
+          setPixelColor(((uint16_t)par1)%SEGLEN, CRGB::Black);
         else
-          setPixelColor(((uint16_t)par1)%ledCount, color_from_palette(((uint8_t)par2)%256, true, (paletteBlend == 1 || paletteBlend == 3), 0));
+          setPixelColor(((uint16_t)par1)%SEGLEN, color_from_palette(((uint8_t)par2)%256, true, (paletteBlend == 1 || paletteBlend == 3), 0));
         return floatNull;
       }
       case F_setPixels:
@@ -175,11 +175,11 @@ float WS2812FX::arti_external_function(uint8_t function, float par1, float par2,
 
       case F_shift: {
         uint32_t saveFirstPixel = getPixelColor(0);
-        for (uint16_t i=0; i<ledCount-1; i++)
+        for (uint16_t i=0; i<SEGLEN-1; i++)
         {
-          setPixelColor(i, getPixelColor((uint16_t)(i + par1)%ledCount));
+          setPixelColor(i, getPixelColor((uint16_t)(i + par1)%SEGLEN));
         }
-        setPixelColor(ledCount - 1, saveFirstPixel);
+        setPixelColor(SEGLEN - 1, saveFirstPixel);
         return floatNull;
       }
       case F_circle2D: {
@@ -427,7 +427,7 @@ void WS2812FX::arti_set_external_variable(float value, uint8_t variable, float p
           errorOccurred = true;
         }
         else if (par2 == floatNull)
-          leds[realPixelIndex((uint16_t)par1%ledCount)] = value;
+          leds[realPixelIndex((uint16_t)par1%SEGLEN)] = value;
         else
           leds[XY((uint16_t)par1%SEGMENT.width, (uint16_t)par2%SEGMENT.height)] = value; //2D value!!
 

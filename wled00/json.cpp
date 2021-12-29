@@ -164,7 +164,7 @@ void deserializeSegment(JsonObject elem, byte it, byte presetId)
 		byte effectPrev = effectCurrent;
     if (getVal(elem["fx"], &effectCurrent, 1, strip.getModeCount())) { //load effect ('r' random, '~' inc/dec, 0-255 exact value)
       if (!presetId && effectCurrent != effectPrev) unloadPlaylist(); //stop playlist if active and FX changed manually
-    } // ADDED WHAT LOOKED LIKE A MISSING CLOSING CURLY BRACE - CHRIS REESE
+    }
     effectSpeed = elem[F("sx")] | effectSpeed;
     effectIntensity = elem[F("ix")] | effectIntensity;
     effectCustom1 = elem[F("c1x")] | effectCustom1;

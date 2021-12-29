@@ -487,22 +487,22 @@ function populatePresets(fromls)
 		pNum++;
 	}
 
-  d.getElementById('pcont').innerHTML = cn;
-  if (pNum > 0) {
-    if (pmtLS != pmt && pmt != 0) {
-      localStorage.setItem("wledPmt", pmt);
-      pJson["0"] = {};
-      localStorage.setItem("wledP", JSON.stringify(pJson));
-    }
-    pmtLS = pmt;
-    for (var a = 0; a < is.length; a++) {
-      let i = is[a];
-      if (expanded[i+100]) expand(i+100, true);
-    }
-    makePlSel(arr);
-  } else { presetError(true); }
-  updatePA();
-  populateQL();
+	d.getElementById('pcont').innerHTML = cn;
+	if (pNum > 0) {
+		if (pmtLS != pmt && pmt != 0) {
+			localStorage.setItem("wledPmt", pmt);
+			pJson["0"] = {};
+			localStorage.setItem("wledP", JSON.stringify(pJson));
+		}
+		pmtLS = pmt;
+		for (var a = 0; a < is.length; a++) {
+		let i = is[a];
+		if (expanded[i+100]) expand(i+100, true);
+		}
+		//makePlSel(arr);
+	} else { presetError(true); }
+	updatePA();
+	populateQL();
 }
 
 function populateInfo(i)
@@ -559,65 +559,83 @@ function populateSegments(s)
 		if (i == lowestUnused) lowestUnused = i+1;
 		if (i > lSeg) lSeg = i;
 
-		cn += `<div class="seg">
-			<label class="check schkl">
-				&nbsp;
-				<input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
-				<span class="checkmark schk"></span>
-			</label>
-			<div class="segname">
-				<div class="segntxt" onclick="selSegEx(${i})">${inst.n ? inst.n : "Segment "+i}</div>
-				<i class="icons edit-icon ${expanded[i] ? "expanded":""}" id="seg${i}nedit" onclick="tglSegn(${i})">&#xe2c6;</i>
-			</div>
-			<i class="icons e-icon flr ${expanded[i] ? "exp":""}" id="sege${i}" onclick="expand(${i})">&#xe395;</i>
-			<div class="segin ${expanded[i] ? "expanded":""}" id="seg${i}">
-				<input type="text" class="ptxt stxt noslide" id="seg${i}t" autocomplete="off" maxlength=32 value="${inst.n?inst.n:""}" placeholder="Enter name..."/>
-				<div class="sbs">
-				<i class="icons e-icon pwr ${powered[i] ? "act":""}" id="seg${i}pwr" onclick="setSegPwr(${i})">&#xe08f;</i>
-				<div class="sliderwrap il sws">
-					<input id="seg${i}bri" class="noslide sis" onchange="setSegBri(${i})" oninput="updateTrail(this)" max="255" min="1" type="range" value="${inst.bri}" />
-					<div class="sliderdisplay"></div>
-				</div>
-				</div>
-				<table class="infot">
-					<tr>
-						<td class="segtd">Start LED</td>
-						<td class="segtd">${cfg.comp.seglen?"Length":"Stop LED"}</td>
-						<td class="segtd">Offset</td>
-					</tr>
-					<tr>
-						<td class="segtd"><input class="noslide segn" id="seg${i}s" type="number" min="0" max="${ledCount-1}" value="${inst.start}" oninput="updateLen(${i})"></td>
-						<td class="segtd"><input class="noslide segn" id="seg${i}e" type="number" min="0" max="${ledCount-(cfg.comp.seglen?inst.start:0)}" value="${inst.stop-(cfg.comp.seglen?inst.start:0)}" oninput="updateLen(${i})"></td>
-						<td class="segtd"><input class="noslide segn" id="seg${i}of" type="number" value="${inst.of}" oninput="updateLen(${i})"></td>
-					</tr>
-				</table>
-				<table class="infot">
-					<tr>
-						<td class="segtd">Grouping</td>
-						<td class="segtd">Spacing</td>
-						<td class="segtd">Apply</td>
-					</tr>
-					<tr>
-						<td class="segtd"><input class="noslide segn" id="seg${i}grp" type="number" min="1" max="255" value="${inst.grp}" oninput="updateLen(${i})"></td>
-						<td class="segtd"><input class="noslide segn" id="seg${i}spc" type="number" min="0" max="255" value="${inst.spc}" oninput="updateLen(${i})"></td>
-						<td class="segtd"><i class="icons e-icon cnf cnf-s" id="segc${i}" onclick="setSeg(${i})">&#xe390;</i></td>
-					</tr>
-				</table>
-				<div class="h" id="seg${i}len"></div>
-				<button class="btn btn-i btn-xs del" id="segd${i}" onclick="delSeg(${i})"><i class="icons btn-icon">&#xe037;</i></button>
-				<label class="check revchkl">
-					Reverse direction
-					<input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
-					<span class="checkmark schk"></span>
-				</label>
-				<label class="check revchkl">
-					Mirror effect
-					<input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
-					<span class="checkmark schk"></span>
-				</label>
-			</div>
-		</div><br>`;
-	}
+		//WLEDSR: add tooltip (title) and add reverse direction X / Y and rotation parameters
+    cn += `<div title="Fx${inst.fx}: ${inst.start}-${inst.stop} (${inst.mi} ${inst.rev} ${inst.rev2D} ${inst.rot2D})" class="seg">
+      <label class="check schkl">
+        &nbsp;
+        <input type="checkbox" id="seg${i}sel" onchange="selSeg(${i})" ${inst.sel ? "checked":""}>
+        <span class="checkmark schk"></span>
+      </label>
+      <div class="segname">
+        <div class="segntxt" onclick="selSegEx(${i})">${inst.n ? inst.n : "Segment "+i}</div>
+        <i class="icons edit-icon ${expanded[i] ? "expanded":""}" id="seg${i}nedit" onclick="tglSegn(${i})">&#xe2c6;</i>
+      </div>
+      <i class="icons e-icon flr ${expanded[i] ? "exp":""}" id="sege${i}" onclick="expand(${i})">&#xe395;</i>
+      <div class="segin ${expanded[i] ? "expanded":""}" id="seg${i}">
+        <input type="text" class="ptxt stxt noslide" id="seg${i}t" autocomplete="off" maxlength=32 value="${inst.n?inst.n:""}" placeholder="Enter name..."/>
+        <div class="sbs">
+        <i class="icons e-icon pwr ${powered[i] ? "act":""}" id="seg${i}pwr" onclick="setSegPwr(${i})">&#xe08f;</i>
+        <div class="sliderwrap il sws">
+          <input id="seg${i}bri" class="noslide sis" onchange="setSegBri(${i})" oninput="updateTrail(this)" max="255" min="1" type="range" value="${inst.bri}" />
+          <div class="sliderdisplay"></div>
+        </div>
+        </div>
+        <table class="infot">
+          <tr>
+            <td class="segtd">Start LED</td>
+            <td class="segtd">${cfg.comp.seglen?"Length":"Stop LED"}</td>
+            <td class="segtd">Offset</td>
+          </tr>
+          <tr>
+            <td class="segtd"><input class="noslide segn" id="seg${i}s" type="number" min="0" max="${ledCount-1}" value="${inst.start}" oninput="updateLen(${i})"></td>
+            <td class="segtd"><input class="noslide segn" id="seg${i}e" type="number" min="0" max="${ledCount-(cfg.comp.seglen?inst.start:0)}" value="${inst.stop-(cfg.comp.seglen?inst.start:0)}" oninput="updateLen(${i})"></td>
+            <td class="segtd"><input class="noslide segn" id="seg${i}of" type="number" value="${inst.of}" oninput="updateLen(${i})"></td>
+          </tr>
+        </table>
+        <table class="infot">
+          <tr>
+            <td class="segtd">Grouping</td>
+            <td class="segtd">Spacing</td>
+            <td class="segtd">Apply</td>
+          </tr>
+          <tr>
+            <td class="segtd"><input class="noslide segn" id="seg${i}grp" type="number" min="1" max="255" value="${inst.grp}" oninput="updateLen(${i})"></td>
+            <td class="segtd"><input class="noslide segn" id="seg${i}spc" type="number" min="0" max="255" value="${inst.spc}" oninput="updateLen(${i})"></td>
+            <td class="segtd"><i class="icons e-icon cnf cnf-s" id="segc${i}" onclick="setSeg(${i})">&#xe390;</i></td>
+          </tr>
+        </table>
+        <div class="h" id="seg${i}len"></div>
+        <button class="btn btn-i btn-xs del" id="segd${i}" onclick="delSeg(${i})"><i class="icons btn-icon">&#xe037;</i></button>
+        <label class="check revchkl">
+          Reverse direction X
+          <input type="checkbox" id="seg${i}rev" onchange="setRev(${i})" ${inst.rev ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>
+        <label class="check revchkl">
+          Reverse direction Y
+          <input type="checkbox" id="seg${i}rev2D" onchange="setrev2D(${i})" ${inst.rev2D ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>
+        <label class="check revchkl">
+          Rotation
+          <input type="checkbox" id="seg${i}rot2D" onchange="setRot2D(${i})" ${inst.rot2D ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>
+        <label class="check revchkl">
+          Mirror effect
+          <input type="checkbox" id="seg${i}mi" onchange="setMi(${i})" ${inst.mi ? "checked":""}>
+          <span class="checkmark schk"></span>
+        </label>`;
+
+        // WLEDSR Custom Effects
+        if (inst.fx == 187)
+        cn += `<button class="btn" onclick="toggleCEEditor('${inst.n?inst.n:"default"}', ${i})">Custom Effect Editor</button><br>
+          </div>
+          </div><br>`;
+      else
+        cn += `</div>
+          </div><br>`;
+  }
 
   d.getElementById('segcont').innerHTML = cn;
   if (lowestUnused >= maxSeg) {
@@ -834,22 +852,22 @@ function loadNodes()
   }
 
   fetch
-  (url, {
-    method: 'get'
-  })
-  .then(res => {
-    if (!res.ok) {
-      showToast('Could not load Node list!', true);
-    }
-    return res.json();
-  })
-  .then(json => {
-    populateNodes(lastinfo, json);
-  })
-  .catch(function (error) {
-    showToast(error, true);
-    console.log(error);
-  });
+	(url, {
+		method: 'get'
+	})
+	.then(res => {
+		if (!res.ok) {
+			showToast('Could not load Node list!', true);
+		}
+		return res.json();
+	})
+	.then(json => {
+		populateNodes(lastinfo, json);
+	})
+	.catch(function (error) {
+		showToast(error, true);
+		console.log(error);
+	});
 }
 
 //update the 'sliderdisplay' background div of a slider for a visual indication of slider position
@@ -905,23 +923,23 @@ function updateLen(s)
   d.getElementById(`seg${s}len`).innerHTML = out;
 }
 
-//updates background color of currently selected preset
+// updates background color of currently selected preset
 function updatePA()
 {
-	var ps = d.getElementsByClassName("seg"); //reset all preset buttons
+	var ps = d.getElementsByClassName("seg"); // reset all preset buttons
 	for (let i = 0; i < ps.length; i++) {
 		ps[i].style.backgroundColor = "var(--c-2)";
 	}
-	ps = d.getElementsByClassName("psts"); //reset all quick selectors
+	ps = d.getElementsByClassName("psts"); // reset all quick selectors
 	for (let i = 0; i < ps.length; i++) {
 		ps[i].style.backgroundColor = "var(--c-2)";
 	}
 	if (currentPreset > 0) {
 		var acv = d.getElementById(`p${currentPreset}o`);
 		if (acv && !expanded[currentPreset+100])
-			acv.style.background = "var(--c-6)"; //highlight current preset
+			acv.style.background = "var(--c-6)"; // highlight current preset
 		acv = d.getElementById(`p${currentPreset}qlb`);
-		if (acv) acv.style.background = "var(--c-6)"; //highlight quick selector
+		if (acv) acv.style.background = "var(--c-6)"; // highlight quick selector
 	}
 }
 
@@ -1254,9 +1272,9 @@ function requestJson(command, rinfo = true) {
       var tn = parseInt(t.value*10);
       if (tn != tr) command.transition = tn;
     }
-    req = JSON.stringify(command);
+		req = JSON.stringify(command);
     if (req.length > 1000) useWs = false; // do not send very long requests over websocket
-  }
+	}
 
 	if (useWs) {
 		ws.send(req?req:'{"v":true}');
@@ -1295,7 +1313,7 @@ function requestJson(command, rinfo = true) {
 				populateEffects(json.effects);
 				populatePalettes(json.palettes);
 
-				//load palette previews, presets, and open websocket sequentially
+				// load palette previews, presets, and open websocket sequentially
 				setTimeout(function(){
 					loadPresets(function(){
 						loadPalettesData(function(){
@@ -1481,7 +1499,7 @@ function refreshPlE(p) {
   }
   plEDiv.innerHTML = content;
   var dels = plEDiv.getElementsByClassName("btn-pl-del");
-  if (dels.length < 2 && p > 0) dels[0].style.display = "none";
+  if (dels.length < 2) dels[0].style.display = "none";
 
   var sels = d.getElementById(`seg${p+100}`).getElementsByClassName("sel");
   for (var i of sels) {
@@ -2049,14 +2067,14 @@ function selectSlot(b) {
 	cd[csel].style.margin="2px";
 	cd[csel].style.width="50px";
 	setPicker(cd[csel].style.backgroundColor);
-	//force slider update on initial load (picker "color:change" not fired if black)
+	// force slider update on initial load (picker "color:change" not fired if black)
 	if (cpick.color.value == 0) updatePSliders();
 	d.getElementById('sliderW').value = whites[csel];
 	updateTrail(d.getElementById('sliderW'));
 	redrawPalPrev();
 }
 
-//set the color from a hex string. Used by quick color selectors
+// set the color from a hex string. Used by quick color selectors
 var lasth = 0;
 function pC(col)
 {
@@ -2083,24 +2101,24 @@ function updatePSliders() {
 	s = d.getElementById('sliderB');
 	s.value = col.b; updateTrail(s,3);
 
-  //update hex field
+  // update hex field
 	var str = cpick.color.hexString.substring(1);
 	var w = whites[csel];
 	if (w > 0) str += w.toString(16);
 	d.getElementById('hexc').value = str;
 	d.getElementById('hexcnf').style.backgroundColor = "var(--c-3)";
 
-	//update value slider
+	// update value slider
   var v = d.getElementById('sliderV');
   v.value = cpick.color.value;
-	//background color as if color had full value
+	// background color as if color had full value
   var hsv = {"h":cpick.color.hue,"s":cpick.color.saturation,"v":100};
   var c = iro.Color.hsvToRgb(hsv);
   var cs = 'rgb('+c.r+','+c.g+','+c.b+')';
   v.parentNode.getElementsByClassName('sliderdisplay')[0].style.setProperty('--bg',cs);
   updateTrail(v);
 
-	//update Kelvin slider
+	// update Kelvin slider
   d.getElementById('sliderK').value = cpick.color.kelvin;
 }
 
@@ -2146,7 +2164,7 @@ function fromRgb()
 	setPicker(`rgb(${r},${g},${b})`);
 }
 
-//sr 0: from RGB sliders, 1: from picker, 2: from hex
+// sr 0: from RGB sliders, 1: from picker, 2: from hex
 function setColor(sr) {
 	var cd = d.getElementById('csl').children;
 	if (sr == 1 && cd[csel].style.backgroundColor == "rgb(0, 0, 0)") cpick.color.setChannel('hsv', 'v', 100);

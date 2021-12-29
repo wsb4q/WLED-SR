@@ -725,12 +725,18 @@ void WS2812FX::setSegment(uint8_t n, uint16_t i1, uint16_t i2, uint8_t grouping,
   _segment_runtimes[n].reset();
 }
 
-  void WS2812FX::setReset(uint8_t n) {
-    _segment_runtimes[n].reset();
+void WS2812FX::restartRuntime() {
+  for (uint8_t i = 0; i < MAX_NUM_SEGMENTS; i++) {
+    _segment_runtimes[i].reset();
   }
+}
+
+void WS2812FX::setReset(uint8_t n) {
+  _segment_runtimes[n].reset();
+}
 
 void WS2812FX::resetSegments() {
-  for (uint8_t i = 0; i < MAX_NUM_SEGMENTS; i++) if (_segments[i].name) delete _segments[i].name;
+  for (uint8_t i = 0; i < MAX_NUM_SEGMENTS; i++) if (_segments[i].name) delete[] _segments[i].name;
   mainSegment = 0;
   memset(_segments, 0, sizeof(_segments));
   //memset(_segment_runtimes, 0, sizeof(_segment_runtimes));
@@ -946,10 +952,10 @@ void WS2812FX::fade2black(uint8_t rate) {
 
   for(uint16_t i = 0; i < SEGLEN; i++) {
     color = getPixelColor(i);
-    int w1 = (color >> 24) & 0xff;
-    int r1 = (color >> 16) & 0xff;
-    int g1 = (color >>  8) & 0xff;
-    int b1 =  color        & 0xff;
+    int w1 = W(color);
+    int r1 = R(color);
+    int g1 = G(color);
+    int b1 = B(color);
 
     int w = w1 * mappedRate;
     int r = r1 * (mappedRate * 1.05);      // acount for the fact that leds stay red on much lower intensities

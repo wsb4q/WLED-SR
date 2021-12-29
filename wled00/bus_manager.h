@@ -91,7 +91,7 @@ class Bus {
     virtual void     setBrightness(uint8_t b) {}
     virtual void     cleanup() {}
     virtual uint8_t  getPins(uint8_t* pinArray) { return 0; }
-    inline  uint16_t getLength() { return _len; }
+    virtual uint16_t getLength() { return _len; }
     virtual void     setColorOrder() {}
     virtual uint8_t  getColorOrder() { return COL_ORDER_RGB; }
     virtual uint8_t  skippedLeds() { return 0; }
@@ -134,7 +134,6 @@ class Bus {
     static uint8_t _autoWhiteMode;
     static int16_t _cct;
 		static uint8_t _cctBlend;
-
     uint32_t autoWhiteCalc(uint32_t c) {
       if (_autoWhiteMode == RGBW_MODE_MANUAL_ONLY) return c;
       uint8_t w = W(c);
@@ -220,7 +219,7 @@ class BusDigital : public Bus {
     return _colorOrder;
   }
 
-  inline uint16_t getLength() {
+  uint16_t getLength() {
     return _len - _skip;
   }
 

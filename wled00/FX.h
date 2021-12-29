@@ -336,12 +336,12 @@ class WS2812FX {
     typedef struct Segment { // 30 (32 in memory?) bytes
       uint16_t start;
       uint16_t stop;    //segment invalid if stop == 0
-      uint16_t offset;  // WLEDSR: this is in latest AC
+      uint16_t offset;
       uint8_t speed;
       uint8_t intensity;
-      uint8_t custom1;     // WLEDSR
-      uint8_t custom2;     // WLEDSR
-      uint8_t custom3;     // WLEDSR
+      uint8_t custom1;  // WLEDSR
+      uint8_t custom2;  // WLEDSR
+      uint8_t custom3;  // WLEDSR
       uint8_t palette;
       uint8_t mode;
       uint8_t options;  //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
@@ -845,6 +845,7 @@ class WS2812FX {
       trigger(void),
       setReset(uint8_t n),
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0, uint16_t offset = UINT16_MAX),
+      restartRuntime(),
       resetSegments(),
       makeAutoSegments(),
       fixInvalidSegments(),
@@ -860,7 +861,7 @@ class WS2812FX {
       gammaCorrectBri = false,
       gammaCorrectCol = true,
       applyToAllSelected = true,
-      setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t f1, uint8_t f2, uint8_t f3, uint8_t p), //WLEDSR: add f1,2,3
+      setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t c1, uint8_t c2, uint8_t c3, uint8_t p), //WLEDSR: add c1,c2,c3
       checkSegmentAlignment(void),
 			hasCCTBus(void),
       // return true if the strip is being sent pixel updates

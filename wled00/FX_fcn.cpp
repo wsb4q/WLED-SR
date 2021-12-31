@@ -87,8 +87,6 @@ void WS2812FX::finalizeInit(void)
     }
   }
 
-  set2DSegment(0); // ewowi20210629: initialize 2D segment variables
-
   _length = 0;
   for (uint8_t i=0; i<busses.getNumBusses(); i++) {
     Bus *bus = busses.getBus(i);
@@ -108,6 +106,9 @@ void WS2812FX::finalizeInit(void)
     if (pins[0] == 3) bd->reinit();
     #endif
   }
+
+  setStripOrPanelWidthAndHeight();
+  set2DSegment(0); // ewowi20210629: initialize 2D segment variables
 
   //segments are created in makeAutoSegments();
 

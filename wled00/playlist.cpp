@@ -55,7 +55,7 @@ void unloadPlaylist() {
 
 int16_t loadPlaylist(JsonObject playlistObj, byte presetId) {
   unloadPlaylist();
-  
+
   JsonArray presets = playlistObj["ps"];
   playlistLen = presets.size();
   if (playlistLen == 0) return -1;
@@ -118,7 +118,9 @@ int16_t loadPlaylist(JsonObject playlistObj, byte presetId) {
 
 
 void handlePlaylist() {
-  if (currentPlaylist < 0 || playlistEntries == nullptr) return;
+  static unsigned long presetCycledTime = 0;
+  // if fileDoc is not null JSON buffer is in use so just quit
+  if (currentPlaylist < 0 || playlistEntries == nullptr || fileDoc != nullptr) return;
 
   if (millis() - presetCycledTime > (100*playlistEntryDur)) {
     presetCycledTime = millis();

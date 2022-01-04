@@ -69,11 +69,11 @@ void decBrightness()
 }
 
 // apply preset or fallback to a effect and palette if it doesn't exist
-void presetFallback(uint8_t presetID, uint8_t effectID, uint8_t paletteID) 
+void presetFallback(uint8_t presetID, uint8_t effectID, uint8_t paletteID)
 {
   byte prevError = errorFlag;
-  if (!applyPreset(presetID, CALL_MODE_BUTTON)) { 
-    effectCurrent = effectID;      
+  if (!applyPreset(presetID, CALL_MODE_BUTTON_PRESET)) {
+    effectCurrent = effectID;
     effectPalette = paletteID;
     errorFlag = prevError; //clear error 12 from non-existent preset
   }
@@ -87,7 +87,7 @@ bool decodeIRCustom(uint32_t code)
   {
     //just examples, feel free to modify or remove
     case IRCUSTOM_ONOFF : toggleOnOff(); break;
-    case IRCUSTOM_MACRO1 : applyPreset(1, CALL_MODE_BUTTON); break;
+    case IRCUSTOM_MACRO1 : applyPreset(1, CALL_MODE_BUTTON_PRESET); break;
 
     default: return false;
   }
@@ -119,8 +119,8 @@ void changeEffectSpeed(int8_t amount)
     if (new_val < 0) new_val += 255;    // roll-over if smaller than 0
     prim_hsv.h = (byte)new_val;
     hsv2rgb_rainbow(prim_hsv, fastled_col);
-    col[0] = fastled_col.red; 
-    col[1] = fastled_col.green; 
+    col[0] = fastled_col.red;
+    col[1] = fastled_col.green;
     col[2] = fastled_col.blue;
   }
 
@@ -143,8 +143,8 @@ void changeEffectIntensity(int8_t amount)
     int16_t new_val = (int16_t) prim_hsv.s + amount;
     prim_hsv.s = (byte)constrain(new_val,0.1,255.1);  // constrain to 0-255
     hsv2rgb_rainbow(prim_hsv, fastled_col);
-    col[0] = fastled_col.red; 
-    col[1] = fastled_col.green; 
+    col[0] = fastled_col.red;
+    col[1] = fastled_col.green;
     col[2] = fastled_col.blue;
   }
 
@@ -165,11 +165,12 @@ void decodeIR(uint32_t code)
   if (decodeIRCustom(code)) return;
   if (irEnabled == 8) { // any remote configurable with ir.json file
     decodeIRJson(code);
+    colorUpdated(CALL_MODE_BUTTON);
     return;
   }
   if (code > 0xFFFFFF) return; //invalid code
   switch (irEnabled) {
-    case 1: 
+    case 1:
       if (code > 0xF80000) {
         decodeIR24OLD(code);            // white 24-key remote (old) - it sends 0xFF0000 values
       } else {
@@ -178,10 +179,10 @@ void decodeIR(uint32_t code)
       break;
     case 2: decodeIR24CT(code);  break;  // white 24-key remote with CW, WW, CT+ and CT- keys
     case 3: decodeIR40(code);    break;  // blue  40-key remote with 25%, 50%, 75% and 100% keys
-    case 4: decodeIR44(code);    break;  // white 44-key remote with color-up/down keys and DIY1 to 6 keys 
-    case 5: decodeIR21(code);    break;  // white 21-key remote  
+    case 4: decodeIR44(code);    break;  // white 44-key remote with color-up/down keys and DIY1 to 6 keys
+    case 5: decodeIR21(code);    break;  // white 21-key remote
     case 6: decodeIR6(code);     break;  // black 6-key learning remote defaults: "CH" controls brightness,
-                                          // "VOL +" controls effect, "VOL -" controls colour/palette, "MUTE" 
+                                          // "VOL +" controls effect, "VOL -" controls colour/palette, "MUTE"
                                           // sets bright plain white
     case 7: decodeIR9(code);    break;
     //case 8: return; // ir.json file, handled above switch statement
@@ -193,9 +194,9 @@ void decodeIR(uint32_t code)
 }
 
 void applyRepeatActions(){
-  
+
     if (lastRepeatableAction == ACTION_BRIGHT_UP)
-    { 
+    {
       incBrightness(); colorUpdated(CALL_MODE_BUTTON);
     }
     else if (lastRepeatableAction == ACTION_BRIGHT_DOWN )
@@ -204,7 +205,7 @@ void applyRepeatActions(){
     }
 
     if (lastRepeatableAction == ACTION_SPEED_UP)
-    { 
+    {
       changeEffectSpeed(lastRepeatableValue); colorUpdated(CALL_MODE_BUTTON);
     }
     else if (lastRepeatableAction == ACTION_SPEED_DOWN )
@@ -213,7 +214,7 @@ void applyRepeatActions(){
     }
 
     if (lastRepeatableAction == ACTION_INTENSITY_UP)
-    { 
+    {
       changeEffectIntensity(lastRepeatableValue); colorUpdated(CALL_MODE_BUTTON);
     }
     else if (lastRepeatableAction == ACTION_INTENSITY_DOWN )
@@ -222,7 +223,7 @@ void applyRepeatActions(){
     }
 
     if (lastValidCode == IR40_WPLUS)
-    { 
+    {
       relativeChangeWhite(10); colorUpdated(CALL_MODE_BUTTON);
     }
     else if (lastValidCode == IR40_WMINUS)
@@ -235,7 +236,7 @@ void applyRepeatActions(){
       nightlightStartTime = millis();
       colorUpdated(CALL_MODE_BUTTON);
     }
-    else if (irEnabled == 8) 
+    else if (irEnabled == 8)
     {
       decodeIRJson(lastValidCode);
     }
@@ -332,9 +333,9 @@ void decodeIR24CT(uint32_t code)
     case IR24_CT_CTPLUS     : colorFromUint32(COLOR2_COLDWHITE2);   effectCurrent = 0;  break;
     case IR24_CT_CTMINUS    : colorFromUint32(COLOR2_WARMWHITE2);   effectCurrent = 0;  break;
     case IR24_CT_MEMORY   : {
-      if (col[3] > 0) col[3] = 0; 
+      if (col[3] > 0) col[3] = 0;
       else colorFromUint32(COLOR2_NEUTRALWHITE); effectCurrent = 0; }                   break;
-    default: return; 
+    default: return;
   }
   lastValidCode = code;
 }
@@ -362,19 +363,19 @@ void decodeIR40(uint32_t code)
     case IR40_MAGENTA      : colorFromUint24(COLOR_MAGENTA);                             break;
     case IR40_PINK         : colorFromUint24(COLOR_PINK);                                break;
     case IR40_WARMWHITE2   : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE2);   effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE2);   effectCurrent = 0; }
       else                  colorFromUint24(COLOR_WARMWHITE2);                       }   break;
     case IR40_WARMWHITE    : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE);    effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE);    effectCurrent = 0; }
       else                  colorFromUint24(COLOR_WARMWHITE);                        }   break;
     case IR40_WHITE        : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_NEUTRALWHITE); effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_NEUTRALWHITE); effectCurrent = 0; }
       else                  colorFromUint24(COLOR_NEUTRALWHITE);                     }   break;
     case IR40_COLDWHITE    : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE);    effectCurrent = 0; }   
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE);    effectCurrent = 0; }
       else                  colorFromUint24(COLOR_COLDWHITE);                        }   break;
     case IR40_COLDWHITE2    : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE2);   effectCurrent = 0; }   
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE2);   effectCurrent = 0; }
       else                  colorFromUint24(COLOR_COLDWHITE2);                       }   break;
     case IR40_WPLUS        : relativeChangeWhite(10);                                    break;
     case IR40_WMINUS       : relativeChangeWhite(-10, 5);                                break;
@@ -420,20 +421,20 @@ void decodeIR44(uint32_t code)
     case IR44_PINK        : colorFromUint24(COLOR_PINK);                                break;
     case IR44_WHITE       : {
       if (strip.isRgbw) {
-        if (col[3] > 0) col[3] = 0; 
+        if (col[3] > 0) col[3] = 0;
         else {              colorFromUint32(COLOR2_NEUTRALWHITE); effectCurrent = 0; }
       } else                colorFromUint24(COLOR_NEUTRALWHITE);                     }  break;
     case IR44_WARMWHITE2  : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE2);   effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE2);   effectCurrent = 0; }
       else                  colorFromUint24(COLOR_WARMWHITE2);                       }  break;
     case IR44_WARMWHITE   : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE);    effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_WARMWHITE);    effectCurrent = 0; }
       else                  colorFromUint24(COLOR_WARMWHITE);                        }  break;
     case IR44_COLDWHITE   : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE);    effectCurrent = 0; }   
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE);    effectCurrent = 0; }
       else                  colorFromUint24(COLOR_COLDWHITE);                        }  break;
     case IR44_COLDWHITE2  : {
-      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE2);   effectCurrent = 0; }    
+      if (strip.isRgbw) {        colorFromUint32(COLOR2_COLDWHITE2);   effectCurrent = 0; }
       else                  colorFromUint24(COLOR_COLDWHITE2);                       }  break;
     case IR44_REDPLUS     : relativeChange(&effectCurrent,  1, 0, MODE_COUNT);          break;
     case IR44_REDMINUS    : relativeChange(&effectCurrent, -1, 0);                      break;
@@ -496,7 +497,7 @@ void decodeIR6(uint32_t code)
     case IR6_CHANNEL_DOWN: decBrightness();                                 break;
     case IR6_VOLUME_UP:   relativeChange(&effectCurrent, 1, 0, MODE_COUNT); break;  // next effect
     case IR6_VOLUME_DOWN:                                                           // next palette
-      relativeChange(&effectPalette, 1, 0, strip.getPaletteCount() -1); 
+      relativeChange(&effectPalette, 1, 0, strip.getPaletteCount() -1);
       switch(lastIR6ColourIdx) {
         case 0: colorFromUint32(COLOR_RED);       break;
         case 1: colorFromUint32(COLOR_REDDISH);   break;
@@ -542,13 +543,13 @@ void decodeIR9(uint32_t code)
 
 /*
 This allows users to customize IR actions without the need to edit C code and compile.
-From the https://github.com/Aircoookie/WLED/wiki/Infrared-Control page, download the starter 
+From the https://github.com/Aircoookie/WLED/wiki/Infrared-Control page, download the starter
 ir.json file that corresponds to the number of buttons on your remote.
 Many of the remotes with the same number of buttons emit the same codes, but will have
 different labels or colors. Once you edit the ir.json file, upload it to your controller
 using the /edit page.
 
-Each key should be the hex encoded IR code. The "cmd" property should be the HTTP API 
+Each key should be the hex encoded IR code. The "cmd" property should be the HTTP API
 or JSON API command to execute on button press. If the command contains a relative change (SI=~16),
 it will register as a repeatable command. If the command doesn't contain a "~" but is repeatable, add "rpt" property
 set to true. Other properties are ignored but having labels and positions can assist with editing
@@ -563,31 +564,39 @@ Sample:
                "label": "Preset 1, fallback to Saw - Party if not found"},
 }
 */
-void decodeIRJson(uint32_t code) 
+void decodeIRJson(uint32_t code)
 {
   char objKey[10];
-  const char* cmd;
   String cmdStr;
-  DynamicJsonDocument irDoc(JSON_BUFFER_SIZE);
   JsonObject fdo;
   JsonObject jsonCmdObj;
 
-  sprintf(objKey, "\"0x%X\":", code);
+  #ifdef WLED_USE_DYNAMIC_JSON
+  DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+  #else
+  if (!requestJSONBufferLock(13)) return;
+  #endif
 
-  readObjectFromFile("/ir.json", objKey, &irDoc);
-  fdo = irDoc.as<JsonObject>();
+  sprintf_P(objKey, PSTR("\"0x%lX\":"), (unsigned long)code);
+
+  // attempt to read command from ir.json
+  // this may fail for two reasons: ir.json does not exist or IR code not found
+  // if the IR code is not found readObjectFromFile() will clean() doc JSON document
+  // so we can differentiate between the two
+  readObjectFromFile("/ir.json", objKey, &doc);
+  fdo = doc.as<JsonObject>();
   lastValidCode = 0;
   if (fdo.isNull()) {
     //the received code does not exist
     if (!WLED_FS.exists("/ir.json")) errorFlag = ERR_FS_IRLOAD; //warn if IR file itself doesn't exist
+    releaseJSONBufferLock();
     return;
   }
 
-  cmd = fdo["cmd"]; //string
-  cmdStr = String(cmd);
+  cmdStr = fdo["cmd"].as<String>();
   jsonCmdObj = fdo["cmd"]; //object
 
-  if (!cmdStr.isEmpty()) 
+  if (!cmdStr.isEmpty())
   {
     if (cmdStr.startsWith("!")) {
       // call limited set of C functions
@@ -605,7 +614,7 @@ void decodeIRJson(uint32_t code)
       }
     } else {
       // HTTP API command
-      if (cmdStr.indexOf("~") || fdo["rpt"]) 
+      if (cmdStr.indexOf("~") || fdo["rpt"])
       {
         // repeatable action
         lastValidCode = code;
@@ -617,16 +626,14 @@ void decodeIRJson(uint32_t code)
       if (!cmdStr.startsWith("win&")) {
         cmdStr = "win&" + cmdStr;
       }
-      handleSet(nullptr, cmdStr, false); 
+      handleSet(nullptr, cmdStr, false);
     }
     colorUpdated(CALL_MODE_BUTTON);
   } else if (!jsonCmdObj.isNull()) {
     // command is JSON object
-    //allow applyPreset() to reuse JSON buffer, or it would alloc. a second buffer and run out of mem.
-    fileDoc = &irDoc;
-    deserializeState(jsonCmdObj, CALL_MODE_BUTTON);
-    fileDoc = nullptr;
+    deserializeState(jsonCmdObj, CALL_MODE_BUTTON_PRESET);
   }
+  releaseJSONBufferLock();
 }
 
 void initIR()
@@ -646,17 +653,16 @@ void handleIR()
     if (irEnabled > 0)
     {
       if (irrecv == NULL)
-      { 
+      {
         initIR(); return;
       }
-      
+
       if (irrecv->decode(&results))
       {
         if (results.value != 0) // only print results if anything is received ( != 0 )
         {
-          Serial.print("IR recv\r\n0x");
-          Serial.println((uint32_t)results.value, HEX);
-          Serial.println();
+					if (!pinManager.isPinAllocated(1)) //GPIO 1 - Serial TX pin
+          	Serial.printf_P(PSTR("IR recv: 0x%lX\n"), (unsigned long)results.value);
         }
         decodeIR(results.value);
         irrecv->resume();

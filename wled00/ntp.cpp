@@ -31,6 +31,7 @@ Timezone* tz;
 #define TZ_HAWAII              18
 #define TZ_NOVOSIBIRSK         19
 #define TZ_ANCHORAGE           20
+#define TZ_MX_CENTRAL          21
 #define TZ_INIT               255
 
 byte tzCurrent = TZ_INIT; //uninitialized
@@ -140,6 +141,11 @@ void updateTimezone() {
     case TZ_ANCHORAGE : {
       tcrDaylight = {Second, Sun, Mar, 2, -480};  //AKDT = UTC - 8 hours
       tcrStandard = {First, Sun, Nov, 2, -540};   //AKST = UTC - 9 hours
+      break;
+    }
+     case TZ_MX_CENTRAL : {
+      tcrDaylight = {First, Sun, Apr, 2, -300};  //CDT = UTC - 5 hours
+      tcrStandard = {Last,  Sun, Oct, 2, -360};  //CST = UTC - 6 hours
       break;
     }
   }
@@ -327,8 +333,8 @@ void checkTimers()
     byte d = weekdayMondayFirst();
 
     DEBUG_PRINTF("Local time: %02d:%02d\n", h, m);
-    uint16_t scanBackMax = ntpFirstTime ? 10080 : 1;   // first time scan back 7 * 24 * 60 minutes 
-    for (uint16_t scanBack = 0; scanBack < scanBackMax; scanBack++) 
+    uint16_t scanBackMax = ntpFirstTime ? 10080 : 1;   // first time scan back 7 * 24 * 60 minutes
+    for (uint16_t scanBack = 0; scanBack < scanBackMax; scanBack++)
     {
       for (uint8_t i = 0; i < 8; i++)
       {
@@ -344,6 +350,8 @@ void checkTimers()
             applyPreset(timerMacro[i]);
           }
           scanBack = scanBackMax;   // exit outer loop
+          unloadPlaylist();
+          applyPreset(timerMacro[i]);
         }
       }
 
@@ -373,6 +381,7 @@ void checkTimers()
           && (timerWeekday[8] & 0x01) //timer is enabled
           && ((timerWeekday[8] >> weekdayMondayFirst()) & 0x01)) //timer should activate at current day of week
       {
+        unloadPlaylist();
         applyPreset(timerMacro[8]);
         DEBUG_PRINTF("Sunrise macro %d triggered.",timerMacro[8]);
       }
@@ -387,6 +396,7 @@ void checkTimers()
           && (timerWeekday[9] & 0x01) //timer is enabled
           && ((timerWeekday[9] >> weekdayMondayFirst()) & 0x01)) //timer should activate at current day of week
       {
+        unloadPlaylist();
         applyPreset(timerMacro[9]);
         DEBUG_PRINTF("Sunset macro %d triggered.",timerMacro[9]);
       }

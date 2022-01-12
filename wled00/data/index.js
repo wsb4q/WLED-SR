@@ -1922,29 +1922,29 @@ function populateCEEditor(name, segID)
 
   fetchAndExecute(name + ".wled", function(text)
   {
-    fetchAndExecute(name + ".wled.log", function(logtext)
-    {
-      var cn="";
+    var cn=`<table class="infot"><tr><td>
+            Custom Effects Editor<br>
+            <i>${name}.wled</i><br>
+            <textarea class="ceTextarea" id="ceProgramArea">${text}</textarea>
+            </td></tr></table>
+            <button class="btn infobtn" onclick="toggleCEEditor()">Close</button>
+            <button class="btn infobtn" onclick="saveCE('${name}.wled', ${segID})">Save and Run</button><br>
+            <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button>
+            <button class="btn infobtn" onclick="loadCETemplate('${name}')">Load template</button><br>
+            <button class="btn infobtn" onclick="downloadCEFile('wled.json')">Download wled.json</button>
+            <button class="btn infobtn" onclick="downloadCEFile('presets.json')">Download presets.json</button><br>
+            <a href="https://github.com/MoonModules/WLED-Effects/tree/master/CustomEffects/wled" target="_blank">Custom Effects Library</a><br>
+            <a href="https://github.com/atuline/WLED/wiki/WLED-Custom-effects" target="_blank">Custom Effects Help</a><br>
+            <br><i>Compile and Run Log</i><br>
+            <textarea class="ceTextarea" id="ceLogArea"></textarea><br>
+            <i>Run log > 3 seconds is send to Serial Ouput.</i>`;
 
-      cn +=  `<table class="infot"><tr><td>
-              Custom Effects Editor<br>
-              <i>${name}.wled</i><br>
-              <textarea class="ceTextarea" id="ceProgramArea">${text}</textarea>
-              </td></tr></table>
-              <button class="btn infobtn" onclick="toggleCEEditor()">Close</button>
-              <button class="btn infobtn" onclick="saveCE('${name}.wled', ${segID})">Save</button><br>
-              <button class="btn infobtn" onclick="downloadCEFile('${name}.wled')">Download ${name}.wled</button>
-              <button class="btn infobtn" onclick="loadCETemplate('${name}')">Load template</button><br>
-              <button class="btn infobtn" onclick="downloadCEFile('wled.json')">Download wled.json</button>
-              <button class="btn infobtn" onclick="downloadCEFile('presets.json')">Download presets.json</button><br>
-              <a href="https://github.com/MoonModules/WLED-Effects/tree/master/CustomEffects/wled" target="_blank">Custom Effects Library</a><br>
-              <a href="https://github.com/atuline/WLED/wiki/WLED-Custom-effects" target="_blank">Custom Effects Help</a><br>
-              <br><i>Compile Log</i><br>
-              <textarea class="ceTextarea" id="ceLogArea">${logtext}</textarea><br>
-              <i>Run log (including errors and print commands) is send to Serial Ouput.</i>`;
+    d.getElementById('kceEditor').innerHTML = cn;
 
-      d.getElementById('kceEditor').innerHTML = cn;
-    });
+    var ceLogArea = d.getElementById("ceLogArea");
+    ceLogArea.value = ".";
+    loadLogFile(name + ".wled.log", 1);
+  
   });
 }
 
@@ -1975,14 +1975,32 @@ function saveCE(name, segID) {
   var obj = {"seg": {"id": segID, "reset": true}};
   requestJson(obj);
 
+  var ceLogArea = d.getElementById("ceLogArea");
+  ceLogArea.value = ".";
   setTimeout(() =>
   {
-      fetchAndExecute(name + ".log", function(logtext)
-      {
-        var ceLogArea = d.getElementById("ceLogArea");
-        ceLogArea.value = logtext;
-      });
-    }, 1000);
+    loadLogFile(name + ".log", 1);
+  }, 1000);
+}
+
+function loadLogFile(name, attempt) {
+  var ceLogArea = d.getElementById("ceLogArea");
+  fetchAndExecute(name , function(logtext)
+  {
+    if (logtext == "") {
+      if (attempt < 10) {
+        ceLogArea.value = ("...........").substring(0, attempt + 1);
+        setTimeout(() =>
+        {
+          loadLogFile(name, attempt + 1);
+        }, 1000);
+      }
+      else
+        ceLogArea.value = "log not found after 10 seconds";
+    }
+    else
+      ceLogArea.value = logtext;
+  });
 }
 
 //WLEDSR Custom Effects
@@ -1992,7 +2010,7 @@ function downloadCEFile(name) {
   var request = new XMLHttpRequest();
   request.onload = function() {
     if (name == "wled.json" || name == "presets.json") {
-        if (!confirm('Are you sure to download' + name + '?'))
+        if (!confirm('Are you sure to download ' + name + '?'))
           return;
         uploadFileWithText("/" + name, request.response);
     }

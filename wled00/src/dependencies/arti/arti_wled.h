@@ -21,7 +21,7 @@
 
 #if ARTI_PLATFORM == ARTI_ARDUINO
   #include "arti.h"
-  #include "FX.h"
+//  #include "FX.h"
   extern float sampleAvg;
 #else
   #include "../arti.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Wire.h>
-#include <wled.h>
+#include "wled.h"
 #include <driver/i2s.h>
 
 /* ToDo: remove. ES7243 is controlled via compiler defines

@@ -42,8 +42,8 @@
 #define ARTI_FILE 2
 
 #if ARTI_PLATFORM == ARTI_ARDUINO //defined in arti_definition.h e.g. arti_wled.h!
-  #include "wled.h"  
-  #include "src/dependencies/json/ArduinoJson-v6.h"
+  #include "../../../wled.h"  
+  #include "../json/ArduinoJson-v6.h"
 
   File logFile;
 

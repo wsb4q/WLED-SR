@@ -200,7 +200,7 @@ void agcAvg() {
 
   multAgc = (sampleAvg < 1) ? targetAgc : targetAgc / sampleAvg;  // Make the multiplier so that sampleAvg * multiplier = setpoint
   int tmpAgc = sample * multAgc;
-  if (tmpAgc > 255) tmpAgc = 0;
+  if (tmpAgc > 255) tmpAgc = 255;
   sampleAgc = tmpAgc;                             // ONLY update sampleAgc ONCE because it's used elsewhere asynchronously!!!!
   userVar0 = sampleAvg * 4;
   if (userVar0 > 255) userVar0 = 255;

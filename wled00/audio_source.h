@@ -89,11 +89,11 @@ public:
         _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
             .sample_rate = _sampleRate,
-            .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+            .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
             .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
             .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-            .dma_buf_count = 8,
+            .dma_buf_count = 12,
             .dma_buf_len = _blockSize
         };
 
@@ -155,7 +155,7 @@ public:
         if(_initialized) {
             esp_err_t err;
             size_t bytes_read = 0;        /* Counter variable to check if we actually got enough data */
-            int32_t samples[num_samples]; /* Intermediary sample storage */
+            int16_t samples[num_samples]; /* Intermediary sample storage */
 
             // Reset dc offset
             _dcOffset = 0.0f;
@@ -175,13 +175,19 @@ public:
             // Store samples in sample buffer and update DC offset
             for (int i = 0; i < num_samples; i++) {
                 // From the old code.
-                double sample = (double)abs((samples[i] >> _shift));
+                // double sample = (double)abs((samples[i] >> _shift));
+                double sample = 0.0;
+                if (_shift > 0)
+                  sample = (double) (samples[i] >> _shift);
+                else
+                  sample = (double) samples[i];
+                
                 buffer[i] = sample;
                 _dcOffset = ((_dcOffset * 31) + sample) / 32;
             }
 
             // Update no-DC sample
-            _sampleNoDCOffset = abs(buffer[num_samples - 1] - _dcOffset);
+            _sampleNoDCOffset = buffer[num_samples - 1] - _dcOffset;
         }
     }
 
@@ -261,7 +267,7 @@ private:
         _es7243I2cWrite(0x00, 0x01);
         _es7243I2cWrite(0x06, 0x00);
         _es7243I2cWrite(0x05, 0x1B);
-        _es7243I2cWrite(0x01, 0x00); // 0x00 for 24 bit to match INMP441
+        _es7243I2cWrite(0x01, 0x00); // 0x00 for 24 bit to match INMP441 - not sure if this needs adjustment to get 16bit samples from I2S
         _es7243I2cWrite(0x08, 0x43);
         _es7243I2cWrite(0x05, 0x13);
     }
@@ -304,11 +310,11 @@ public:
         _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
             .sample_rate = _sampleRate,
-            .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+            .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
             .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
             .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-            .dma_buf_count = 8,
+            .dma_buf_count = 12,
             .dma_buf_len = _blockSize
         };
     }
@@ -350,19 +356,26 @@ public:
     after sampling, otherwise Wifi dies
     */
         if (_initialized) {
+#if !defined(ARDUINO_ARCH_ESP32)
+			// old code - works for me without enable/disable, at least on ESP32.
             esp_err_t err = i2s_adc_enable(I2S_NUM_0);
+			//esp_err_t err = i2s_start(I2S_NUM_0);
             if (err != ESP_OK) {
                 Serial.printf("Failed to enable i2s adc: %d\n", err);
                 return;
             }
-
+#endif
             I2SSource::getSamples(buffer, num_samples);
 
+#if !defined(ARDUINO_ARCH_ESP32)
+			// old code - works for me without enable/disable, at least on ESP32.
             err = i2s_adc_disable(I2S_NUM_0);
+			//err = i2s_stop(I2S_NUM_0);
             if (err != ESP_OK) {
                 Serial.printf("Failed to disable i2s adc: %d\n", err);
                 return;
             }
+#endif
         }
     }
 

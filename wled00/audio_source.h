@@ -352,7 +352,17 @@ public:
         if (err != ESP_OK) {
             Serial.printf("Failed to set i2s adc mode: %d\n", err);
             return;
+
         }
+#if defined(ARDUINO_ARCH_ESP32)
+        // according to docs from espressif, the ADC needs to be started explicitly
+        // fingers crossed
+        err = i2s_adc_enable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to enable i2s adc: %d\n", err);
+            //return;
+        }
+#endif
 
         _initialized = true;
     }
@@ -389,7 +399,17 @@ public:
     void deinitialize() {
         pinManager.deallocatePin(audioPin, PinOwner::AnalogMic);
         _initialized = false;
-        esp_err_t err = i2s_driver_uninstall(I2S_NUM_0);
+        esp_err_t err;
+#if defined(ARDUINO_ARCH_ESP32)
+        // according to docs from espressif, the ADC needs to be stopped explicitly
+        // fingers crossed
+        err = i2s_adc_disable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to disable i2s adc: %d\n", err);
+            //return;
+        }
+#endif
+        err = i2s_driver_uninstall(I2S_NUM_0);
         if (err != ESP_OK) {
             Serial.printf("Failed to uninstall i2s driver: %d\n", err);
             return;

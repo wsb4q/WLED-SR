@@ -45,8 +45,8 @@ void userSetup() {
     case 0:
     default:
       Serial.println("AS: Analog Microphone.");
-      // we don't need the down-shift by 16bit any more
-      audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, 0, 0x0FFF);
+      // we don't do the down-shift by 16bit any more, however "upscaling" from 12bit to 16bit is needed
+      audioSource = new I2SAdcSource(SAMPLE_RATE, BLOCK_SIZE, -4, 0x0FFF);
       break;
   }
 

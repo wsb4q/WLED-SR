@@ -74,8 +74,8 @@ protected:
     int _blockSize;                 /* I2S block size */
     volatile int _sampleNoDCOffset; /* Up-to-date sample without DCOffset */
     float _dcOffset;                /* Rolling average DC offset */
-    uint16_t _shift;                /* Shift obtained samples to the right by this amount */
-    uint32_t _mask;                 /* Bitmask for sample data after shifting */
+    int16_t _shift;                /* Shift obtained samples to the right (positive) or left(negative) by this amount */
+    uint32_t _mask;                 /* Bitmask for sample data after shifting. Bitmask 0X0FFF means that we need to convert 12bit ADC samples from unsigned to signed*/
     bool _initialized;              /* Gets set to true if initialization is successful */
 };
 
@@ -174,14 +174,21 @@ public:
 
             // Store samples in sample buffer and update DC offset
             for (int i = 0; i < num_samples; i++) {
+                // pre-processing of ADC samples
+                if (_mask == 0x0FFF) { // 0x0FFF means that we have 12bit unsigned data from ADC -> convert to signed
+                   samples[i] = samples[i] - 2048;
+                }
                 // From the old code.
                 // double sample = (double)abs((samples[i] >> _shift));
                 double sample = 0.0;
-                if (_shift > 0)
+                if(_shift > 0)
                   sample = (double) (samples[i] >> _shift);
-                else
-                  sample = (double) samples[i];
-                
+                else {
+                  if(_shift < 0)
+                    sample = (double) (samples[i] << (- _shift)); // need to "pup up" 12bit ADC to full 16bit as delivered by other digotal mics
+                  else
+                    sample = (double) samples[i];
+                }
                 buffer[i] = sample;
                 _dcOffset = ((_dcOffset * 31) + sample) / 32;
             }

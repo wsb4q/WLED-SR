@@ -74,8 +74,8 @@ protected:
     int _blockSize;                 /* I2S block size */
     volatile int _sampleNoDCOffset; /* Up-to-date sample without DCOffset */
     float _dcOffset;                /* Rolling average DC offset */
-    uint16_t _shift;                /* Shift obtained samples to the right by this amount */
-    uint32_t _mask;                 /* Bitmask for sample data after shifting */
+    int16_t _shift;                /* Shift obtained samples to the right (positive) or left(negative) by this amount */
+    uint32_t _mask;                 /* Bitmask for sample data after shifting. Bitmask 0X0FFF means that we need to convert 12bit ADC samples from unsigned to signed*/
     bool _initialized;              /* Gets set to true if initialization is successful */
 };
 
@@ -174,14 +174,21 @@ public:
 
             // Store samples in sample buffer and update DC offset
             for (int i = 0; i < num_samples; i++) {
+                // pre-processing of ADC samples
+                if (_mask == 0x0FFF) { // 0x0FFF means that we have 12bit unsigned data from ADC -> convert to signed
+                   samples[i] = samples[i] - 2048;
+                }
                 // From the old code.
                 // double sample = (double)abs((samples[i] >> _shift));
                 double sample = 0.0;
-                if (_shift > 0)
+                if(_shift > 0)
                   sample = (double) (samples[i] >> _shift);
-                else
-                  sample = (double) samples[i];
-                
+                else {
+                  if(_shift < 0)
+                    sample = (double) (samples[i] << (- _shift)); // need to "pump up" 12bit ADC to full 16bit as delivered by other digital mics
+                  else
+                    sample = (double) samples[i];
+                }
                 buffer[i] = sample;
                 _dcOffset = ((_dcOffset * 31) + sample) / 32;
             }
@@ -345,7 +352,17 @@ public:
         if (err != ESP_OK) {
             Serial.printf("Failed to set i2s adc mode: %d\n", err);
             return;
+
         }
+#if defined(ARDUINO_ARCH_ESP32)
+        // according to docs from espressif, the ADC needs to be started explicitly
+        // fingers crossed
+        err = i2s_adc_enable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to enable i2s adc: %d\n", err);
+            //return;
+        }
+#endif
 
         _initialized = true;
     }
@@ -382,7 +399,17 @@ public:
     void deinitialize() {
         pinManager.deallocatePin(audioPin, PinOwner::AnalogMic);
         _initialized = false;
-        esp_err_t err = i2s_driver_uninstall(I2S_NUM_0);
+        esp_err_t err;
+#if defined(ARDUINO_ARCH_ESP32)
+        // according to docs from espressif, the ADC needs to be stopped explicitly
+        // fingers crossed
+        err = i2s_adc_disable(I2S_NUM_0);
+        if (err != ESP_OK) {
+            Serial.printf("Failed to disable i2s adc: %d\n", err);
+            //return;
+        }
+#endif
+        err = i2s_driver_uninstall(I2S_NUM_0);
         if (err != ESP_OK) {
             Serial.printf("Failed to uninstall i2s driver: %d\n", err);
             return;

@@ -185,7 +185,7 @@ public:
                   sample = (double) (samples[i] >> _shift);
                 else {
                   if(_shift < 0)
-                    sample = (double) (samples[i] << (- _shift)); // need to "pump up" 12bit ADC to full 16bit as delivered by other digotal mics
+                    sample = (double) (samples[i] << (- _shift)); // need to "pump up" 12bit ADC to full 16bit as delivered by other digital mics
                   else
                     sample = (double) samples[i];
                 }

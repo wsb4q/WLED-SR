@@ -40,7 +40,7 @@ AudioSource *audioSource;
 // #define MIC_SAMPLING_LOG
 // #define FFT_SAMPLING_LOG
 
-#define MAJORPEAK_SUPPRESS_NOISE      // define to activate a dirty hack that ignores the lowest + hightest FFT bins
+//#define MAJORPEAK_SUPPRESS_NOISE      // define to activate a dirty hack that ignores the lowest + hightest FFT bins
 
 const i2s_port_t I2S_PORT = I2S_NUM_0;
 const int BLOCK_SIZE = 128;
@@ -347,6 +347,8 @@ void FFTcode( void * parameter) {
     FFT.MajorPeak(&FFT_MajorPeak, &FFT_Magnitude);          // let the effects know which freq was most dominant
 
 #ifdef MAJORPEAK_SUPPRESS_NOISE
+	// dirty hack: limit suppressed channel intensities to FFT_Magnitude
+	for (int k=0; k < 24; k++) if(xtemp[k] > FFT_Magnitude) xtemp[k] = FFT_Magnitude;
     // restore bins
     vReal[0] = xtemp[0];
     vReal[1] = xtemp[1];

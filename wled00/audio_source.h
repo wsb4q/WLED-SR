@@ -8,6 +8,18 @@
    Until this configuration is moved to the webinterface
 */
 
+// data type requested from the I2S driver - currently we always use 32bit
+//#define I2S_USE_16BIT_SAMPLES   // (experimental) define this to request 16bit - more efficient but possibly less compatible
+#ifdef I2S_USE_16BIT_SAMPLES
+#define I2S_SAMPLE_RESOLUTION I2S_BITS_PER_SAMPLE_16BIT
+#define I2S_datatype int16_t
+#undef  I2S_SAMPLE_DOWNSCALE_TO_16BIT
+#else
+#define I2S_SAMPLE_RESOLUTION I2S_BITS_PER_SAMPLE_32BIT
+#define I2S_datatype int32_t
+#define I2S_SAMPLE_DOWNSCALE_TO_16BIT
+#endif
+
 #ifndef MCLK_PIN
     int mclkPin = 0;
 #else
@@ -68,7 +80,7 @@ public:
 
 protected:
     // Private constructor, to make sure it is not callable except from derived classes
-    AudioSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) : _sampleRate(sampleRate), _blockSize(blockSize), _sampleNoDCOffset(0), _dcOffset(0.0f), _shift(lshift), _mask(mask), _initialized(false) {};
+    AudioSource(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) : _sampleRate(sampleRate), _blockSize(blockSize), _sampleNoDCOffset(0), _dcOffset(0.0f), _shift(lshift), _mask(mask), _initialized(false) {};
 
     int _sampleRate;                /* Microphone sampling rate */
     int _blockSize;                 /* I2S block size */
@@ -84,16 +96,16 @@ protected:
 */
 class I2SSource : public AudioSource {
 public:
-    I2SSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    I2SSource(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         AudioSource(sampleRate, blockSize, lshift, mask) {
         _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
             .sample_rate = _sampleRate,
-            .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+            .bits_per_sample = I2S_SAMPLE_RESOLUTION,
             .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
             .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-            .dma_buf_count = 12,
+            .dma_buf_count = 8,
             .dma_buf_len = _blockSize
         };
 
@@ -155,7 +167,7 @@ public:
         if(_initialized) {
             esp_err_t err;
             size_t bytes_read = 0;        /* Counter variable to check if we actually got enough data */
-            int16_t samples[num_samples]; /* Intermediary sample storage */
+            I2S_datatype samples[num_samples]; /* Intermediary sample storage */
 
             // Reset dc offset
             _dcOffset = 0.0f;
@@ -174,6 +186,10 @@ public:
 
             // Store samples in sample buffer and update DC offset
             for (int i = 0; i < num_samples; i++) {
+                // pre-shift samples down to 16bit
+#ifdef I2S_SAMPLE_DOWNSCALE_TO_16BIT
+                samples[i] >>= 16;
+#endif
                 // pre-processing of ADC samples
                 if (_mask == 0x0FFF) { // 0x0FFF means that we have 12bit unsigned data from ADC -> convert to signed
                    samples[i] = samples[i] - 2048;
@@ -213,7 +229,7 @@ protected:
 */
 class I2SSourceWithMasterClock : public I2SSource {
 public:
-    I2SSourceWithMasterClock(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    I2SSourceWithMasterClock(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         I2SSource(sampleRate, blockSize, lshift, mask) {
     };
 
@@ -281,7 +297,7 @@ private:
 
 public:
 
-    ES7243(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    ES7243(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         I2SSourceWithMasterClock(sampleRate, blockSize, lshift, mask) {
         _config.channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT;
     };
@@ -312,16 +328,16 @@ public:
 */
 class I2SAdcSource : public I2SSource {
 public:
-    I2SAdcSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    I2SAdcSource(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         I2SSource(sampleRate, blockSize, lshift, mask){
         _config = {
             .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
             .sample_rate = _sampleRate,
-            .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+            .bits_per_sample = I2S_SAMPLE_RESOLUTION,
             .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
             .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-            .dma_buf_count = 12,
+            .dma_buf_count = 8,
             .dma_buf_len = _blockSize
         };
     }
@@ -424,7 +440,7 @@ public:
 class SPH0654 : public I2SSource {
 
 public:
-    SPH0654(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    SPH0654(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         I2SSource(sampleRate, blockSize, lshift, mask){}
 
     void initialize() {
@@ -443,7 +459,7 @@ public:
 class I2SPdmSource : public I2SSource {
 
 public:
-    I2SPdmSource(int sampleRate, int blockSize, uint16_t lshift, uint32_t mask) :
+    I2SPdmSource(int sampleRate, int blockSize, int16_t lshift, uint32_t mask) :
         I2SSource(sampleRate, blockSize, lshift, mask) {
 
         _config.mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM); // Change mode to pdm

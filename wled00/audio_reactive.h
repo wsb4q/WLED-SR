@@ -36,7 +36,7 @@ AudioSource *audioSource;
   #define DEBUGSR_PRINTF(x...)
 #endif
 
-#define MIC_LOGGER
+// #define MIC_LOGGER
 // #define MIC_SAMPLING_LOG
 // #define FFT_SAMPLING_LOG
 

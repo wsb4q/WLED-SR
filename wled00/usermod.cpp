@@ -83,7 +83,9 @@ void userLoop() {
     getSample();                        // Sample the microphone
     agcAvg();                           // Calculated the PI adjusted value as sampleAvg
     myVals[millis()%32] = sampleAgc;
-    logAudio();
+    EVERY_N_MILLIS(20) {
+      logAudio();
+    }
   }
   if (audioSyncEnabled & (1 << 0)) {    // Only run the transmit code IF we're in Transmit mode
     //Serial.println("Transmitting UDP Mic Packet");

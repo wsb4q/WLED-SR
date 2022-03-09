@@ -199,10 +199,26 @@ void getSample() {
 /*
  * A simple averaging multiplier to automatically adjust sound sensitivity.
  */
+/*
+ * A simple, but hairy, averaging multiplier to automatically adjust sound sensitivity.
+ *    not sure if not sure "sample" or "sampleAvg" is the correct input signal for AGC
+ */
 void agcAvg() {
 
-  multAgc = (sampleAvg < 1) ? targetAgc : targetAgc / sampleAvg;  // Make the multiplier so that sampleAvg * multiplier = setpoint
-  int tmpAgc = sample * multAgc;
+  float lastMultAgc = multAgc;
+  float tmpAgc;
+  if(fabs(sampleAvg) < 2.0) {
+    tmpAgc = sampleAvg;                           // signal below squelch -> deliver silence
+    multAgc = multAgc * 0.95;                     // slightly decrease gain multiplier
+  } else {
+    multAgc = (sampleAvg < 1) ? targetAgc : targetAgc / sampleAvg;  // Make the multiplier so that sampleAvg * multiplier = setpoint
+  }
+
+  if (multAgc < 0.5) multAgc = 0.5;               // signal higher than 2*setpoint -> don't reduce it further
+  multAgc = (lastMultAgc*127.0 +multAgc) / 128.0; //apply some filtering to gain multiplier -> smoother transitions
+  tmpAgc = (float)sample * multAgc;               // apply gain to signal
+  if (tmpAgc <= (soundSquelch*1.2)) tmpAgc = sample;  // check against squelch threshold - increased by 20% to avoid artefacts (ripples)
+
   if (tmpAgc > 255) tmpAgc = 255;
   sampleAgc = tmpAgc;                             // ONLY update sampleAgc ONCE because it's used elsewhere asynchronously!!!!
   userVar0 = sampleAvg * 4;
@@ -453,12 +469,14 @@ void logAudio() {
 #ifdef MIC_LOGGER
 
 
-//  Serial.print(micIn);      Serial.print(" ");
-//  Serial.print(sample); Serial.print(" ");
-//  Serial.print(sampleAvg); Serial.print(" ");
-//  Serial.print(sampleAgc);  Serial.print(" ");
-//  Serial.print(micData);    Serial.print(" ");
-//  Serial.print(micDataSm);  Serial.print(" ");
+  //Serial.print("micData:");    Serial.print(micData);   Serial.print("\t");
+  //Serial.print("micDataSm:");  Serial.print(micDataSm); Serial.print("\t");
+  //Serial.print("micIn:");      Serial.print(micIn);     Serial.print("\t");
+  //Serial.print("micLev:");     Serial.print(micLev);      Serial.print("\t");
+  Serial.print("sample:");     Serial.print(sample);      Serial.print("\t");
+  //Serial.print("sampleAvg:");  Serial.print(sampleAvg);   Serial.print("\t");
+  //Serial.print("multAgc:");    Serial.print(multAgc);   Serial.print("\t");
+  Serial.print("sampleAgc:");  Serial.print(sampleAgc);   Serial.print("\t");
   Serial.println(" ");
 
 #endif

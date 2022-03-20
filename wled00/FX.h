@@ -48,7 +48,8 @@
 
 /* Not used in all effects yet */
 #define WLED_FPS         42
-#define FRAMETIME        (1000/WLED_FPS)
+#define FRAMETIME_FIXED  (1000/WLED_FPS)
+#define FRAMETIME        _frametime
 
 /* each segment uses 52 bytes of SRAM memory, so if you're application fails because of
   insufficient memory, decreasing MAX_NUM_SEGMENTS may help */
@@ -71,7 +72,7 @@
 #define FAIR_DATA_PER_SEG (MAX_SEGMENT_DATA / MAX_NUM_SEGMENTS)
 
 #define LED_SKIP_AMOUNT  1
-#define MIN_SHOW_DELAY  15
+#define MIN_SHOW_DELAY   (_frametime < 16 ? 8 : 15)
 
 #define NUM_COLORS       3 /* number of colors per segment */
 #define SEGMENT          _segments[_segment_index]
@@ -80,7 +81,6 @@
 #define SEGLEN           _virtualSegmentLength
 #define SEGACT           SEGMENT.stop
 #define SPEED_FORMULA_L  5U + (50U*(255U - SEGMENT.speed))/SEGLEN
-#define RESET_RUNTIME    memset(_segment_runtimes, 0, sizeof(_segment_runtimes))
 
 // some common colors
 #define RED        (uint32_t)0xFF0000
@@ -316,7 +316,7 @@
 
 #define floatNull -32768 //WLEDSR Custom Effects
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//    End of Audio Reactive fork (WLEDSR)                                                                                                       //
+//    End of Audio Reactive fork (WLEDSR)                                                                                                //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class WS2812FX {
@@ -333,7 +333,7 @@ class WS2812FX {
     // FastLED array, so we can refer to leds[i] instead of getPixel() and setPixel()
     CRGB leds[MAX_LEDS+1];                          // See const.h for a value of 1500. The plus 1 is just in case we go over with XY().
 
-    typedef struct Segment { // 30 (32 in memory?) bytes
+    typedef struct Segment { // 31 (32 in memory) bytes
       uint16_t start;
       uint16_t stop;    //segment invalid if stop == 0
       uint16_t offset;
@@ -349,7 +349,8 @@ class WS2812FX {
       uint8_t opacity;
       uint32_t colors[NUM_COLORS];
       uint8_t  cct;     //0==1900K, 255==10091K
-      uint16_t width;   // WLEDSRewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
+      uint8_t  _capabilities;
+      uint16_t width;   // WLEDSR ewowi20210624: add width/height and startX/Y stopX/Y for 2D segments
       uint16_t height;  // WLEDSR
       uint16_t startX;  // WLEDSR
       uint16_t startY;  // WLEDSR
@@ -430,30 +431,10 @@ class WS2812FX {
           vLength = (vLength + 1) /2;  // divide by 2 if mirror, leave at least a single LED
         return vLength;
       }
-      uint8_t differs(Segment& b) {
-        uint8_t d = 0;
-        if (start != b.start)         d |= SEG_DIFFERS_BOUNDS;
-        if (stop != b.stop)           d |= SEG_DIFFERS_BOUNDS;
-        if (offset != b.offset)       d |= SEG_DIFFERS_GSO;
-        if (grouping != b.grouping)   d |= SEG_DIFFERS_GSO;
-        if (spacing != b.spacing)     d |= SEG_DIFFERS_GSO;
-        if (opacity != b.opacity)     d |= SEG_DIFFERS_BRI;
-        if (mode != b.mode)           d |= SEG_DIFFERS_FX;
-        if (speed != b.speed)         d |= SEG_DIFFERS_FX;
-        if (intensity != b.intensity) d |= SEG_DIFFERS_FX;
-        if (custom2 != b.custom2)     d |= SEG_DIFFERS_FX;
-        if (custom1 != b.custom1)     d |= SEG_DIFFERS_FX;
-        if (custom3 != b.custom3)     d |= SEG_DIFFERS_FX;
-        if (palette != b.palette)     d |= SEG_DIFFERS_FX;
 
-        if ((options & 0b00101111) != (b.options & 0b00101111)) d |= SEG_DIFFERS_OPT;
-        for (uint8_t i = 0; i < NUM_COLORS; i++)
-        {
-          if (colors[i] != b.colors[i]) d |= SEG_DIFFERS_COL;
-        }
-
-        return d;
-      }
+      uint8_t differs(Segment& b);
+      inline uint8_t getLightCapabilities() {return _capabilities;}
+      void refreshLightCapabilities();
     } segment;
 
   // segment runtime parameters
@@ -507,8 +488,9 @@ class WS2812FX {
        * Flags that before the next effect is calculated,
        * the internal segment state should be reset.
        * Call resetIfRequired before calling the next effect function.
+       * Safe to call from interrupts and network requests.
        */
-      inline void reset() { _requiresReset = true; }
+      inline void markForReset() { _requiresReset = true; }
       private:
         uint16_t _dataLen = 0;
         bool _requiresReset = false;
@@ -836,7 +818,8 @@ class WS2812FX {
       setMode(uint8_t segid, uint8_t m),
       setColor(uint8_t slot, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       setColor(uint8_t slot, uint32_t c),
-      setBrightness(uint8_t b),
+      setCCT(uint16_t k),
+      setBrightness(uint8_t b, bool direct = false),
       setRange(uint16_t i, uint16_t i2, uint32_t col),
       setShowCallback(show_callback cb),
       setTransition(uint16_t t),
@@ -845,47 +828,53 @@ class WS2812FX {
       trigger(void),
       setReset(uint8_t n),
       setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0, uint16_t offset = UINT16_MAX),
+      setMainSegmentId(uint8_t n),
       restartRuntime(),
       resetSegments(),
-      makeAutoSegments(),
+      makeAutoSegments(bool forceReset = false),
       fixInvalidSegments(),
       setPixelColor(uint16_t n, uint32_t c),
       setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
-      setPixelSegment(uint8_t n),
+			setTargetFps(uint8_t fps),
       deserializeMap(uint8_t n=0);
 
     bool
-      isRgbw = false,
-      isOffRefreshRequred = false, //periodic refresh is required for the strip to remain off.
       gammaCorrectBri = false,
       gammaCorrectCol = true,
-      applyToAllSelected = true,
-      setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t c1, uint8_t c2, uint8_t c3, uint8_t p), //WLEDSR: add c1,c2,c3
+      // REMOVED IN 7b969bb
+      // applyToAllSelected = true,
+      // setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t c1, uint8_t c2, uint8_t c3, uint8_t p), //WLEDSR: add c1,c2,c3
       checkSegmentAlignment(void),
-			hasCCTBus(void),
+      hasRGBWBus(void),
+      hasCCTBus(void),
       // return true if the strip is being sent pixel updates
       isUpdating(void);
 
     uint8_t
-      mainSegment = 0,
       paletteFade = 0,
       paletteBlend = 0,
       milliampsPerLed = 55,
-			cctBlending = 0,
+      autoWhiteMode = RGBW_MODE_DUAL,
+      cctBlending = 0,
       getBrightness(void),
-      getMode(void),
-      getSpeed(void),
       getModeCount(void),
       getPaletteCount(void),
       getMaxSegments(void),
       getActiveSegmentsNum(void),
-      //getFirstSelectedSegment(void),
+      getFirstSelectedSegId(void),
       getMainSegmentId(void),
+      getLastActiveSegmentId(void),
+      getTargetFps(void),
+      setPixelSegment(uint8_t n),
       gamma8(uint8_t),
       gamma8_cal(uint8_t, float),
-      sin_gap(uint16_t),
       get_random_wheel_index(uint8_t);
+
+    inline uint8_t sin_gap(uint16_t in) {
+      if (in & 0x100) return 0;
+      return sin8(in + 192); // correct phase shift of sine so that it starts and stops at 0
+    }
 
     int8_t
       tristate_square8(uint8_t x, uint8_t pulsewidth, uint8_t attdec);
@@ -907,14 +896,12 @@ class WS2812FX {
       currentColor(uint32_t colorNew, uint8_t tNr),
       gamma32(uint32_t),
       getLastShow(void),
-      getPixelColor(uint16_t),
-      getColor(void);
+      getPixelColor(uint16_t);
 
-    WS2812FX::Segment&
-      getSegment(uint8_t n);
-
-    WS2812FX::Segment_runtime
-      getSegmentRuntime(void);
+    WS2812FX::Segment
+      &getSegment(uint8_t n),
+      &getFirstSelectedSeg(void),
+      &getMainSegment(void);
 
     WS2812FX::Segment*
       getSegments(void);
@@ -1177,9 +1164,13 @@ class WS2812FX {
     uint16_t _usedSegmentData = 0;
     uint16_t _transitionDur = 750;
 
+		uint8_t _targetFps = 42;
+		uint16_t _frametime = (1000/42);
     uint16_t _cumulativeFps = 2;
 
     bool
+      _isOffRefreshRequired = false, //periodic refresh is required for the strip to remain off.
+      _hasWhiteChannel = false,
       _triggered;
 
     mode_ptr _mode[MODE_COUNT]; // SRAM footprint: 4 bytes per element
@@ -1226,12 +1217,16 @@ class WS2812FX {
     uint32_t _colors_t[3];
     uint8_t _bri_t;
 
+    bool _no_rgb = false;
+
     uint8_t _segment_index = 0;
     uint8_t _segment_index_palette_last = 99;
+    uint8_t _mainSegment;
+
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 27 bytes per element
       //WLEDSR: add f1,2,3
-      // start, stop, offset, speed, intensity, custom1, custom2, custom3, palette, mode, options, grouping, spacing, opacity (unused), color[]
-      {0, 7, 0, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_Custom1, DEFAULT_Custom2, DEFAULT_Custom3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
+      // start, stop, offset, speed, intensity, custom1, custom2, custom3, palette, mode, options, grouping, spacing, opacity (unused), color[], capabilities
+      {0, 7, 0, DEFAULT_SPEED, DEFAULT_INTENSITY, DEFAULT_Custom1, DEFAULT_Custom2, DEFAULT_Custom3, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}, 0}
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 28 bytes per element
     friend class Segment_runtime;
@@ -1242,6 +1237,10 @@ class WS2812FX {
     uint16_t
       realPixelIndex(uint16_t i),
       transitionProgress(uint8_t tNr);
+
+  public:
+    inline bool hasWhiteChannel(void) {return _hasWhiteChannel;}
+    inline bool isOffRefreshRequired(void) {return _isOffRefreshRequired;}
 };
 
 //10 names per line

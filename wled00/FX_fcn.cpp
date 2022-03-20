@@ -423,6 +423,11 @@ void WS2812FX::setTargetFps(uint8_t fps) {
 	_frametime = 1000 / _targetFps;
 }
 
+// Fixes private class variable compiler error. Unsure if this is the correct way of fixing the root problem. -THATDONFC
+uint16_t WS2812FX::getMinShowDelay() {
+  return MIN_SHOW_DELAY;
+}
+
 /**
  * Forces the next frame to be computed on all active segments.
  */

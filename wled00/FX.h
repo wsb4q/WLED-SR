@@ -72,6 +72,7 @@
 #define FAIR_DATA_PER_SEG (MAX_SEGMENT_DATA / MAX_NUM_SEGMENTS)
 
 #define LED_SKIP_AMOUNT  1
+// NEED WORKAROUND TO ACCESS PRIVATE CLASS VARIABLE '_frametime'
 #define MIN_SHOW_DELAY   (_frametime < 16 ? 8 : 15)
 
 #define NUM_COLORS       3 /* number of colors per segment */
@@ -885,7 +886,8 @@ class WS2812FX {
       triwave16(uint16_t),
       getLengthTotal(void),
       getLengthPhysical(void),
-      getFps();
+      getFps(),
+      getMinShowDelay(); // Fixes private class variable compiler error. Unsure if this is the correct way of fixing the root problem. -THATDONFC
 
     uint32_t
       now,

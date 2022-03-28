@@ -1312,7 +1312,7 @@ function setSliderAndColorControl(idx, extra) {
     pallist.style.display = "none";
     pallabel.style.display = "none";
   }
-}
+} //setSliderAndColorControl
 
 var jsonTimeout;
 var reqsLegal = false;

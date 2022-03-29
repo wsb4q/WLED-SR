@@ -159,7 +159,6 @@ class FourLineDisplayUsermod : public Usermod {
     bool clockMode = false;         // display clock
     bool forceAutoRedraw = false;         // WLEDSR: force rotating of variables in display, even if strip.isUpdating, this can cause led stutter, this should not be necessary if display is fast enough...
     bool noAutoRedraw = false;         // WLEDSR: never do auto Redraw, only when variable changes or rotary is pressed (in case redraw causes stutter on leds, should not be needed with spi displays)
-    bool enabled = true;
 
     // Next variables hold the previous known values to determine if redraw is
     // required.
@@ -377,9 +376,9 @@ class FourLineDisplayUsermod : public Usermod {
         return FLD_LINE_EFFECT_CUSTOM2;
       else if (knownEffectCustom3 != effectCustom3)
         return FLD_LINE_EFFECT_CUSTOM3;
-      else if (knownMode != strip.getMode())
+      else if (knownMode != strip.getMainSegment().mode)
         return FLD_LINE_MODE;
-      else if (knownPalette != strip.getSegment(0).palette)
+      else if (knownPalette != strip.getMainSegment().palette)
         return FLD_LINE_PALETTE;
       else if (knownSquelch != soundSquelch)
         return FLD_LINE_SQUELCH;

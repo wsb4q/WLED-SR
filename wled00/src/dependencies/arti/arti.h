@@ -2506,7 +2506,7 @@ public:
     const char * version = metaData["version"];
     if (strcmp(version, "0.3.0") != 0) 
     {
-      ERROR_ARTI("Version of definition.json file (%s) should be 0.3.0. Press Download wled.json\n", version);
+      ERROR_ARTI("Version of definition.json file (%s) should be 0.3.0.\nPress Download wled.json\n", version);
       return false;
     }
     const char * startNode = metaData["start"];

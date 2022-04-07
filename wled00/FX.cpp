@@ -25,6 +25,7 @@
 */
 
 #include "FX.h"
+#include "wled.h"
 
 //WLEDSR Custom Effects
 #include "src/dependencies/arti/arti_wled.h"
@@ -940,7 +941,7 @@ uint16_t WS2812FX::mode_chase_flash_random(void) {
   } else {
     SEGENV.step = (SEGENV.step + 1) % SEGLEN;
 
-    if(SEGENV.step == 0) {
+    if (SEGENV.step == 0) {
       SEGENV.aux0 = get_random_wheel_index(SEGENV.aux0);
     }
   }
@@ -969,8 +970,7 @@ uint16_t WS2812FX::running(uint32_t color1, uint32_t color2, bool theatre) {
     setPixelColor(i,col);
   }
 
-  if (it != SEGENV.step )
-  {
+  if (it != SEGENV.step) {
     SEGENV.aux0 = (SEGENV.aux0 +1) % (theatre ? width : (width<<1));
     SEGENV.step = it;
   }
@@ -1000,26 +1000,34 @@ uint16_t WS2812FX::mode_halloween(void) {
 
 
 /*
- * Random colored pixels running.
+ * Random colored pixels running. ("Stream")
  */
 uint16_t WS2812FX::mode_running_random(void) {
   uint32_t cycleTime = 25 + (3 * (uint32_t)(255 - SEGMENT.speed));
   uint32_t it = now / cycleTime;
-  if (SEGENV.aux1 == it) return FRAMETIME;
+  if (SEGENV.call == 0) SEGENV.aux0 = random16(); // random seed for PRNG on start
 
-  for(uint16_t i=SEGLEN-1; i > 0; i--) {
-    setPixelColor( i, getPixelColor( i - 1));
-  }
+  uint8_t zoneSize = ((255-SEGMENT.intensity) >> 4) +1;
+  uint16_t PRNG16 = SEGENV.aux0;
 
-  if(SEGENV.step == 0) {
-    SEGENV.aux0 = get_random_wheel_index(SEGENV.aux0);
-    setPixelColor(0, color_wheel(SEGENV.aux0));
-  }
-
-  SEGENV.step++;
-  if (SEGENV.step > (uint8_t)((255-SEGMENT.intensity) >> 4))
-  {
-    SEGENV.step = 0;
+  uint8_t z = it % zoneSize;
+  bool nzone = (!z && it != SEGENV.aux1);
+  for (uint16_t i=SEGLEN-1; i > 0; i--) {
+    if (nzone || z >= zoneSize) {
+      uint8_t lastrand = PRNG16 >> 8;
+      int16_t diff = 0;
+      while (abs(diff) < 42) { // make sure the difference between adjacent colors is big enough
+        PRNG16 = (uint16_t)(PRNG16 * 2053) + 13849; // next zone, next 'random' number
+        diff = (PRNG16 >> 8) - lastrand;
+      }
+      if (nzone) {
+        SEGENV.aux0 = PRNG16; // save next starting seed
+        nzone = false;
+      }
+      z = 0;
+    }
+    setPixelColor(i, color_wheel(PRNG16 >> 8));
+    z++;
   }
 
   SEGENV.aux1 = it;
@@ -1593,26 +1601,36 @@ uint16_t WS2812FX::mode_dual_larson_scanner(void){
 
 
 /*
- * Running random pixels
+ * Running random pixels ("Stream 2")
  * Custom mode by Keith Lord: https://github.com/kitesurfer1404/WS2812FX/blob/master/src/custom/RandomChase.h
  */
 uint16_t WS2812FX::mode_random_chase(void)
 {
+  if (SEGENV.call == 0) {
+    SEGENV.step = RGBW32(random8(), random8(), random8(), 0);
+    SEGENV.aux0 = random16();
+  }
+  uint16_t prevSeed = random16_get_seed(); // save seed so we can restore it at the end of the function
   uint32_t cycleTime = 25 + (3 * (uint32_t)(255 - SEGMENT.speed));
   uint32_t it = now / cycleTime;
-  if (SEGENV.step == it) return FRAMETIME;
+  uint32_t color = SEGENV.step;
+  random16_set_seed(SEGENV.aux0);
 
   for(uint16_t i = SEGLEN -1; i > 0; i--) {
-    setPixelColor(i, getPixelColor(i-1));
+    uint8_t r = random8(6) != 0 ? (color >> 16 & 0xFF) : random8();
+    uint8_t g = random8(6) != 0 ? (color >> 8  & 0xFF) : random8();
+    uint8_t b = random8(6) != 0 ? (color       & 0xFF) : random8();
+    color = RGBW32(r, g, b, 0);
+    setPixelColor(i, r, g, b);
+    if (i == SEGLEN -1 && SEGENV.aux1 != (it & 0xFFFF)) { //new first color in next frame
+      SEGENV.step = color;
+      SEGENV.aux0 = random16_get_seed();
+    }
   }
-  uint32_t color = getPixelColor(0);
-  if (SEGLEN > 1) color = getPixelColor( 1);
-  uint8_t r = random8(6) != 0 ? (color >> 16 & 0xFF) : random8();
-  uint8_t g = random8(6) != 0 ? (color >> 8  & 0xFF) : random8();
-  uint8_t b = random8(6) != 0 ? (color       & 0xFF) : random8();
-  setPixelColor(0, r, g, b);
 
-  SEGENV.step = it;
+  SEGENV.aux1 = it & 0xFFFF;
+
+  random16_set_seed(prevSeed); // restore original seed so other effects can use "random" PRNG
   return FRAMETIME;
 }
 
@@ -2098,7 +2116,7 @@ uint16_t WS2812FX::mode_colortwinkle()
       }
     }
   }
-  return FRAMETIME;
+  return FRAMETIME_FIXED;
 }
 
 
@@ -2336,7 +2354,7 @@ uint16_t WS2812FX::mode_ripple_rainbow(void) {
 // incandescent bulbs change color as they get dim down.
 #define COOL_LIKE_INCANDESCENT 1
 
-CRGB WS2812FX::twinklefox_one_twinkle(uint32_t ms, uint8_t salt, bool cat)
+CRGB IRAM_ATTR WS2812FX::twinklefox_one_twinkle(uint32_t ms, uint8_t salt, bool cat)
 {
   // Overall twinkle speed (changed)
   uint16_t ticks = ms / SEGENV.aux0;
@@ -2774,16 +2792,9 @@ uint16_t WS2812FX::mode_popcorn(void) {
   if (numPopcorn == 0) numPopcorn = 1;
 
   for(uint8_t i = 0; i < numPopcorn; i++) {
-    bool isActive = popcorn[i].pos >= 0.0f;
-
-    if (isActive) { // if kernel is active, update its position
+    if (popcorn[i].pos >= 0.0f) { // if kernel is active, update its position
       popcorn[i].pos += popcorn[i].vel;
       popcorn[i].vel += gravity;
-      uint32_t col = color_wheel(popcorn[i].colIndex);
-      if (!SEGMENT.palette && popcorn[i].colIndex < NUM_COLORS) col = SEGCOLOR(popcorn[i].colIndex);
-
-      uint16_t ledIndex = popcorn[i].pos;
-      if (ledIndex < SEGLEN) setPixelColor(ledIndex, col);
     } else { // if kernel is inactive, randomly pop it
       if (random8() < 2) { // POP!!!
         popcorn[i].pos = 0.01f;
@@ -2801,6 +2812,13 @@ uint16_t WS2812FX::mode_popcorn(void) {
           popcorn[i].colIndex = col;
         }
       }
+    }
+    if (popcorn[i].pos >= 0.0f) { // draw now active popcorn (either active before or just popped)
+      uint32_t col = color_wheel(popcorn[i].colIndex);
+      if (!SEGMENT.palette && popcorn[i].colIndex < NUM_COLORS) col = SEGCOLOR(popcorn[i].colIndex);
+
+      uint16_t ledIndex = popcorn[i].pos;
+      if (ledIndex < SEGLEN) setPixelColor(ledIndex, col);
     }
   }
 
@@ -2884,7 +2902,7 @@ uint16_t WS2812FX::candle(bool multi)
     }
   }
 
-  return FRAMETIME;
+  return FRAMETIME_FIXED;
 }
 
 uint16_t WS2812FX::mode_candle()
@@ -6388,17 +6406,21 @@ uint16_t WS2812FX::mode_waterfall(void) {                   // Waterfall. By: An
 //     ** 2D GEQ       //
 /////////////////////////
 
-uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tatam. Refactor by Ewoud Wijma.
+uint16_t WS2812FX::GEQ_base(int NUMB_BANDS, bool centered_horizontal, bool centered_vertical, bool color_vertical) {                     // By Will Tatam. Refactor by Ewoud Wijma.
+
+  // centered_vertical = true;
+  // color_vertical = true;
 
   fadeToBlackBy(leds, SEGMENT.speed);
 
-  int NUMB_BANDS = map(SEGMENT.custom1, 0, 255, 1, 16);
-  int barWidth = (SEGMENT.width / NUMB_BANDS);
+  int barWidth = SEGMENT.width / NUMB_BANDS;
+  if (centered_vertical)
+    barWidth /= 2;
   int bandInc = 1;
   if(barWidth == 0) {
     // Matrix narrower than fft bands
     barWidth = 1;
-    bandInc = (NUMB_BANDS / SEGMENT.width);
+    bandInc = NUMB_BANDS / SEGMENT.width; 
   }
   bool rippleTime;
   if (millis() - SEGENV.step >= 255 - SEGMENT.intensity)
@@ -6414,9 +6436,10 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
   int b = 0;
   for (int band = 0; band < NUMB_BANDS; band += bandInc) {
     int barHeight = map(fftResult[band], 0, 255, 0, SEGMENT.height);
-    if ((barHeight % 2 == 1) && centered) barHeight++; //get an even barHeight if centered
-    int yStartBar = centered?(SEGMENT.height - barHeight) / 2:0; //lift up the bar if centered
-    int yStartPeak = centered?(SEGMENT.height - previousBarHeight[band]) / 2:0; //lift up the peaks if centered
+    if ((barHeight % 2 == 1) && centered_horizontal) barHeight++; //get an even barHeight if centered_horizontal
+    int yStartBar = centered_horizontal?(SEGMENT.height - barHeight) / 2:0; //lift up the bar if centered_horizontal
+    int yStartPeak = centered_horizontal?(SEGMENT.height - previousBarHeight[band]) / 2:0; //lift up the peaks if centered_horizontal
+
     for (int w = 0; w < barWidth; w++) {
       int x = (barWidth * b) + w;
       for (int y=0; y<SEGMENT.height; y++)
@@ -6424,19 +6447,29 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
         CRGB color = CRGB::Black; //if not part of bars or peak, make black (not fade to black)
 
         //bar
-        if (y>=yStartBar && y<yStartBar + barHeight)
-          color = color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0);
+        if (y >= yStartBar && y < yStartBar + barHeight) {
+          if (color_vertical)
+            color = color_from_palette(map(y, 0, SEGMENT.height - 1, 0, 255), false, PALETTE_SOLID_WRAP, 0);
+          else
+            color = color_from_palette(band * 35, false, PALETTE_SOLID_WRAP, 0);
+        }
 
-        //low and high peak (must exist && on peak position && only below if centered effect)
-        if ((previousBarHeight[band] > 0) && (SEGMENT.intensity < 255) && (y==yStartPeak || y==yStartPeak + previousBarHeight[band]-1) && (centered || y!=yStartPeak))
+        //low and high peak (must exist && on peak position && only below if centered_horizontal effect)
+        if ((previousBarHeight[band] > 0) && (SEGMENT.intensity < 255) && (y==yStartPeak || y==yStartPeak + previousBarHeight[band]-1) && (centered_horizontal || y!=yStartPeak))
           color = SEGCOLOR(2)==CRGB::Black?color_from_palette((band * 35), false, PALETTE_SOLID_WRAP, 0):SEGCOLOR(2); //low peak
 
-        leds[XY(x, SEGMENT.height - 1 - y)] = color;
+        if (centered_vertical) {
+          leds[XY(SEGMENT.width / 2 - 1 + x, SEGMENT.height - 1 - y)] = color;
+          leds[XY(SEGMENT.width / 2 - 1 - x, SEGMENT.height - 1 - y)] = color;
+        }
+        else {
+          leds[XY(x, SEGMENT.height - 1 - y)] = color;
+        }
       }
     } //barWidth
     b++;
 
-    if (rippleTime) previousBarHeight[band]-=centered?2:1; //delay/ripple effect
+    if (rippleTime) previousBarHeight[band]-=centered_horizontal?2:1; //delay/ripple effect
     if (barHeight > previousBarHeight[band]) previousBarHeight[band] = barHeight; //drive the peak up
   }
 
@@ -6445,7 +6478,7 @@ uint16_t WS2812FX::GEQ_base(bool centered) {                     // By Will Tata
 } //GEQ_base
 
 uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam. Code reduction by Ewoud Wijma.
-  return GEQ_base(false);
+  return GEQ_base(map(SEGMENT.custom1, 0, 255, 1, 16), false, false, false);
 } // mode_2DGEQ()
 
 
@@ -6454,7 +6487,7 @@ uint16_t WS2812FX::mode_2DGEQ(void) {                     // By Will Tatam. Code
 /////////////////////////
 
 uint16_t WS2812FX::mode_2DCenterBars(void) {              // Written by Scott Marley Adapted by  Spiro-C..
-  return GEQ_base(true);
+  return GEQ_base(16, SEGMENT.custom1 > 128, SEGMENT.custom2 > 128, SEGMENT.custom3 > 128);
 } // mode_2DCenterBars()
 
 

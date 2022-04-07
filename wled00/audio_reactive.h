@@ -177,7 +177,10 @@ void getSample() {
   DEBUGSR_PRINT("\t\t"); DEBUGSR_PRINT(sampleAvg); DEBUGSR_PRINT("\n\n");
 /*-------END DEBUG-------*/
 
-  if (millis() - timeOfPeak > MIN_SHOW_DELAY) {   // Auto-reset of samplePeak after a complete frame has passed.
+  // Fixes private class variable compiler error. Unsure if this is the correct way of fixing the root problem. -THATDONFC
+  uint16_t MinShowDelay = strip.getMinShowDelay();
+
+  if (millis() - timeOfPeak > MinShowDelay) {   // Auto-reset of samplePeak after a complete frame has passed.
     samplePeak = 0;
     udpSamplePeak = 0;
     }
@@ -310,7 +313,7 @@ void FFTcode( void * parameter) {
     {
 	    // set imaginary parts to 0
       vImag[i] = 0;
-	    // pick our  our current mic sample - we take the max value from all samples that go into FFT 
+	    // pick our  our current mic sample - we take the max value from all samples that go into FFT
 	    if ((vReal[i] <= (INT16_MAX - 1024)) && (vReal[i] >= (INT16_MIN + 1024)))  //skip extreme values - normally these are artefacts
 	    {
 		    if (fabs(vReal[i]) > maxSample) maxSample = fabs(vReal[i]);
@@ -318,7 +321,7 @@ void FFTcode( void * parameter) {
     }
 	  micDataSm = (uint16_t)maxSample;
 
-    FFT.DCRemoval(); // let FFT lib remove DC component, so we don't need to care about this in getSamples()	
+    FFT.DCRemoval(); // let FFT lib remove DC component, so we don't need to care about this in getSamples()
 
     //FFT.Windowing( FFT_WIN_TYP_HAMMING, FFT_FORWARD );        // Weigh data - standard Hamming window
     //FFT.Windowing( FFT_WIN_TYP_BLACKMAN, FFT_FORWARD );       // Blackman window - better side freq rejection
@@ -389,7 +392,7 @@ void FFTcode( void * parameter) {
     vReal[20] = xtemp[20];
     vReal[21] = xtemp[21];
     vReal[samples-2] = xtemp[22];
-    vReal[samples-1] = xtemp[23];    
+    vReal[samples-1] = xtemp[23];
 #endif
 
     for (int i = 0; i < samples; i++) {                     // Values for bins 0 and 1 are WAY too large. Might as well start at 3.

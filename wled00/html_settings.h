@@ -203,19 +203,22 @@ var d=document;function H(){window.open("https://github.com/atuline/WLED/wiki/Sq
 onclick="H()">?</button></div><button type="button" onclick="B()">Back</button>
 <button type="submit">Save</button><hr><h2>Sound Input Settings</h2>Squelch: 
 <input name="SQ" type="number" min="0" max="255" required><br>Gain: <input 
-name="GN" type="number" min="0" max="255" required><br>AGC: <input 
-type="checkbox" name="AGC"><br><h2>Sound Input Pin Manager</h2>Microphone type: 
-<select id="dme" name="DMM" onchange="enDM()"><option value="0" 
-selected="selected">Generic Analog</option><option value="1">Generic I2S
-</option><option value="2">ES7243</option><option value="3">SPH0654</option>
-<option value="4">Generic I2S with Mclk</option><option value="5">
+name="GN" type="number" min="0" max="255" required><br><i>
+Enter values between 0 and 255. To tune, start with Squelch=10 and Gain=40 and modify according to your setup
+</i><br>Automatic Gain Control (AGC): <input type="checkbox" name="AGC"><br><i>
+AGC is an expiremental feature</i><br><h2>Sound Input Pin Manager</h2>
+Microphone type: <select id="dme" name="DMM" onchange="enDM()"><option 
+value="0" selected="selected">Generic Analog</option><option value="1">
+Generic I2S</option><option value="2">ES7243</option><option value="3">SPH0654
+</option><option value="4">Generic I2S with Mclk</option><option value="5">
 Generic I2S PDM</option></select><br><div id="dm">I2S SD pin: <input 
 type="number" min="-1" max="40" name="DI"><br>I2S WS pin: <input type="number" 
 min="-1" max="40" name="LR"><br>I2S SCK pin: <input type="number" min="-1" 
-max="40" name="CK"><br></div><div id="am">Analog Input pin: <input 
-type="number" min="-1" max="40" name="SI"><br></div><button type="button" 
-onclick="B()">Back</button><button type="submit">Save</button></form></body>
-</html>)=====";
+max="40" name="CK"><br></div><i>
+Changing the microphone type or pins requires a hard reset/power cycle</i><br>
+<div id="am">Analog Input pin: <input type="number" min="-1" max="40" name="SI">
+<br></div><button type="button" onclick="B()">Back</button><button 
+type="submit">Save</button></form></body></html>)=====";
 
 
 #ifdef WLED_ENABLE_DMX

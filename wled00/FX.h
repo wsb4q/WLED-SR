@@ -1136,7 +1136,7 @@ class WS2812FX {
     //  mode_2DCAElementary(void);
 
     uint16_t
-      GEQ_base(bool); //private???
+      GEQ_base(int, bool, bool, bool); //private???
 
     uint16_t
       _lengthRaw; //private? not in AC (anymore)
@@ -1432,7 +1432,7 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 " ♫ Gravfreq@Rate of fall,Sensivity;,!;!",
 " ♫ DJ Light@Speed;;",
 " ♫ 2D Funky Plank@Scroll speed,,# of bands;;",
-" ♫ 2D CenterBars@Bar speed,Ripple decay,# of bands;,,Peak Color;!",
+" ♫ 2D CenterBars@Bar speed,Ripple decay,Center ↔ ☑,Center ↕ ☑, Color ↕ ☑;,,Peak Color;!",
 "2D Pulser@Speed,Blur;;!",
 " ♫ Blurz@Fade rate,Blur amount;,Color mix;!",
 "2D Drift@Rotation speed,Blur amount;;!",

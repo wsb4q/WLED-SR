@@ -43,9 +43,9 @@
 #define FLD_LINE_MODE             0
 #define FLD_LINE_EFFECT_SPEED     0
 #define FLD_LINE_EFFECT_INTENSITY 0
-#define FLD_LINE_EFFECT_FFT1      0 //WLEDSR
-#define FLD_LINE_EFFECT_FFT2      0 //WLEDSR
-#define FLD_LINE_EFFECT_FFT3      0 //WLEDSR
+#define FLD_LINE_EFFECT_CUSTOM1      0 //WLEDSR
+#define FLD_LINE_EFFECT_CUSTOM2      0 //WLEDSR
+#define FLD_LINE_EFFECT_CUSTOM3      0 //WLEDSR
 #define FLD_LINE_PALETTE          0
 #define FLD_LINE_SQUELCH          0 //WLEDSR
 #define FLD_LINE_GAIN             0 //WLEDSR
@@ -216,13 +216,13 @@ public:
                 changedState = changeState(sliderNames[1], FLD_LINE_EFFECT_INTENSITY, 3);
                 break;
               case 4:
-                changedState = changeState(sliderNames[2], FLD_LINE_EFFECT_FFT1, 3); //WLEDSR
+                changedState = changeState(sliderNames[2], FLD_LINE_EFFECT_CUSTOM1, 3); //WLEDSR
                 break;
               case 5:
-                changedState = changeState(sliderNames[3], FLD_LINE_EFFECT_FFT2, 3); //WLEDSR
+                changedState = changeState(sliderNames[3], FLD_LINE_EFFECT_CUSTOM2, 3); //WLEDSR
                 break;
               case 6:
-                changedState = changeState(sliderNames[4], FLD_LINE_EFFECT_FFT3, 3); //WLEDSR
+                changedState = changeState(sliderNames[4], FLD_LINE_EFFECT_CUSTOM3, 3); //WLEDSR
                 break;
               case 7:
                 changedState = changeState("Palette", FLD_LINE_PALETTE, 3);
@@ -264,13 +264,13 @@ public:
               changeEffectIntensity(true);
               break;
             case 4:
-              changeEffectFFT1(true); //WLEDSR
+              changeEffectCustom1(true); //WLEDSR
               break;
             case 5:
-              changeEffectFFT2(true); //WLEDSR
+              changeEffectCustom2(true); //WLEDSR
               break;
             case 6:
-              changeEffectFFT3(true); //WLEDSR
+              changeEffectCustom3(true); //WLEDSR
               break;
             case 7:
               changePalette(true);
@@ -299,13 +299,13 @@ public:
               changeEffectIntensity(false);
               break;
             case 4:
-              changeEffectFFT1(false); //WLEDSR
+              changeEffectCustom1(false); //WLEDSR
               break;
             case 5:
-              changeEffectFFT2(false); //WLEDSR
+              changeEffectCustom2(false); //WLEDSR
               break;
             case 6:
-              changeEffectFFT3(false); //WLEDSR
+              changeEffectCustom3(false); //WLEDSR
               break;
             case 7:
               changePalette(false);
@@ -359,11 +359,8 @@ public:
   }
 
   void lampUdated() {
-    strip.setEffectConfig(effectCurrent, effectSpeed, effectIntensity, effectFFT1, effectFFT2, effectFFT3, effectPalette);
-    //call for notifier -> 0: init 1: direct change 2: button 3: notification 4: nightlight 5: other (No notification)
-    // 6: fx changed 7: hue 8: preset cycle 9: blynk 10: alexa
-    colorUpdated(CALL_MODE_DIRECT_CHANGE);
-    updateInterfaces(CALL_MODE_DIRECT_CHANGE);
+    colorUpdated(CALL_MODE_BUTTON);
+    updateInterfaces(CALL_MODE_BUTTON);
   }
 
   void changeBrightness(bool increase) {
@@ -438,7 +435,7 @@ public:
     lampUdated();
   }
 
-  void changeEffectFFT1(bool increase) { //WLEDSR
+  void changeEffectCustom1(bool increase) { //WLEDSR
 #ifdef USERMOD_FOUR_LINE_DISPLAY
     if (display && display->wakeDisplay()) {
       // Throw away wake up input
@@ -446,15 +443,15 @@ public:
     }
 #endif
     if (increase) {
-      effectFFT1 = (effectFFT1 + fadeAmount <= 255) ? (effectFFT1 + fadeAmount) : 255;
+      effectCustom1 = (effectCustom1 + fadeAmount <= 255) ? (effectCustom1 + fadeAmount) : 255;
     }
     else {
-      effectFFT1 = (effectFFT1 - fadeAmount >= 0) ? (effectFFT1 - fadeAmount) : 0;
+      effectCustom1 = (effectCustom1 - fadeAmount >= 0) ? (effectCustom1 - fadeAmount) : 0;
     }
     lampUdated();
   }
 
-  void changeEffectFFT2(bool increase) { //WLEDSR
+  void changeEffectCustom2(bool increase) { //WLEDSR
 #ifdef USERMOD_FOUR_LINE_DISPLAY
     if (display && display->wakeDisplay()) {
       // Throw away wake up input
@@ -462,15 +459,15 @@ public:
     }
 #endif
     if (increase) {
-      effectFFT2 = (effectFFT2 + fadeAmount <= 255) ? (effectFFT2 + fadeAmount) : 255;
+      effectCustom2 = (effectCustom2 + fadeAmount <= 255) ? (effectCustom2 + fadeAmount) : 255;
     }
     else {
-      effectFFT2 = (effectFFT2 - fadeAmount >= 0) ? (effectFFT2 - fadeAmount) : 0;
+      effectCustom2 = (effectCustom2 - fadeAmount >= 0) ? (effectCustom2 - fadeAmount) : 0;
     }
     lampUdated();
   }
 
-  void changeEffectFFT3(bool increase) { //WLEDSR
+  void changeEffectCustom3(bool increase) { //WLEDSR
 #ifdef USERMOD_FOUR_LINE_DISPLAY
     if (display && display->wakeDisplay()) {
       // Throw away wake up input
@@ -478,10 +475,10 @@ public:
     }
 #endif
     if (increase) {
-      effectFFT3 = (effectFFT3 + fadeAmount <= 255) ? (effectFFT3 + fadeAmount) : 255;
+      effectCustom3 = (effectCustom3 + fadeAmount <= 255) ? (effectCustom3 + fadeAmount) : 255;
     }
     else {
-      effectFFT3 = (effectFFT3 - fadeAmount >= 0) ? (effectFFT3 - fadeAmount) : 0;
+      effectCustom3 = (effectCustom3 - fadeAmount >= 0) ? (effectCustom3 - fadeAmount) : 0;
     }
     lampUdated();
   }

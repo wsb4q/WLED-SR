@@ -90,7 +90,16 @@ void loadSettingsFromEEPROM()
   if (apChannel > 13 || apChannel < 1) apChannel = 1;
   apHide = EEPROM.read(228);
   if (apHide > 1) apHide = 1;
-  ledCount = EEPROM.read(229) + ((EEPROM.read(398) << 8) & 0xFF00); if (ledCount > MAX_LEDS || ledCount == 0) ledCount = 30;
+  uint16_t length = EEPROM.read(229) + ((EEPROM.read(398) << 8) & 0xFF00); //was ledCount
+  if (length > MAX_LEDS || length == 0) length = 30;
+  uint8_t pins[5] = {2, 255, 255, 255, 255};
+  uint8_t colorOrder = COL_ORDER_GRB;
+  if (lastEEPROMversion > 9) colorOrder = EEPROM.read(383);
+  if (colorOrder > COL_ORDER_GBR) colorOrder = COL_ORDER_GRB;
+  bool skipFirst = EEPROM.read(2204);
+  bool reversed = EEPROM.read(252);
+  BusConfig bc = BusConfig(EEPROM.read(372) ? TYPE_SK6812_RGBW : TYPE_WS2812_RGB, pins, 0, length, colorOrder, reversed, skipFirst);
+  busses.add(bc);
 
   notifyButton = EEPROM.read(230);
   notifyTwice = EEPROM.read(231);
@@ -133,8 +142,7 @@ void loadSettingsFromEEPROM()
   useAMPM = EEPROM.read(329);
   strip.gammaCorrectBri = EEPROM.read(330);
   strip.gammaCorrectCol = EEPROM.read(331);
-  overlayDefault = EEPROM.read(332);
-  if (lastEEPROMversion < 8 && overlayDefault > 0) overlayDefault--; //overlay mode 1 (solid) was removed
+  overlayCurrent = EEPROM.read(332);
 
   alexaEnabled = EEPROM.read(333);
 
@@ -144,7 +152,7 @@ void loadSettingsFromEEPROM()
   arlsOffset = EEPROM.read(368);
   if (!EEPROM.read(367)) arlsOffset = -arlsOffset;
   turnOnAtBoot = EEPROM.read(369);
-  strip.isRgbw = EEPROM.read(372);
+  //strip.isRgbw = EEPROM.read(372);
   //374 - strip.paletteFade
 
   apBehavior = EEPROM.read(376);
@@ -190,11 +198,6 @@ void loadSettingsFromEEPROM()
     countdownMin = EEPROM.read(2160);
     countdownSec = EEPROM.read(2161);
     setCountdown();
-
-    #ifndef WLED_DISABLE_CRONIXIE
-    readStringFromEEPROM(2165, cronixieDisplay, 6);
-    cronixieBacklight = EEPROM.read(2171);
-    #endif
 
     //macroBoot = EEPROM.read(2175);
     macroAlexaOn = EEPROM.read(2176);
@@ -321,7 +324,7 @@ void loadSettingsFromEEPROM()
   receiveDirect = !EEPROM.read(2200);
   notifyMacro = EEPROM.read(2201);
 
-  strip.rgbwMode = EEPROM.read(2203);
+  //strip.rgbwMode = EEPROM.read(2203);
   //skipFirstLed = EEPROM.read(2204);
 
   bootPreset = EEPROM.read(389);
@@ -366,9 +369,9 @@ void loadSettingsFromEEPROM()
     audioSyncPort = EEPROM.read(EEP_AUDIO+1) + ((EEPROM.read(EEP_AUDIO+2) << 8) & 0xFF00);
     audioSyncEnabled = EEPROM.read(EEP_AUDIO + 3);
 
-    effectFFT1 = EEPROM.read(EEP_AUDIO+4);
-    effectFFT2 = EEPROM.read(EEP_AUDIO+5);
-    effectFFT3 = EEPROM.read(EEP_AUDIO+6);
+    effectCustom1 = EEPROM.read(EEP_AUDIO+4);
+    effectCustom2 = EEPROM.read(EEP_AUDIO+5);
+    effectCustom3 = EEPROM.read(EEP_AUDIO+6);
 
     strip.stripOrMatrixPanel = EEPROM.read(EEP_AUDIO+7);
     strip.matrixWidth = EEPROM.read(EEP_AUDIO+8) + ((EEPROM.read(EEP_AUDIO+9) << 8) & 0xFF00); //if (strip.matrixWidth == 0) strip.matrixWidth = ledCount;
@@ -387,19 +390,17 @@ void loadSettingsFromEEPROM()
     strip.panelTranspose = EEPROM.read(EEP_AUDIO+19); // > 0;
 
     sampleGain = EEPROM.read(EEP_AUDIO+20);
-    soundAgc = EEPROM.read(EEP_AUDIO+21); 
+    soundAgc = EEPROM.read(EEP_AUDIO+21);
   }
 
 // FFT Slider Data Preset Protocol 5 bytes, 25 "slots"
 // RESERVE 3175-3299 for FFT Preset saves and future expansion
-// 3175:      FFT1
-// 3176:      FFT2
-// 3177:      FFT3
+// 3175:      Custom1
+// 3176:      Custom2
+// 3177:      Custom3
 // 3178-3179: ZEROs
 
 // End of Audio Reactive SEGMENT specific read settings
-
-  overlayCurrent = overlayDefault;
 }
 
 
@@ -415,8 +416,13 @@ void deEEP() {
 
   DEBUG_PRINTLN(F("Preset file not found, attempting to load from EEPROM"));
   DEBUGFS_PRINTLN(F("Allocating saving buffer for dEEP"));
-  DynamicJsonDocument dDoc(JSON_BUFFER_SIZE *2);
-  JsonObject sObj = dDoc.to<JsonObject>();
+  #ifdef WLED_USE_DYNAMIC_JSON
+  DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+  #else
+  if (!requestJSONBufferLock(8)) return;
+  #endif
+
+  JsonObject sObj = doc.to<JsonObject>();
   sObj.createNestedObject("0");
 
   EEPROM.begin(EEPSIZE);
@@ -443,7 +449,7 @@ void deEEP() {
 
         JsonArray colarr = segObj.createNestedArray("col");
 
-        byte numChannels = (strip.isRgbw)? 4:3;
+        byte numChannels = (strip.hasWhiteChannel())? 4:3;
 
         for (uint8_t k = 0; k < 3; k++) //k=0 primary (i+2) k=1 secondary (i+6) k=2 tertiary color (i+12)
         {
@@ -458,9 +464,9 @@ void deEEP() {
         segObj[F("sx")]  = EEPROM.read(i+11);
         segObj[F("ix")]  = EEPROM.read(i+16);
         segObj["pal"]    = EEPROM.read(i+17);
-        segObj[F("f1x")] = EEPROM.read(k);      // Read FFT Slider values from EEPROM for presets
-        segObj[F("f2x")] = EEPROM.read(k+1);    // Read FFT Slider values from EEPROM for presets
-        segObj[F("f3x")] = EEPROM.read(k+2);    // Read FFT Slider values from EEPROM for presets
+        segObj[F("c1x")] = EEPROM.read(k);      // Read FFT Slider values from EEPROM for presets
+        segObj[F("c2x")] = EEPROM.read(k+1);    // Read FFT Slider values from EEPROM for presets
+        segObj[F("c3x")] = EEPROM.read(k+2);    // Read FFT Slider values from EEPROM for presets
       } else {
         WS2812FX::Segment* seg = strip.getSegments();
         memcpy(seg, EEPROM.getDataPtr() +i+2, 240);
@@ -471,15 +477,9 @@ void deEEP() {
             strip.getSegment(j).setOption(SEG_OPTION_ON, 1);
           }
         }
-        setValuesFromMainSeg();
         serializeState(pObj, true, false, true);
-
-        strip.resetSegments();
-        setValuesFromMainSeg();
       }
     }
-
-
 
     for (uint16_t index = 1; index <= 16; index++) { //copy macros to presets.json
       char m[65];
@@ -500,10 +500,14 @@ void deEEP() {
   File f = WLED_FS.open("/presets.json", "w");
   if (!f) {
     errorFlag = ERR_FS_GENERAL;
+    releaseJSONBufferLock();
     return;
   }
-  serializeJson(dDoc, f);
+  serializeJson(doc, f);
   f.close();
+
+  releaseJSONBufferLock();
+
   DEBUG_PRINTLN(F("deEEP complete!"));
 }
 
